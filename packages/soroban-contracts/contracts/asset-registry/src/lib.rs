@@ -230,3 +230,98 @@ impl VaulticAssetRegistry {
         env.storage().instance().get(&DataKey::AssetCounter).unwrap_or(1) - 1
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use soroban_sdk::testutils::{Address as _};
+
+    #[test]
+    fn test_initialize() {
+        let env = Env::default();
+        let admin = Address::generate(&env);
+        let tokenizer = Address::generate(&env);
+        let contract_id = env.register_contract(None, VaulticAssetRegistry);
+        let client = VaulticAssetRegistryClient::new(&env, &contract_id);
+
+        client.initialize(&admin, &tokenizer);
+        assert_eq!(client.total_assets(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "already initialized")]
+    fn test_double_initialize() {
+        let env = Env::default();
+        let admin = Address::generate(&env);
+        let contract_id = env.register_contract(None, VaulticAssetRegistry);
+        let client = VaulticAssetRegistryClient::new(&env, &contract_id);
+
+        client.initialize(&admin, &admin);
+        client.initialize(&admin, &admin);
+    }
+
+    #[test]
+    fn test_registration_cycle() {
+        let env = Env::default();
+        let admin = Address::generate(&env);
+        let owner = Address::generate(&env);
+        let contract_id = env.register_contract(None, VaulticAssetRegistry);
+        let client = VaulticAssetRegistryClient::new(&env, &contract_id);
+
+        client.initialize(&admin, &admin);
+
+        env.mock_all_auths();
+
+        let asset_id = client.register_asset(
+            &owner,
+            &String::from_str(&env, "Test Building"),
+            &String::from_str(&env, "Real Estate"),
+            &String::from_str(&env, "VT-TEST"),
+            &String::from_str(&env, "ipfs://metadata"),
+            &1000000i128,
+            &OwnershipModel::Fractional,
+        );
+
+        assert_eq!(asset_id, 1);
+        let asset = client.get_asset(&asset_id);
+        assert_eq!(asset.asset_name, String::from_str(&env, "Test Building"));
+        assert!(matches!(asset.state, AssetState::Pending));
+
+        // Approve
+        client.approve_asset(&asset_id);
+        let asset_active = client.get_asset(&asset_id);
+        assert!(matches!(asset_active.state, AssetState::Active));
+
+        // Tokenize
+        let issuer = Address::generate(&env);
+        client.record_tokenization(&asset_id, &issuer, &1000i128, &1000i128);
+        
+        let asset_tokenized = client.get_asset(&asset_id);
+        assert!(matches!(asset_tokenized.state, AssetState::Tokenized));
+        assert_eq!(asset_tokenized.issuer.unwrap(), issuer);
+    }
+
+    #[test]
+    #[should_panic(expected = "unauthorized")]
+    fn test_unauthorized_registration() {
+        let env = Env::default();
+        let admin = Address::generate(&env);
+        let intruder = Address::generate(&env);
+        let contract_id = env.register_contract(None, VaulticAssetRegistry);
+        let client = VaulticAssetRegistryClient::new(&env, &contract_id);
+
+        client.initialize(&admin, &admin);
+
+        // Registry check: Only admin can register (as per set_auth in logic)
+        // Note: For unit tests we mock auth, but without mock_all_auths it will fail as expected.
+        client.register_asset(
+            &intruder,
+            &String::from_str(&env, "Bad"),
+            &String::from_str(&env, "Scam"),
+            &String::from_str(&env, "BAD"),
+            &String::from_str(&env, "uri"),
+            &100i128,
+            &OwnershipModel::WholeOwnership,
+        );
+    }
+}

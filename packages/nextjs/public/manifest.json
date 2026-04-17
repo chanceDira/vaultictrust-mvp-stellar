@@ -1,5 +1,21 @@
 {
   "name": "Vaultic Trust",
-  "description": "Unlocking asset liquidity by tokenizing Africa's real economy. Compliant RWA tokenization for Rwanda and Africa.",
-  "iconPath": "logo.png"
+  "short_name": "Vaultic",
+  "description": "Africa's Real-World Asset (RWA) Stellar Gateway",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#2DD4BF",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
