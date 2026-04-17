@@ -78,20 +78,7 @@ export default function OwnerPage() {
             Manage your African real-world assets. Tokenize approved assets into Stellar native primitives.
           </p>
 
-          {!isConnected ? (
-            <div className="rounded-2xl border border-base-300 bg-base-100 p-8 sm:p-10 text-center shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-4">
-                <WalletIcon className="h-7 w-7 text-base-content/60" />
-              </div>
-              <h2 className="text-xl font-bold text-base-content">Connect your Stellar wallet</h2>
-              <p className="mt-2 text-base-content/70 max-w-md mx-auto">
-                Sign in to manage your asset listings and monitor tokenization status.
-              </p>
-              <div className="mt-6">
-                <StellarConnectButton />
-              </div>
-            </div>
-          ) : (
+          {isConnected ? (
             <div className="space-y-6">
               {/* Wallet Info */}
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
@@ -165,6 +152,19 @@ export default function OwnerPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-base-300 bg-base-100 p-8 sm:p-10 text-center shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-4">
+                <WalletIcon className="h-7 w-7 text-base-content/60" />
+              </div>
+              <h2 className="text-xl font-bold text-base-content">Connect your Stellar wallet</h2>
+              <p className="mt-2 text-base-content/70 max-w-md mx-auto">
+                Sign in to manage your asset listings and monitor tokenization status.
+              </p>
+              <div className="mt-6">
+                <StellarConnectButton />
               </div>
             </div>
           )}
