@@ -10,7 +10,7 @@ import { Asset, BASE_FEE, Keypair, Operation, TransactionBuilder } from "@stella
 // Placeholder for Testnet USDC - in a real app this would be constant from a known issuer.
 export const TESTNET_USDC_ASSET = new Asset(
   "USDC",
-  "GBBD47IF6LWLVNC7F7YC6BRS7VSRH6P52MGTW6V3VNDIHUED6KMLKNPB", // Circle Testnet Issuer
+  "GBMSZTLNGY2YKQWFEOPO2OIU6D3SZNTGY5FNPCSMG5H5QYFHQ5D34DG3", // Valid Testnet Placeholder
 );
 
 /**

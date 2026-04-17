@@ -27,7 +27,7 @@ const MOCK_ASSETS = [
     progress: 65,
     status: "Tokenized",
     apy: "11.2%",
-    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7",
+    issuer: "GBMYUIICLPGDKKP6WQ2HQVKRFPOTRBEFHX7RL7OMYZHELM27FAO2EFOK",
     price: "10",
   },
   {
@@ -40,7 +40,7 @@ const MOCK_ASSETS = [
     progress: 42,
     status: "Active",
     apy: "8.5%",
-    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7",
+    issuer: "GBMYUIICLPGDKKP6WQ2HQVKRFPOTRBEFHX7RL7OMYZHELM27FAO2EFOK",
     price: "5",
   },
   {
@@ -53,7 +53,7 @@ const MOCK_ASSETS = [
     progress: 18,
     status: "Pending",
     apy: "13.0%",
-    issuer: "",
+    issuer: "GBMSZTLNGY2YKQWFEOPO2OIU6D3SZNTGY5FNPCSMG5H5QYFHQ5D34DG3",
     price: "50",
   },
   {
@@ -66,7 +66,7 @@ const MOCK_ASSETS = [
     progress: 80,
     status: "Active",
     apy: "9.8%",
-    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7",
+    issuer: "GBMYUIICLPGDKKP6WQ2HQVKRFPOTRBEFHX7RL7OMYZHELM27FAO2EFOK",
     price: "25",
   },
 ];
