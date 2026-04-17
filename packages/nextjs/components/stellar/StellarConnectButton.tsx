@@ -27,7 +27,10 @@ export const StellarConnectButton = () => {
           <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
           {shortKey}
         </button>
-        <ul tabIndex={0} className="dropdown-content menu rounded-box z-[100] mt-2 w-52 bg-base-100 p-2 shadow-lg border border-base-300">
+        <ul
+          tabIndex={0}
+          className="dropdown-content menu rounded-box z-[100] mt-2 w-52 bg-base-100 p-2 shadow-lg border border-base-300"
+        >
           <li className="menu-title px-2 pt-1 pb-0">
             <span className="text-xs text-base-content/50 font-mono break-all">{publicKey}</span>
           </li>
@@ -47,7 +50,11 @@ export const StellarConnectButton = () => {
       {!isFreighterInstalled ? (
         <>
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
           </svg>
           Install Freighter
         </>
@@ -55,7 +62,11 @@ export const StellarConnectButton = () => {
         <>
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+            />
           </svg>
           Connect Wallet
         </>
