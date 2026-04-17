@@ -1,31 +1,9 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useFetchNativeCurrencyPrice } from "@scaffold-ui/hooks";
-import { hardhat } from "viem/chains";
-import { useAccount } from "wagmi";
-import { CurrencyDollarIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { SwitchTheme } from "~~/components/SwitchTheme";
-import { Faucet } from "~~/components/scaffold-eth";
-import { useScaffoldReadContract, useTargetNetwork } from "~~/hooks/scaffold-eth";
 
 export const Footer = () => {
-  const { address } = useAccount();
-  const { targetNetwork } = useTargetNetwork();
-  const isLocalNetwork = targetNetwork.id === hardhat.id;
-  const { price: nativeCurrencyPrice } = useFetchNativeCurrencyPrice();
-  const { data: invOwner } = useScaffoldReadContract({
-    contractName: "VaulticInvestmentManager",
-    functionName: "owner",
-  });
-  const { data: registryOwner } = useScaffoldReadContract({
-    contractName: "VaulticAssetRegistry",
-    functionName: "owner",
-  });
-  const isInvOwner = !!address && !!invOwner && address.toLowerCase() === (invOwner as string).toLowerCase();
-  const isRegistryOwner =
-    !!address && !!registryOwner && address.toLowerCase() === (registryOwner as string).toLowerCase();
-
   return (
     <footer className="footer footer-center md:footer-horizontal p-6 md:px-8 md:py-5 bg-base-200 text-base-content border-t border-base-300 text-sm">
       <aside className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 md:place-self-start md:justify-self-start">
@@ -38,10 +16,12 @@ export const Footer = () => {
             <span className="text-xs text-base-content/60 leading-tight">Tokenize Africa&apos;s real economy</span>
           </div>
         </Link>
-        <p className="text-base-content/70 max-w-[260px] text-center sm:text-left text-xs sm:text-sm">
-          Trust, transparency, and traceability. Built on Avalanche.
+        <p className="text-base-content/70 max-w-[280px] text-center sm:text-left text-xs sm:text-sm">
+          Trust, transparency, and traceability.{" "}
+          <span className="font-semibold text-primary">Built on Stellar Network.</span>
         </p>
       </aside>
+
       <nav className="flex flex-col sm:flex-row items-center gap-4 md:place-self-center">
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-0">
           <Link href="/marketplace" className="link link-hover">
@@ -53,11 +33,9 @@ export const Footer = () => {
           <Link href="/investor" className="link link-hover">
             For investors
           </Link>
-          {(isInvOwner || isRegistryOwner) && (
-            <Link href="/control-panel" className="link link-hover">
-              Control panel
-            </Link>
-          )}
+          <Link href="/litepaper" className="link link-hover">
+            Litepaper
+          </Link>
         </div>
         <span className="hidden sm:inline text-base-content/30">·</span>
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-0">
@@ -72,22 +50,20 @@ export const Footer = () => {
           </Link>
         </div>
       </nav>
+
       <div className="flex flex-wrap items-center justify-center gap-2 md:place-self-end md:justify-self-end">
-        {nativeCurrencyPrice > 0 && (
-          <div className="btn btn-primary btn-sm font-normal gap-1 cursor-auto min-h-8">
-            <CurrencyDollarIcon className="h-3.5 w-3.5" />
-            <span>{nativeCurrencyPrice.toFixed(2)}</span>
-          </div>
-        )}
-        {isLocalNetwork && (
-          <>
-            <Faucet />
-            <Link href="/blockexplorer" passHref className="btn btn-primary btn-sm font-normal gap-1 min-h-8">
-              <MagnifyingGlassIcon className="h-3.5 w-3.5" />
-              <span>Block Explorer</span>
-            </Link>
-          </>
-        )}
+        {/* Stellar network badge */}
+        <a
+          href="https://stellar.org"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9V8h2v9zm4 0h-2V8h2v9z" />
+          </svg>
+          Stellar Network
+        </a>
         <SwitchTheme className="flex items-center" />
       </div>
     </footer>
