@@ -2,8 +2,6 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
-
 @theme {
   --shadow-center: 0 0 12px -2px rgb(0 0 0 / 0.05);
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -15,23 +13,29 @@
     dark --prefersdark;
 }
 
-/* Vaultic Trust: white + violet theme (light) */
+/* ─── Vaultic Trust — Stellar Light Theme ─────────────────────────────────── */
 @plugin "daisyui/theme" {
   name: "light";
 
-  --color-primary: #6d28d9;
+  /* Primary: Stellar cyan/teal */
+  --color-primary: #0284c7;
   --color-primary-content: #ffffff;
-  --color-secondary: #ede9fe;
-  --color-secondary-content: #5b21b6;
-  --color-accent: #7c3aed;
+  /* Secondary: light sky tint */
+  --color-secondary: #e0f2fe;
+  --color-secondary-content: #0369a1;
+  /* Accent: vibrant cyan */
+  --color-accent: #0ea5e9;
   --color-accent-content: #ffffff;
-  --color-neutral: #1e1b4b;
+  /* Neutral: deep Stellar navy */
+  --color-neutral: #0c1a2e;
   --color-neutral-content: #ffffff;
+  /* Backgrounds */
   --color-base-100: #ffffff;
-  --color-base-200: #faf5ff;
-  --color-base-300: #f3e8ff;
-  --color-base-content: #1e1b4b;
-  --color-info: #7c3aed;
+  --color-base-200: #f0f9ff;
+  --color-base-300: #e0f2fe;
+  --color-base-content: #0c1a2e;
+  /* Semantic */
+  --color-info: #0ea5e9;
   --color-success: #059669;
   --color-warning: #d97706;
   --color-error: #dc2626;
@@ -41,26 +45,32 @@
   --tt-tailw: 6px;
 }
 
-/* Vaultic Trust: white + violet theme (dark) */
+/* ─── Vaultic Trust — Stellar Dark Theme ──────────────────────────────────── */
 @plugin "daisyui/theme" {
   name: "dark";
 
-  --color-primary: #8b5cf6;
-  --color-primary-content: #ffffff;
-  --color-secondary: #4c1d95;
-  --color-secondary-content: #e9d5ff;
-  --color-accent: #a78bfa;
-  --color-accent-content: #1e1b4b;
-  --color-neutral: #e9d5ff;
-  --color-neutral-content: #1e1b4b;
-  --color-base-100: #1e1b4b;
-  --color-base-200: #312e81;
-  --color-base-300: #4c1d95;
-  --color-base-content: #f5f3ff;
-  --color-info: #a78bfa;
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-error: #dc2626;
+  /* Primary: electric cyan */
+  --color-primary: #22d3ee;
+  --color-primary-content: #050d1a;
+  /* Secondary: deep Stellar blue */
+  --color-secondary: #0d2d4e;
+  --color-secondary-content: #7dd3fc;
+  /* Accent: bright sky */
+  --color-accent: #38bdf8;
+  --color-accent-content: #050d1a;
+  /* Neutral: very dark navy */
+  --color-neutral: #bae6fd;
+  --color-neutral-content: #050d1a;
+  /* Backgrounds — near-black space aesthetic */
+  --color-base-100: #050d1a;
+  --color-base-200: #0a1628;
+  --color-base-300: #0d2040;
+  --color-base-content: #e0f2fe;
+  /* Semantic */
+  --color-info: #38bdf8;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
 
   --radius-field: 0.5rem;
   --radius-box: 0.75rem;
@@ -69,12 +79,7 @@
 }
 
 /*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  Tailwind v4 border-color compatibility fix.
 */
 @layer base {
   *,
@@ -121,4 +126,9 @@
 
 .link:hover {
   opacity: 80%;
+}
+
+/* Stellar glow utility — use on key CTA elements */
+.stellar-glow {
+  box-shadow: 0 0 24px -4px oklch(from var(--color-primary) l c h / 0.45);
 }

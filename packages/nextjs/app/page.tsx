@@ -4,12 +4,14 @@ import Link from "next/link";
 import type { NextPage } from "next";
 import {
   ArrowRightIcon,
+  BoltIcon,
   BuildingOffice2Icon,
   CheckCircleIcon,
-  CloudIcon,
   CubeIcon,
   CurrencyDollarIcon,
+  GlobeAltIcon,
   MapPinIcon,
+  ShieldCheckIcon,
   SparklesIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
@@ -19,7 +21,7 @@ const ASSET_PREVIEWS = [
   { label: "Carbon Credits", value: "52,000 tCO2e", icon: SparklesIcon },
   { label: "Treasury Bills", value: "12% APY", icon: CurrencyDollarIcon },
   { label: "Commodities", value: "Gold/Tea", icon: CubeIcon },
-  { label: "Infrastructure", value: "Power/Water", icon: CloudIcon },
+  { label: "Infrastructure", value: "Power/Water", icon: GlobeAltIcon },
   { label: "Location Oracles", value: "DePIN", icon: MapPinIcon },
 ];
 
@@ -49,26 +51,57 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const STELLAR_ADVANTAGES = [
+  {
+    icon: BoltIcon,
+    title: "3–5 Second Finality",
+    desc: "Stellar confirms transactions in seconds — not minutes.",
+  },
+  {
+    icon: CurrencyDollarIcon,
+    title: "Fractions of a Cent",
+    desc: "Fees as low as 0.00001 XLM. Accessible at any scale.",
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: "Native Compliance",
+    desc: "Built-in trustlines act as a KYC/whitelist layer by design.",
+  },
+  {
+    icon: GlobeAltIcon,
+    title: "Global Reach",
+    desc: "ISO 20022 compatible. Connects to real payment rails.",
+  },
+];
+
 const Home: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
-      <section className="relative flex min-h-[calc(100vh-8rem)] sm:min-h-[calc(100vh-7rem)] flex-col justify-center bg-base-100 px-5 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24">
-        <div className="mx-auto w-full max-w-4xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/90 sm:text-sm">
-            Compliant RWA Tokenization
-          </p>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-base-content sm:mt-5 sm:text-5xl lg:text-6xl xl:text-7xl xl:leading-[1.1]">
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="relative flex min-h-[calc(100vh-8rem)] sm:min-h-[calc(100vh-7rem)] flex-col justify-center bg-base-100 px-5 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24 overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute -bottom-32 -right-32 h-[600px] w-[600px] rounded-full bg-accent/5 blur-3xl" />
+        </div>
+
+        <div className="mx-auto w-full max-w-4xl text-center relative">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary sm:text-sm mb-6">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            Now on Stellar Network
+          </div>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-base-content sm:text-5xl lg:text-6xl xl:text-7xl xl:leading-[1.1]">
             Tokenize Africa&apos;s <span className="text-primary">Real Economy</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-base-content/80 sm:mt-8 sm:text-lg">
             Vaultic Trust is the compliant RWA tokenization layer for Rwanda and Africa. Fractionalize real estate,
-            commodities, carbon credits, and infrastructure into programmable, liquid digital assets backed by
-            verifiable proofs and on-chain transparency.
+            commodities, carbon credits, and infrastructure into programmable, liquid digital assets — backed by
+            verifiable proofs and powered by <span className="font-semibold text-primary">Stellar</span>.
           </p>
           <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-4 sm:mt-12 sm:flex-row sm:items-center sm:gap-5 md:gap-6">
             <Link
               href="/owner"
-              className="btn btn-primary btn-lg min-h-12 flex flex-1 items-center justify-center gap-2 rounded-xl px-6 font-semibold sm:min-w-[200px] sm:flex-initial sm:flex-none sm:px-8 md:min-w-[220px] md:px-10"
+              className="stellar-glow btn btn-primary btn-lg min-h-12 flex flex-1 items-center justify-center gap-2 rounded-xl px-6 font-semibold sm:min-w-[200px] sm:flex-initial sm:flex-none sm:px-8 md:min-w-[220px] md:px-10"
             >
               Get Early Access
               <ArrowRightIcon className="h-5 w-5 shrink-0" />
@@ -81,7 +114,7 @@ const Home: NextPage = () => {
             </Link>
           </div>
           <p className="mt-10 text-sm font-medium tracking-wide text-base-content/60 sm:mt-12">
-            Compliance-first · KYC/AML · Auditable
+            Compliance-first · KYC/AML · Auditable · Stellar Network
           </p>
           <ul className="mx-auto mt-6 flex max-w-xl flex-wrap justify-center gap-x-8 gap-y-3 sm:mt-8 sm:gap-x-10">
             {FEATURES.map((item, i) => (
@@ -96,6 +129,7 @@ const Home: NextPage = () => {
         </div>
       </section>
 
+      {/* ── Asset preview ─────────────────────────────────────────────────── */}
       <section className="border-t border-base-300/80 bg-base-200/60 py-16 lg:py-20">
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12">
           <div className="mb-8 sm:mb-10">
@@ -106,7 +140,7 @@ const Home: NextPage = () => {
             {ASSET_PREVIEWS.map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-base-300/70 bg-base-100 p-4 shadow-sm transition-colors hover:border-primary/25 hover:shadow-md sm:p-5"
+                className="rounded-xl border border-base-300/70 bg-base-100 p-4 shadow-sm transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 sm:p-5"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-11 sm:w-11">
                   <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -116,10 +150,12 @@ const Home: NextPage = () => {
               </div>
             ))}
           </div>
+          {/* Sample asset card */}
           <div className="mt-8 rounded-2xl border border-base-300/80 bg-base-100 p-5 shadow-sm sm:mt-10 sm:p-6 lg:p-8">
             <p className="font-bold text-base-content sm:text-lg">VT-RWA: Kigali Green Tower</p>
             <p className="mt-2 text-sm leading-relaxed text-base-content/60">
-              Supply: 1,000,000 VT-KGT · Compliance: ERC-3643 · Oracle: Chainlink PoA · Custody: Qualified Trustee
+              Supply: 1,000,000 VT-KGT · Standard: SEP-0041 (Stellar Asset Contract) · Oracle: Stellar Oracle · Custody:
+              Qualified Trustee
             </p>
             <div className="mt-5 sm:mt-6">
               <div className="mb-2 flex justify-between text-sm font-medium text-base-content/70">
@@ -143,6 +179,7 @@ const Home: NextPage = () => {
         </div>
       </section>
 
+      {/* ── How it works ──────────────────────────────────────────────────── */}
       <section id="how-it-works" className="bg-base-100 py-16 lg:py-20">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-8 lg:px-12">
           <div className="mb-12 text-center lg:mb-14">
@@ -154,9 +191,9 @@ const Home: NextPage = () => {
               <Link
                 key={title}
                 href={href}
-                className="group rounded-2xl border border-base-300/80 bg-base-100 p-6 text-left shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-md sm:p-8"
+                className="group rounded-2xl border border-base-300/80 bg-base-100 p-6 text-left shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md hover:-translate-y-1 sm:p-8"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                   <Icon className="h-6 w-6" />
                 </span>
                 <h3 className="mt-5 text-lg font-bold text-base-content">{title}</h3>
@@ -171,11 +208,47 @@ const Home: NextPage = () => {
         </div>
       </section>
 
+      {/* ── Why Stellar ───────────────────────────────────────────────────── */}
+      <section className="border-t border-base-300/80 bg-base-200/60 py-16 lg:py-20">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8 lg:px-12">
+          <div className="mb-12 text-center">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary/90">Infrastructure</p>
+            <h2 className="text-2xl font-bold text-base-content sm:text-3xl">Why Stellar?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-base-content/70">
+              Stellar is purpose-built for real-world asset tokenization — fast, cheap, and compliance-ready by design.
+            </p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {STELLAR_ADVANTAGES.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="rounded-xl border border-base-300/70 bg-base-100 p-5 shadow-sm hover:border-primary/20 hover:shadow-md transition-all"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <p className="mt-3 font-semibold text-base-content text-sm">{title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-base-content/60">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Bottom strip ──────────────────────────────────────────────────── */}
       <section className="border-t border-base-300/80 bg-base-200/50 py-8 sm:py-10">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-8 lg:px-12">
           <p className="text-center text-sm text-base-content/70">
-            Built on <span className="font-semibold text-base-content">Avalanche C-Chain</span> for low gas and high
-            throughput. On-chain ownership and funding progress.
+            Built on{" "}
+            <a
+              href="https://stellar.org"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-primary hover:opacity-80 transition-opacity"
+            >
+              Stellar Network
+            </a>{" "}
+            for fast settlement and minimal fees. On-chain asset ownership and funding progress.
           </p>
         </div>
       </section>

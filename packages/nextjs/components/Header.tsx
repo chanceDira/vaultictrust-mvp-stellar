@@ -4,55 +4,37 @@ import React, { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { hardhat } from "viem/chains";
-import { useAccount } from "wagmi";
 import { Bars3Icon } from "@heroicons/react/24/outline";
+import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
+import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { SwitchTheme } from "~~/components/SwitchTheme";
-import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
-import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useOutsideClick } from "~~/hooks/scaffold-eth/useOutsideClick";
 
 type HeaderMenuLink = {
   label: string;
   href: string;
 };
 
-const baseMenuLinks: HeaderMenuLink[] = [
+const menuLinks: HeaderMenuLink[] = [
   { label: "Home", href: "/" },
   { label: "Owner", href: "/owner" },
   { label: "Marketplace", href: "/marketplace" },
   { label: "Investor", href: "/investor" },
+  { label: "Litepaper", href: "/litepaper" },
 ];
 
-const controlPanelLink: HeaderMenuLink = { label: "Control panel", href: "/control-panel" };
-
-export const menuLinks: HeaderMenuLink[] = [...baseMenuLinks];
-
-export const HeaderMenuLinks = () => {
+const HeaderMenuLinks = ({ onClose }: { onClose?: () => void }) => {
   const pathname = usePathname();
-  const { address } = useAccount();
-  const { data: invOwner } = useScaffoldReadContract({
-    contractName: "VaulticInvestmentManager",
-    functionName: "owner",
-  });
-  const { data: registryOwner } = useScaffoldReadContract({
-    contractName: "VaulticAssetRegistry",
-    functionName: "owner",
-  });
-  const isInvOwner = !!address && !!invOwner && address.toLowerCase() === (invOwner as string).toLowerCase();
-  const isRegistryOwner =
-    !!address && !!registryOwner && address.toLowerCase() === (registryOwner as string).toLowerCase();
-  const links = isInvOwner || isRegistryOwner ? [...baseMenuLinks, controlPanelLink] : baseMenuLinks;
 
   return (
     <>
-      {links.map(({ label, href }) => {
+      {menuLinks.map(({ label, href }) => {
         const isActive = pathname === href;
         return (
           <li key={href}>
             <Link
               href={href}
-              passHref
+              onClick={onClose}
               className={`${
                 isActive ? "bg-secondary shadow-md" : ""
               } hover:bg-secondary hover:shadow-md focus:!bg-secondary active:!text-neutral py-1.5 px-3 text-sm rounded-full`}
@@ -67,16 +49,16 @@ export const HeaderMenuLinks = () => {
 };
 
 /**
- * Site header. Preserves Hardhat/Scaffold-ETH structure: logo, nav links, Connect Wallet, Faucet (local only).
+ * Site header — Stellar / Freighter wallet, Vaultic Trust branding.
  */
 export const Header = () => {
-  const { targetNetwork } = useTargetNetwork();
-  const isLocalNetwork = targetNetwork.id === hardhat.id;
+  const { isConnected, network } = useStellarWallet();
 
   const burgerMenuRef = useRef<HTMLDetailsElement>(null);
-  useOutsideClick(burgerMenuRef, () => {
-    burgerMenuRef?.current?.removeAttribute("open");
-  });
+  const closeMenu = () => burgerMenuRef?.current?.removeAttribute("open");
+  useOutsideClick(burgerMenuRef, closeMenu);
+
+  const networkLabel = network ?? "Stellar Testnet";
 
   return (
     <header className="sticky top-0 z-20 border-b border-base-300 bg-base-100">
@@ -86,11 +68,8 @@ export const Header = () => {
             <summary className="ml-1 btn btn-ghost lg:hidden hover:bg-transparent" aria-label="Open menu">
               <Bars3Icon className="h-6 w-6" />
             </summary>
-            <ul
-              className="menu menu-compact dropdown-content mt-3 p-2 shadow-lg bg-base-100 rounded-box w-52"
-              onClick={() => burgerMenuRef?.current?.removeAttribute("open")}
-            >
-              <HeaderMenuLinks />
+            <ul className="menu menu-compact dropdown-content mt-3 p-2 shadow-lg bg-base-100 rounded-box w-52">
+              <HeaderMenuLinks onClose={closeMenu} />
             </ul>
           </details>
           <Link href="/" className="hidden lg:flex items-center gap-2 mr-8 shrink-0">
@@ -99,7 +78,9 @@ export const Header = () => {
             </div>
             <div className="flex flex-col">
               <span className="font-bold leading-tight text-base-content">Vaultic Trust</span>
-              <span className="text-xs text-base-content/70">Tokenize Africa&apos;s real economy</span>
+              <span className="text-xs text-base-content/60">
+                Powered by <span className="font-semibold text-primary">Stellar</span>
+              </span>
             </div>
           </Link>
           <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">
@@ -107,9 +88,14 @@ export const Header = () => {
           </ul>
         </div>
         <div className="navbar-end gap-3">
+          {isConnected && (
+            <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-success">
+              <span className="inline-block h-2 w-2 rounded-full bg-success shadow-[0_0_6px] shadow-success" />
+              {networkLabel}
+            </span>
+          )}
           <SwitchTheme className="flex items-center" />
-          <RainbowKitCustomConnectButton />
-          {isLocalNetwork && <FaucetButton />}
+          <StellarConnectButton />
         </div>
       </div>
     </header>
