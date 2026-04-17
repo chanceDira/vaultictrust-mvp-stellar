@@ -1,86 +1,73 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRightIcon,
   BuildingOffice2Icon,
   CubeIcon,
-  CurrencyDollarIcon,
   GlobeAltIcon,
-  MapPinIcon,
   SparklesIcon,
   Squares2X2Icon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
+import { purchaseRWAAsset, setupTrustline } from "~~/services/stellar/stellarService";
+import { notification } from "~~/utils/scaffold-eth";
 
 const MOCK_ASSETS = [
   {
     id: 1,
     name: "Kigali Green Tower",
-    ticker: "VT-KGT",
+    ticker: "VTKGT",
     type: "Real Estate",
     icon: BuildingOffice2Icon,
     supply: "1,000,000",
     progress: 65,
     status: "Tokenized",
     apy: "11.2%",
+    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7", // Example issuer
+    price: "10", // 10 USDC per share
   },
   {
     id: 2,
     name: "Rwanda Carbon Credits",
-    ticker: "VT-RCC",
+    ticker: "VTRCC",
     type: "Carbon Credits",
     icon: SparklesIcon,
     supply: "52,000",
     progress: 42,
     status: "Active",
     apy: "8.5%",
+    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7",
+    price: "5",
   },
   {
     id: 3,
     name: "African Infrastructure Fund",
-    ticker: "VT-AIF",
+    ticker: "VTAIF",
     type: "Infrastructure",
     icon: GlobeAltIcon,
     supply: "500,000",
     progress: 18,
     status: "Pending",
     apy: "13.0%",
+    issuer: "",
+    price: "50",
   },
   {
     id: 4,
     name: "Gold & Tea Commodities",
-    ticker: "VT-GTC",
+    ticker: "VTGTC",
     type: "Commodities",
     icon: CubeIcon,
     supply: "250,000",
     progress: 80,
     status: "Active",
     apy: "9.8%",
-  },
-  {
-    id: 5,
-    name: "Kenya T-Bills",
-    ticker: "VT-KTB",
-    type: "Treasury Bills",
-    icon: CurrencyDollarIcon,
-    supply: "100,000",
-    progress: 55,
-    status: "Active",
-    apy: "12.0%",
-  },
-  {
-    id: 6,
-    name: "DePIN Location Nodes",
-    ticker: "VT-DPN",
-    type: "DePIN",
-    icon: MapPinIcon,
-    supply: "200,000",
-    progress: 30,
-    status: "Pending",
-    apy: "15.5%",
+    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7",
+    price: "25",
   },
 ];
 
@@ -91,7 +78,33 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function MarketplacePage() {
-  const { isConnected } = useStellarWallet();
+  const { isConnected, publicKey } = useStellarWallet();
+  const [loadingAssetId, setLoadingAssetId] = useState<number | null>(null);
+
+  const handleInvest = async (asset: (typeof MOCK_ASSETS)[0]) => {
+    if (!publicKey) return;
+    setLoadingAssetId(asset.id);
+    const notificationId = notification.loading(`Preparing investment for ${asset.name}...`);
+
+    try {
+      // Step 1: Trustline
+      notification.info("Step 1/2: Establishing Trustline for Asset...", { duration: 3000 });
+      await setupTrustline(publicKey, asset.ticker, asset.issuer);
+
+      // Step 2: Purchase
+      notification.info("Step 2/2: Executing USDC Exchange...", { duration: 3000 });
+      await purchaseRWAAsset(publicKey, asset.ticker, asset.issuer, "1", asset.price);
+
+      notification.remove(notificationId);
+      notification.success(`Successfully invested in ${asset.name}!`);
+    } catch (error: any) {
+      console.error(error);
+      notification.remove(notificationId);
+      notification.error(`Investment failed: ${error.message || "User declined or Insufficient funds"}`);
+    } finally {
+      setLoadingAssetId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col grow">
@@ -108,10 +121,9 @@ export default function MarketplacePage() {
             Browse tokenized real-world assets on Stellar Network. Invest in whole assets or buy fractional shares.
           </p>
           <p className="text-sm text-base-content/60 mb-6">
-            <span className="font-medium text-base-content/70">Tokenized</span> assets use Stellar Asset Contracts
-            (SAC/SEP-0041).{" "}
-            <span className="font-medium text-base-content/70">Active</span> assets accept whole-asset investment.{" "}
-            <span className="font-medium text-base-content/70">Pending</span> assets are under review.
+            <span className="font-medium text-base-content/70">Native Assets</span> use Stellar Asset Protocol
+            (SEP-0038/41). <span className="font-medium text-base-content/70">Hybrid Logic</span> enforced by Soroban
+            contracts.
           </p>
 
           {/* Wallet connect prompt */}
@@ -132,24 +144,22 @@ export default function MarketplacePage() {
             </div>
           )}
 
-          {/* Stellar upgrade notice */}
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-8 flex items-start gap-3">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15">
-              <svg className="h-3.5 w-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          {/* Stellar live notice */}
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 mb-8 flex items-start gap-3">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
+              <SparklesIcon className="h-3.5 w-3.5 text-emerald-500" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-base-content">Stellar Smart Contracts Coming Soon</p>
+              <p className="text-sm font-semibold text-emerald-400">Stellar Testnet Integration Live</p>
               <p className="text-xs text-base-content/70 mt-0.5">
-                Soroban contracts are being deployed in Phase 2. Asset data shown below is a preview of listed RWAs.
-                Live on-chain investment will be enabled upon contract deployment.
+                Investing now builds real Stellar transactions. Ensure you have Testnet XLM and USDC to complete the
+                flow.
               </p>
             </div>
           </div>
 
           {/* Asset grid */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid gap-5 sm:grid-cols-1">
             {MOCK_ASSETS.map(asset => (
               <div
                 key={asset.id}
@@ -169,24 +179,18 @@ export default function MarketplacePage() {
                         {asset.ticker} · {asset.type} · Supply: {asset.supply} tokens
                       </p>
                       <p className="text-xs text-primary/80 font-medium mt-1">
-                        SEP-0041 · Stellar Asset Contract · Est. APY: {asset.apy}
+                        Stellar Native Asset · Price: {asset.price} USDC / share
                       </p>
                     </div>
                   </div>
                   <div className="shrink-0">
                     <button
-                      className="btn btn-primary btn-sm gap-1.5"
-                      disabled={!isConnected || asset.status === "Pending"}
-                      title={
-                        !isConnected
-                          ? "Connect Freighter wallet"
-                          : asset.status === "Pending"
-                          ? "Asset pending review"
-                          : "Invest"
-                      }
+                      onClick={() => handleInvest(asset)}
+                      className={`btn btn-primary btn-sm gap-1.5 ${loadingAssetId === asset.id ? "loading" : ""}`}
+                      disabled={!isConnected || asset.status === "Pending" || loadingAssetId !== null}
                     >
-                      Invest
-                      <ArrowRightIcon className="h-3.5 w-3.5" />
+                      {loadingAssetId === asset.id ? "Processing..." : "Invest"}
+                      {!loadingAssetId && <ArrowRightIcon className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -208,10 +212,11 @@ export default function MarketplacePage() {
           </div>
 
           <p className="mt-6 text-xs text-base-content/50 text-center">
-            Asset data is illustrative pending Soroban contract deployment.{" "}
+            Transactions are executed on Stellar Testnet.{" "}
             <Link href="/litepaper" className="link link-primary">
-              Read the litepaper
-            </Link>.
+              Read the tech specs
+            </Link>
+            .
           </p>
         </div>
       </section>

@@ -32,10 +32,10 @@ const LitepaperPage: NextPage = () => {
 
           <h2 className="mt-10 text-xl font-bold text-base-content">Why Stellar?</h2>
           <p className="mt-2 text-base leading-relaxed text-base-content/85">
-            Stellar is purpose-built for real-world payments and asset tokenization. Unlike EVM chains, Stellar
-            provides native token primitives, trustline-based compliance, and 3–5 second finality at fractions of a
-            cent per transaction. Its ISO 20022 compatibility bridges on-chain assets to real-world payment rails —
-            critical for Africa&apos;s financial inclusion mission.
+            Stellar is purpose-built for real-world payments and asset tokenization. Unlike EVM chains, Stellar provides
+            native token primitives, trustline-based compliance, and 3–5 second finality at fractions of a cent per
+            transaction. Its ISO 20022 compatibility bridges on-chain assets to real-world payment rails — critical for
+            Africa&apos;s financial inclusion mission.
           </p>
 
           <h2 className="mt-10 text-xl font-bold text-base-content">Architecture</h2>
@@ -57,8 +57,8 @@ const LitepaperPage: NextPage = () => {
             </li>
           </ul>
           <p className="mt-4 text-base leading-relaxed text-base-content/85">
-            Compliance logic — including KYC gating, whitelisting via trustlines, freeze, and clawback — is enforced
-            at the Stellar protocol level. Off-chain IPFS storage supports documentation and asset metadata.
+            Compliance logic — including KYC gating, whitelisting via trustlines, freeze, and clawback — is enforced at
+            the Stellar protocol level. Off-chain IPFS storage supports documentation and asset metadata.
           </p>
 
           <h2 className="mt-10 text-xl font-bold text-base-content">Tokenization Flow</h2>

@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  ChartBarIcon,
-  CubeIcon,
-  WalletIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ChartBarIcon, CubeIcon, WalletIcon } from "@heroicons/react/24/outline";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 
@@ -32,8 +27,8 @@ export default function InvestorPage() {
             <h1 className="text-3xl font-bold text-base-content">Investor Portfolio</h1>
           </div>
           <p className="text-base-content/80 mb-8">
-            View your whole-asset and fractional token holdings on Stellar Network. Funding progress is tracked
-            on-chain via Soroban.
+            View your whole-asset and fractional token holdings on Stellar Network. Funding progress is tracked on-chain
+            via Soroban.
           </p>
 
           {/* Not connected */}
@@ -68,8 +63,18 @@ export default function InvestorPage() {
               {/* Soroban Phase 2 notice */}
               <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-6 flex items-start gap-3">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15">
-                  <svg className="h-3.5 w-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="h-3.5 w-3.5 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </span>
                 <div>
@@ -85,10 +90,7 @@ export default function InvestorPage() {
               <h2 className="text-xl font-bold text-base-content mb-4">Your positions (preview)</h2>
               <div className="space-y-4 mb-6">
                 {MOCK_HOLDINGS.map(holding => (
-                  <div
-                    key={holding.ticker}
-                    className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5"
-                  >
+                  <div key={holding.ticker} className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div className="flex items-start gap-3">
                         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
