@@ -1,17 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, ChartBarIcon, CubeIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { Spinner } from "../../components/Spinner";
+import {
+  ArrowRightIcon,
+  ArrowTopRightOnSquareIcon,
+  ChartBarIcon,
+  CubeIcon,
+  WalletIcon,
+} from "@heroicons/react/24/outline";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-
-const MOCK_HOLDINGS = [
-  { ticker: "VT-KGT", name: "Kigali Green Tower", shares: "2,500", value: "RWF 3,125,000", progress: 65 },
-  { ticker: "VT-RCC", name: "Rwanda Carbon Credits", shares: "800", value: "RWF 480,000", progress: 42 },
-];
+import { useStellarHoldings } from "~~/hooks/stellar/useStellarHoldings";
 
 export default function InvestorPage() {
   const { isConnected, publicKey } = useStellarWallet();
+  const { holdings, isLoading } = useStellarHoldings(publicKey);
 
   const shortKey = publicKey ? `${publicKey.slice(0, 6)}…${publicKey.slice(-5)}` : null;
 
@@ -24,11 +28,11 @@ export default function InvestorPage() {
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <ChartBarIcon className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-base-content">Investor Portfolio</h1>
+            <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Portfolio</h1>
           </div>
           <p className="text-base-content/80 mb-8">
-            View your whole-asset and fractional token holdings on Stellar Network. Funding progress is tracked on-chain
-            via Soroban.
+            Manage your tokenized real-world asset positions on Stellar Network. Real-time tracking of fractional shares
+            and asset valuations.
           </p>
 
           {/* Not connected */}
@@ -39,17 +43,12 @@ export default function InvestorPage() {
               </div>
               <h2 className="text-xl font-bold text-base-content">Connect your Stellar wallet</h2>
               <p className="mt-2 text-base-content/70 max-w-md mx-auto">
-                Connect Freighter to view your tokenized asset positions on Stellar Network and track funding progress.
+                Connect Freighter to view your on-chain RWA positions. Your personal dashboard for African asset
+                liquidity.
               </p>
               <div className="mt-6">
                 <StellarConnectButton />
               </div>
-              <p className="mt-6 text-sm text-base-content/60">
-                <Link href="/marketplace" className="link link-primary">
-                  Browse the marketplace
-                </Link>{" "}
-                to invest in assets.
-              </p>
             </div>
           ) : (
             <>
@@ -60,76 +59,82 @@ export default function InvestorPage() {
                 <span className="ml-auto text-xs text-base-content/50">Stellar Testnet · Freighter</span>
               </div>
 
-              {/* Soroban Phase 2 notice */}
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-6 flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15">
-                  <svg
-                    className="h-3.5 w-3.5 text-primary"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-base-content">Live portfolio tracking — Phase 2</p>
-                  <p className="text-xs text-base-content/70 mt-0.5">
-                    Once Soroban contracts are live, your actual Stellar trustline balances will appear here. The
-                    preview below shows illustrative holdings.
-                  </p>
-                </div>
-              </div>
+              {/* Holdings Section */}
+              <h2 className="text-xl font-bold text-base-content mb-4 flex items-center gap-2">
+                Your Positions
+                {isLoading && <Spinner className="h-4 w-4 text-primary" />}
+              </h2>
 
-              {/* Preview holdings */}
-              <h2 className="text-xl font-bold text-base-content mb-4">Your positions (preview)</h2>
-              <div className="space-y-4 mb-6">
-                {MOCK_HOLDINGS.map(holding => (
-                  <div key={holding.ticker} className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div className="flex items-start gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
-                          <CubeIcon className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="font-semibold text-base-content text-sm">{holding.name}</p>
-                          <p className="text-xs text-primary/80 font-mono mt-0.5">{holding.ticker}</p>
+              {holdings.length === 0 && !isLoading ? (
+                <div className="rounded-xl border border-dashed border-base-300 p-12 text-center">
+                  <CubeIcon className="h-10 w-10 text-base-content/20 mx-auto mb-3" />
+                  <p className="text-base-content/60 text-sm">No tokenized assets found in this wallet.</p>
+                  <Link href="/marketplace" className="btn btn-outline btn-sm mt-4 gap-2">
+                    Visit Marketplace
+                    <ArrowRightIcon className="h-3 w-3" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 mb-10">
+                  {holdings.map(holding => (
+                    <div
+                      key={holding.asset_code}
+                      className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm hover:border-primary/30 transition-all group"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                            <CubeIcon className="h-6 w-6" />
+                          </span>
+                          <div>
+                            <p className="font-bold text-base-content">{holding.asset_code}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <p className="text-[10px] text-base-content/40 font-mono truncate max-w-[120px]">
+                                Issuer: {holding.asset_issuer}
+                              </p>
+                              <a
+                                href={`https://stellar.expert/explorer/testnet/asset/${holding.asset_code}-${holding.asset_issuer}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary-focus p-0.5"
+                                title="View on Stellar.Expert"
+                              >
+                                <ArrowTopRightOnSquareIcon className="h-2.5 w-2.5" />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-base-content">
+                            {Number.parseFloat(holding.balance).toLocaleString()} shares
+                          </p>
+                          <p className="text-xs text-primary/80 font-medium">Native Stellar Asset</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-base-content">{holding.shares} shares</p>
-                        <p className="text-xs text-base-content/60">{holding.value}</p>
-                      </div>
                     </div>
-                    <div className="mt-3">
-                      <div className="mb-1 flex justify-between text-xs text-base-content/50">
-                        <span>Asset funding progress</span>
-                        <span>{holding.progress}%</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-base-300/80 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-[width] duration-500"
-                          style={{ width: `${holding.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
-              <div className="flex flex-wrap gap-3">
-                <Link href="/marketplace" className="btn btn-primary gap-2">
-                  Browse marketplace
-                  <ArrowRightIcon className="h-4 w-4" />
-                </Link>
-                <Link href="/litepaper" className="btn btn-outline">
-                  Read the litepaper
-                </Link>
+              {/* Portfolio Insights */}
+              <div className="rounded-2xl bg-base-300/30 p-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-base-300/50">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <ChartBarIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base-content">Asset Liquidity</h3>
+                    <p className="text-sm text-base-content/60">
+                      Your holdings are tradable on Stellar&apos;s Decentralized Exchange (DEX).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 shrink-0">
+                  <Link href="/marketplace" className="btn btn-primary gap-2">
+                    Expand Portfolio
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             </>
           )}

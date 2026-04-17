@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   ArrowRightIcon,
   BuildingOffice2Icon,
@@ -13,7 +12,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { purchaseRWAAsset, setupTrustline } from "~~/services/stellar/stellarService";
+import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
+import { purchaseRWAAsset } from "~~/services/stellar/stellarService";
 import { notification } from "~~/utils/scaffold-eth";
 
 const MOCK_ASSETS = [
@@ -27,8 +27,8 @@ const MOCK_ASSETS = [
     progress: 65,
     status: "Tokenized",
     apy: "11.2%",
-    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7", // Example issuer
-    price: "10", // 10 USDC per share
+    issuer: "GA5WUM6T7S7XFQX6QOOGQ3Q2SOGK5S2QG7Z6O7O7O7O7O7O7O7O7O7O7",
+    price: "10",
   },
   {
     id: 2,
@@ -79,30 +79,39 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function MarketplacePage() {
   const { isConnected, publicKey } = useStellarWallet();
-  const [loadingAssetId, setLoadingAssetId] = useState<number | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<(typeof MOCK_ASSETS)[0] | null>(null);
+  const [isTrustlineModalOpen, setIsTrustlineModalOpen] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const handleInvest = async (asset: (typeof MOCK_ASSETS)[0]) => {
+  const handleInvestClick = (asset: (typeof MOCK_ASSETS)[0]) => {
     if (!publicKey) return;
-    setLoadingAssetId(asset.id);
-    const notificationId = notification.loading(`Preparing investment for ${asset.name}...`);
+    setSelectedAsset(asset);
+    setIsTrustlineModalOpen(true);
+  };
+
+  const handleTrustlineSuccess = async () => {
+    if (!selectedAsset || !publicKey) return;
+    setIsTrustlineModalOpen(false);
+    setIsPurchasing(true);
+
+    const notificationId = notification.loading(`Processing your purchase of ${selectedAsset.name}...`);
 
     try {
-      // Step 1: Trustline
-      notification.info("Step 1/2: Establishing Trustline for Asset...", { duration: 3000 });
-      await setupTrustline(publicKey, asset.ticker, asset.issuer);
-
-      // Step 2: Purchase
-      notification.info("Step 2/2: Executing USDC Exchange...", { duration: 3000 });
-      await purchaseRWAAsset(publicKey, asset.ticker, asset.issuer, "1", asset.price);
-
-      notification.remove(notificationId);
-      notification.success(`Successfully invested in ${asset.name}!`);
+      await purchaseRWAAsset(
+        publicKey,
+        selectedAsset.ticker,
+        selectedAsset.issuer,
+        "1", // 1 share for MVP
+        selectedAsset.price,
+      );
+      notification.success(`Purchase successful! Your fractional shares of ${selectedAsset.name} are on-chain.`);
     } catch (error: any) {
       console.error(error);
-      notification.remove(notificationId);
-      notification.error(`Investment failed: ${error.message || "User declined or Insufficient funds"}`);
+      notification.error(`Purchase failed: ${error.message || "Stellar network error"}`);
     } finally {
-      setLoadingAssetId(null);
+      setIsPurchasing(false);
+      notification.remove(notificationId);
+      setSelectedAsset(null);
     }
   };
 
@@ -115,94 +124,86 @@ export default function MarketplacePage() {
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Squares2X2Icon className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-base-content">Marketplace</h1>
+            <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Marketplace</h1>
           </div>
           <p className="text-base-content/80 mb-2">
             Browse tokenized real-world assets on Stellar Network. Invest in whole assets or buy fractional shares.
           </p>
-          <p className="text-sm text-base-content/60 mb-6">
-            <span className="font-medium text-base-content/70">Native Assets</span> use Stellar Asset Protocol
-            (SEP-0038/41). <span className="font-medium text-base-content/70">Hybrid Logic</span> enforced by Soroban
-            contracts.
+          <p className="text-sm text-base-content/60 mb-6 uppercase tracking-widest font-medium">
+            Africa&apos;s RWA <span className="text-primary">Stellar</span> Gateway
           </p>
 
-          {/* Wallet connect prompt */}
-          {!isConnected && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <WalletIcon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-base-content">Connect Freighter to invest</p>
-                  <p className="text-sm text-base-content/70">
-                    Browse assets freely. Connect your Stellar wallet to purchase shares.
-                  </p>
-                </div>
-              </div>
-              <StellarConnectButton />
-            </div>
-          )}
-
-          {/* Stellar live notice */}
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 mb-8 flex items-start gap-3">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
-              <SparklesIcon className="h-3.5 w-3.5 text-emerald-500" />
-            </span>
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-8 flex items-start gap-4 shadow-sm">
+            <SparklesIcon className="h-6 w-6 text-primary shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-emerald-400">Stellar Testnet Integration Live</p>
-              <p className="text-xs text-base-content/70 mt-0.5">
-                Investing now builds real Stellar transactions. Ensure you have Testnet XLM and USDC to complete the
-                flow.
+              <p className="text-sm font-bold text-base-content">Stellar Hybrid Model Active</p>
+              <p className="text-xs text-base-content/70 mt-1">
+                Native Stellar Assets provide instant liquidity. Soroban Smart Contracts enforce African regulatory
+                compliance.
               </p>
             </div>
           </div>
 
+          {!isConnected && (
+            <div className="rounded-2xl border border-dashed border-base-300 p-6 mb-8 text-center bg-base-100">
+              <WalletIcon className="h-10 w-10 text-base-content/20 mx-auto mb-3" />
+              <p className="text-base-content font-bold mb-1">Sign in with Freighter</p>
+              <p className="text-sm text-base-content/60 mb-6">
+                You need to connect a Stellar wallet to begin investing in RWAs.
+              </p>
+              <StellarConnectButton />
+            </div>
+          )}
+
           {/* Asset grid */}
-          <div className="grid gap-5 sm:grid-cols-1">
+          <div className="grid gap-5">
             {MOCK_ASSETS.map(asset => (
               <div
                 key={asset.id}
-                className="rounded-2xl border border-base-300/80 bg-base-100 p-5 sm:p-6 shadow-sm hover:border-primary/25 hover:shadow-md transition-all"
+                className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm hover:border-primary/25 transition-all"
               >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <asset.icon className="h-6 w-6" />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-start gap-5">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <asset.icon className="h-7 w-7" />
                     </span>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-base-content">{asset.name}</p>
-                        <span className={`badge badge-sm ${STATUS_COLORS[asset.status]}`}>{asset.status}</span>
+                      <div className="flex items-center gap-3">
+                        <p className="font-bold text-lg text-base-content">{asset.name}</p>
+                        <span className={`badge badge-sm font-semibold ${STATUS_COLORS[asset.status]}`}>
+                          {asset.status}
+                        </span>
                       </div>
-                      <p className="text-xs text-base-content/60 mt-0.5">
-                        {asset.ticker} · {asset.type} · Supply: {asset.supply} tokens
+                      <p className="text-xs text-base-content/60 mt-1 uppercase tracking-wider font-mono">
+                        {asset.ticker} · {asset.type} · Supply: {asset.supply}
                       </p>
-                      <p className="text-xs text-primary/80 font-medium mt-1">
-                        Stellar Native Asset · Price: {asset.price} USDC / share
+                      <p className="text-xs text-primary font-bold mt-2 uppercase tracking-widest">
+                        {asset.price} USDC / SHARE · EST. APY {asset.apy}
                       </p>
                     </div>
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex gap-2">
                     <button
-                      onClick={() => handleInvest(asset)}
-                      className={`btn btn-primary btn-sm gap-1.5 ${loadingAssetId === asset.id ? "loading" : ""}`}
-                      disabled={!isConnected || asset.status === "Pending" || loadingAssetId !== null}
+                      onClick={() => handleInvestClick(asset)}
+                      disabled={!isConnected || asset.status === "Pending" || isPurchasing}
+                      className={`btn btn-primary btn-md gap-2 ${isPurchasing && selectedAsset?.id === asset.id ? "loading" : ""}`}
                     >
-                      {loadingAssetId === asset.id ? "Processing..." : "Invest"}
-                      {!loadingAssetId && <ArrowRightIcon className="h-3.5 w-3.5" />}
+                      {isPurchasing && selectedAsset?.id === asset.id ? "Purchasing..." : "Invest Now"}
+                      {!isPurchasing && <ArrowRightIcon className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
-                {/* Progress bar */}
-                <div className="mt-4">
-                  <div className="mb-1.5 flex justify-between text-xs font-medium text-base-content/60">
-                    <span>Funding progress</span>
-                    <span>{asset.progress}%</span>
+                {/* Progress */}
+                <div className="mt-6 pt-6 border-t border-base-200">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-xs font-bold text-base-content/50 uppercase tracking-widest">
+                      Round Progress
+                    </span>
+                    <span className="text-xs font-bold text-primary">{asset.progress}% Funded</span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-base-300/80">
+                  <div className="h-2.5 w-full bg-base-200 rounded-full overflow-hidden shadow-inner">
                     <div
-                      className="h-full rounded-full bg-primary transition-[width] duration-500"
+                      className="h-full bg-primary rounded-full transition-all duration-700"
                       style={{ width: `${asset.progress}%` }}
                     />
                   </div>
@@ -211,15 +212,26 @@ export default function MarketplacePage() {
             ))}
           </div>
 
-          <p className="mt-6 text-xs text-base-content/50 text-center">
-            Transactions are executed on Stellar Testnet.{" "}
-            <Link href="/litepaper" className="link link-primary">
-              Read the tech specs
-            </Link>
-            .
+          <p className="mt-8 text-xs text-base-content/40 text-center uppercase tracking-widest">
+            Vaultic Trust · African RWA Liquidity Gateway · Powered by Stellar
           </p>
         </div>
       </section>
+
+      {/* Trustline and Purchase Guard */}
+      {selectedAsset && (
+        <TrustlineModal
+          isOpen={isTrustlineModalOpen}
+          onClose={() => {
+            setIsTrustlineModalOpen(false);
+            setSelectedAsset(null);
+          }}
+          publicKey={publicKey || ""}
+          assetCode={selectedAsset.ticker}
+          issuer={selectedAsset.issuer}
+          onSuccess={handleTrustlineSuccess}
+        />
+      )}
     </div>
   );
 }
