@@ -1,0 +1,36 @@
+# dependencies
+node_modules
+
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# eslint
+.eslintcache
+
+# misc
+.DS_Store
+
+# IDE
+.vscode
+.idea
+
+# cli
+dist
+
+# agents
+.claude
+.cursor
+.agents
+AGENTS.md
+CLAUDE.md
+SYSTEM_ARCHITECTURE.md
+SMART_CONTRACTS.md
+PRODUCT_REQUIREMENTS.md
+TASKS.md
+
+docs/
