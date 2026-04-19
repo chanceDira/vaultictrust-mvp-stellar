@@ -499,14 +499,18 @@ export async function isVerified(userAddress: string): Promise<boolean> {
 // UserRegistry — Write functions
 // ---------------------------------------------------------------------------
 
-export async function submitKyc(metadataUri: string, callerPublicKey: string) {
+export async function submitKyc(metadataUri: string, commitment: Uint8Array, callerPublicKey: string) {
   const { userRegistry } = getContractIds();
   if (!userRegistry) throw new Error("userRegistry contract not deployed");
 
   return callContract({
     contractId: userRegistry,
     method: "submit_kyc",
-    args: [new Address(callerPublicKey).toScVal(), nativeToScVal(metadataUri, { type: "string" })],
+    args: [
+      new Address(callerPublicKey).toScVal(),
+      nativeToScVal(metadataUri, { type: "string" }),
+      xdr.ScVal.scvBytes(Buffer.from(commitment)),
+    ],
     callerPublicKey,
   });
 }

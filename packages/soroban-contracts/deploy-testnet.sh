@@ -164,6 +164,7 @@ stellar contract invoke \
   -- initialize \
   --admin "$ADMIN_ADDRESS" \
   --investment_manager "$INVESTMENT_ID" \
+  --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC"
 
 echo "   ✓ DividendManager initialized. Admin=$ADMIN_ADDRESS"

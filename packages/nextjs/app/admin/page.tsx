@@ -662,16 +662,27 @@ export default function AdminPage() {
                           {foundUser.metadata_uri && (
                             <div className="mt-4">
                               <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-1">
-                                Identity Metadata
+                                Identity Metadata (IPFS)
                               </p>
                               <a
                                 href={foundUser.metadata_uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-xs text-primary underline"
+                                className="text-xs text-primary underline break-all"
                               >
                                 {foundUser.metadata_uri}
                               </a>
+                            </div>
+                          )}
+
+                          {foundUser.commitment && (
+                            <div className="mt-4 bg-base-300/30 rounded-lg p-3 border border-base-300">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-base-content/40 mb-1">
+                                ZK-Commitment Hash (SHA-256)
+                              </p>
+                              <code className="text-[10px] break-all opacity-70 font-mono">
+                                {Buffer.from(foundUser.commitment).toString("hex")}
+                              </code>
                             </div>
                           )}
                         </div>
