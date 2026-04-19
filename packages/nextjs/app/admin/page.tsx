@@ -122,7 +122,7 @@ function TokenizeModal({
       notification.success(`${asset.asset_name} tokenized on Stellar!`);
       onSuccess();
     } catch (e: any) {
-      notification.error(`Tokenization failed: ${e.message}`);
+      notification.error(`Tokenization failed: ${e.message || "Unknown error"}`);
     } finally {
       setLoading(false);
       notification.remove(id);
@@ -336,8 +336,8 @@ export default function AdminPage() {
         if (asset) items.push(asset);
       }
       setAssets([...items].reverse()); // newest first
-    } catch (e: any) {
-      console.error("Failed to load assets:", e);
+    } catch (error: any) {
+      console.error("Failed to load assets:", error);
     } finally {
       setIsLoading(false);
     }
@@ -357,8 +357,8 @@ export default function AdminPage() {
       await approveAsset(assetId, publicKey);
       notification.success("Asset approved! Status → Active");
       await loadAssets();
-    } catch (e: any) {
-      notification.error(`Approval failed: ${e.message}`);
+    } catch (err: any) {
+      notification.error(`Approval failed: ${err.message || "Unknown error"}`);
     } finally {
       setApprovingId(null);
       notification.remove(notifId);
@@ -372,8 +372,8 @@ export default function AdminPage() {
     try {
       await sweepFees(publicKey);
       notification.success("Protocol fees swept to treasury.");
-    } catch (e: any) {
-      notification.error(`Sweep failed: ${e.message}`);
+    } catch (err: any) {
+      notification.error(`Sweep failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsSweeping(false);
       notification.remove(notifId);
@@ -406,8 +406,8 @@ export default function AdminPage() {
       await setUserStatus(foundUser.address, status, publicKey);
       notification.success("KYC Status updated!");
       await handleSearchUser(); // refresh
-    } catch (e: any) {
-      notification.error(`Update failed: ${e.message}`);
+    } catch (err: any) {
+      notification.error(`Update failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsUpdatingKyc(false);
       notification.remove(notifId);
