@@ -111,6 +111,21 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("adm_xfr"),), new_admin);
     }
 
+    /// Returns the current administrator address.
+    pub fn get_admin(env: Env) -> Address {
+        env.storage().instance().get(&DataKey::Admin).expect("not initialized")
+    }
+
+    /// Returns the current tokenizer address.
+    pub fn get_tokenizer(env: Env) -> Address {
+        env.storage().instance().get(&DataKey::Tokenizer).expect("not initialized")
+    }
+
+    /// Returns the current asset counter value.
+    pub fn get_counter(env: Env) -> u32 {
+        env.storage().instance().get(&DataKey::AssetCounter).expect("not initialized")
+    }
+
     // -----------------------------------------------------------------------
     // Asset Lifecycle: Registration
     // -----------------------------------------------------------------------
@@ -133,7 +148,7 @@ impl VaulticAssetRegistry {
             panic!("invalid valuation");
         }
 
-        let mut counter: u32 = env.storage().instance().get(&DataKey::AssetCounter).unwrap();
+        let mut counter: u32 = env.storage().instance().get(&DataKey::AssetCounter).unwrap_or(1);
         let asset_id = counter;
         counter += 1;
         env.storage().instance().set(&DataKey::AssetCounter, &counter);
@@ -145,9 +160,9 @@ impl VaulticAssetRegistry {
             model,
             registered_at: env.ledger().timestamp(),
             valuation,
-            total_shares: 0,
-            price_per_share: 0,
-            sold_shares: 0,
+            total_shares: 0i128,
+            price_per_share: 0i128,
+            sold_shares: 0i128,
             asset_code,
             issuer: None,
             tokenized_at: 0,

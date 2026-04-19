@@ -98,7 +98,6 @@ Access the dashboard at `http://localhost:3000`.
 
 - `packages/soroban-contracts/` — Soroban smart contracts (Rust), build artifacts, and deployment scripts.
 - `packages/nextjs/` — Frontend application, Stellar SDK integration, and UI components.
-- `legacy-evm/` — (Archived) The original Avalanche C-Chain / Solidity implementation.
 
 ---
 
