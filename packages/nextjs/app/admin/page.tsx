@@ -71,12 +71,19 @@ const STATE_CONFIG: Record<AssetStateKey, { label: string; color: string; icon: 
   Relisted: { label: "Relisted", color: "text-blue-400 bg-blue-400/10 border-blue-400/20", icon: ArrowPathIcon },
 };
 
-const KYC_CONFIG: Record<number, { label: string; color: string }> = {
+const KYC_CONFIG: Record<string | number, { label: string; color: string }> = {
+  // Legacy integer mapping
   0: { label: "None", color: "text-base-content/40 bg-base-300/20" },
   1: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10" },
   2: { label: "Verified", color: "text-emerald-400 bg-emerald-400/10" },
   3: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
   4: { label: "Suspended", color: "text-orange-400 bg-orange-400/10" },
+  // String-based Symbol mapping (Soroban native)
+  None: { label: "None", color: "text-base-content/40 bg-base-300/20" },
+  Pending: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10" },
+  Verified: { label: "Verified", color: "text-emerald-400 bg-emerald-400/10" },
+  Rejected: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
+  Suspended: { label: "Suspended", color: "text-orange-400 bg-orange-400/10" },
 };
 
 // ---------------------------------------------------------------------------
@@ -629,9 +636,17 @@ export default function AdminPage() {
                                 Current Status
                               </p>
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold border ${KYC_CONFIG[foundUser.status]?.color}`}
+                                className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                  KYC_CONFIG[foundUser.status]?.color ||
+                                  (typeof foundUser.status === "object" && foundUser.status.tag
+                                    ? KYC_CONFIG[foundUser.status.tag]?.color
+                                    : "text-base-content/40")
+                                }`}
                               >
-                                {KYC_CONFIG[foundUser.status]?.label ?? "Unknown"}
+                                {KYC_CONFIG[foundUser.status]?.label ||
+                                  (typeof foundUser.status === "object" && foundUser.status.tag
+                                    ? foundUser.status.tag
+                                    : "Unknown")}
                               </span>
                             </div>
                             <div>
@@ -665,21 +680,36 @@ export default function AdminPage() {
                           <button
                             className="btn btn-success btn-sm w-full"
                             onClick={() => handleUpdateKyc(2)}
-                            disabled={isUpdatingKyc || foundUser.status === 2}
+                            disabled={
+                              isUpdatingKyc ||
+                              foundUser.status === 2 ||
+                              foundUser.status === "Verified" ||
+                              foundUser.status?.tag === "Verified"
+                            }
                           >
                             Verify User
                           </button>
                           <button
                             className="btn btn-warning btn-sm w-full"
                             onClick={() => handleUpdateKyc(4)}
-                            disabled={isUpdatingKyc || foundUser.status === 4}
+                            disabled={
+                              isUpdatingKyc ||
+                              foundUser.status === 4 ||
+                              foundUser.status === "Suspended" ||
+                              foundUser.status?.tag === "Suspended"
+                            }
                           >
                             Suspend User
                           </button>
                           <button
                             className="btn btn-error btn-outline btn-sm w-full"
                             onClick={() => handleUpdateKyc(3)}
-                            disabled={isUpdatingKyc || foundUser.status === 3}
+                            disabled={
+                              isUpdatingKyc ||
+                              foundUser.status === 3 ||
+                              foundUser.status === "Rejected" ||
+                              foundUser.status?.tag === "Rejected"
+                            }
                           >
                             Reject KYC
                           </button>

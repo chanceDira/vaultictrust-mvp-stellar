@@ -254,7 +254,7 @@ export async function registerAsset(
       nativeToScVal(params.assetCode, { type: "string" }),
       nativeToScVal(params.metadataUri, { type: "string" }),
       nativeToScVal(params.valuation, { type: "i128" }),
-      nativeToScVal(params.model === "Fractional" ? 1 : 0, { type: "u32" }),
+      nativeToScVal(params.model, { type: "symbol" }),
     ],
     callerPublicKey,
   });
@@ -515,10 +515,14 @@ export async function setUserStatus(userAddress: string, status: number, callerP
   const { userRegistry } = getContractIds();
   if (!userRegistry) throw new Error("userRegistry contract not deployed");
 
+  // Map integer status back to Symbol name for Soroban
+  const KYC_STATUS_SYMBOLS = ["None", "Pending", "Verified", "Rejected", "Suspended"];
+  const statusSymbol = KYC_STATUS_SYMBOLS[status] || "None";
+
   return callContract({
     contractId: userRegistry,
     method: "set_status",
-    args: [new Address(userAddress).toScVal(), nativeToScVal(status, { type: "u32" })],
+    args: [new Address(userAddress).toScVal(), nativeToScVal(statusSymbol, { type: "symbol" })],
     callerPublicKey,
   });
 }

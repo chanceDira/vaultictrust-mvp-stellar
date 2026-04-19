@@ -13,6 +13,7 @@ set -euo pipefail
 
 NETWORK="testnet"
 DEPLOYER_ALIAS="deployer"
+ADMIN_ADDRESS="GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI"
 CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REGISTRY_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_asset_registry.wasm"
 INVESTMENT_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_investment_manager.wasm"
@@ -96,11 +97,12 @@ USER_REGISTRY_ID=$(stellar contract deploy \
 echo "   ✓ VaulticUserRegistry deployed: $USER_REGISTRY_ID"
 
 # ---------------------------------------------------------------------------- #
-# 5. GET DEPLOYER PUBLIC KEY
+# 5. GET DEPLOYER DETAILS
 # ---------------------------------------------------------------------------- #
 DEPLOYER_ADDRESS=$(stellar keys address "$DEPLOYER_ALIAS")
 echo ""
-echo "   Deployer address: $DEPLOYER_ADDRESS"
+echo "   Deployer address (paying gas): $DEPLOYER_ADDRESS"
+echo "   Platform Admin address:        $ADMIN_ADDRESS"
 
 # ---------------------------------------------------------------------------- #
 # 6. INITIALIZE — ASSET REGISTRY
@@ -112,10 +114,10 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$REGISTRY_ID" \
   -- initialize \
-  --admin "$DEPLOYER_ADDRESS" \
+  --admin "$ADMIN_ADDRESS" \
   --tokenizer "$INVESTMENT_ID"
 
-echo "   ✓ Registry initialized. Admin=$DEPLOYER_ADDRESS, Tokenizer=$INVESTMENT_ID"
+echo "   ✓ Registry initialized. Admin=$ADMIN_ADDRESS, Tokenizer=$INVESTMENT_ID"
 
 # ---------------------------------------------------------------------------- #
 # 6a. INITIALIZE — USER REGISTRY
@@ -127,9 +129,9 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$USER_REGISTRY_ID" \
   -- initialize \
-  --admin "$DEPLOYER_ADDRESS"
+  --admin "$ADMIN_ADDRESS"
 
-echo "   ✓ UserRegistry initialized. Admin=$DEPLOYER_ADDRESS"
+echo "   ✓ UserRegistry initialized. Admin=$ADMIN_ADDRESS"
 
 # ---------------------------------------------------------------------------- #
 # 7. INITIALIZE — INVESTMENT MANAGER
@@ -141,14 +143,14 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$INVESTMENT_ID" \
   -- initialize \
-  --admin "$DEPLOYER_ADDRESS" \
+  --admin "$ADMIN_ADDRESS" \
   --registry "$REGISTRY_ID" \
   --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC" \
-  --fee_treasury "$DEPLOYER_ADDRESS" \
+  --fee_treasury "$ADMIN_ADDRESS" \
   --protocol_fee_bps "50"
 
-echo "   ✓ InvestmentManager initialized. USDC=$TESTNET_USDC, Fee=0.5%"
+echo "   ✓ InvestmentManager initialized. Admin=$ADMIN_ADDRESS, USDC=$TESTNET_USDC, Fee=0.5%"
 
 # ---------------------------------------------------------------------------- #
 # 8. INITIALIZE — DIVIDEND MANAGER
@@ -160,11 +162,11 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$DIVIDEND_ID" \
   -- initialize \
-  --admin "$DEPLOYER_ADDRESS" \
+  --admin "$ADMIN_ADDRESS" \
   --investment_manager "$INVESTMENT_ID" \
   --payment_token "$TESTNET_USDC"
 
-echo "   ✓ DividendManager initialized."
+echo "   ✓ DividendManager initialized. Admin=$ADMIN_ADDRESS"
 
 # ---------------------------------------------------------------------------- #
 # 9. UPDATE scaffold.config.ts

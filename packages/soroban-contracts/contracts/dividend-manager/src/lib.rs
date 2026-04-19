@@ -328,6 +328,14 @@ impl VaulticDividendManager {
         }
         total
     }
+
+    /// Transfers administrative power to a new address. Admin only.
+    pub fn set_admin(env: Env, new_admin: Address) {
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &new_admin);
+        env.events().publish((symbol_short!("adm_xfr"),), new_admin);
+    }
 }
 
 // ---------------------------------------------------------------------------
