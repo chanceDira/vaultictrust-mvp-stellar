@@ -1,8 +1,7 @@
 /**
  * Vaultic Trust – Stellar Network Configuration
  *
- * This config replaces the former Avalanche/EVM scaffold config.
- * Phase 2 will add deployed Soroban contract IDs.
+ * Phase 2: Soroban contract IDs added after testnet deployment.
  */
 
 // ---------------------------------------------------------------------------
@@ -27,26 +26,36 @@ export const STELLAR_NETWORKS = {
 export type StellarNetworkId = keyof typeof STELLAR_NETWORKS;
 
 // ---------------------------------------------------------------------------
+// Testnet USDC (Circle / SDF official testnet issuer)
+// See: https://developers.stellar.org/docs/tokens/usdc
+// ---------------------------------------------------------------------------
+export const TESTNET_USDC_CONTRACT = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+export const TESTNET_USDC_ASSET = {
+  code: "USDC",
+  issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+};
+
+// ---------------------------------------------------------------------------
 // Deployed Soroban Contract IDs
-// These will be populated in Phase 2 after Soroban contracts are deployed.
+// Run packages/soroban-contracts/deploy-testnet.sh to populate after deployment.
 // ---------------------------------------------------------------------------
 
 export type DeployedSorobanContracts = {
   VaulticAssetRegistry: string | null;
   VaulticInvestmentManager: string | null;
-  VaulticFractionalOwnershipToken: string | null;
+  VaulticDividendManager: string | null;
 };
 
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {
   testnet: {
-    VaulticAssetRegistry: null, // TODO: deploy Soroban contract
-    VaulticInvestmentManager: null, // TODO: deploy Soroban contract
-    VaulticFractionalOwnershipToken: null, // TODO: deploy Soroban contract
+    VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh
+    VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh
+    VaulticDividendManager: null, // TODO: run deploy-testnet.sh
   },
   mainnet: {
-    VaulticAssetRegistry: null, // TODO: deploy Soroban contract
-    VaulticInvestmentManager: null, // TODO: deploy Soroban contract
-    VaulticFractionalOwnershipToken: null, // TODO: deploy Soroban contract
+    VaulticAssetRegistry: null, // Not yet deployed
+    VaulticInvestmentManager: null, // Not yet deployed
+    VaulticDividendManager: null, // Not yet deployed
   },
 };
 
@@ -62,8 +71,7 @@ export type VaulticConfig = {
   networkPassphrase: string;
 };
 
-const targetNetworkId: StellarNetworkId =
-  (process.env.NEXT_PUBLIC_STELLAR_NETWORK as StellarNetworkId) ?? "testnet";
+const targetNetworkId: StellarNetworkId = (process.env.NEXT_PUBLIC_STELLAR_NETWORK as StellarNetworkId) ?? "testnet";
 
 const network = STELLAR_NETWORKS[targetNetworkId];
 
