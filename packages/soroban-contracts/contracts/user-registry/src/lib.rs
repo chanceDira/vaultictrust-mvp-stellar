@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, Env, String, symbol_short,
+    contract, contractimpl, contracttype, Address, Env, String, symbol_short, BytesN,
 };
 
 // ---------------------------------------------------------------------------
@@ -28,6 +28,7 @@ pub struct UserRecord {
     pub address: Address,
     pub status: KycStatus,
     pub metadata_uri: String, // IPFS CID for identity metadata (encrypted/hashed)
+    pub commitment: BytesN<32>, // ZK commitment hash (secret + data)
     pub updated_at: u64,
 }
 
@@ -60,8 +61,7 @@ impl VaulticUserRegistry {
     }
 
     /// Submits a KYC application. Sets status to PENDING.
-    /// In a real-world scenario, the metadata_uri would contain encrypted PII or hashes.
-    pub fn submit_kyc(env: Env, user: Address, metadata_uri: String) {
+    pub fn submit_kyc(env: Env, user: Address, metadata_uri: String, commitment: BytesN<32>) {
         user.require_auth();
 
         let mut record = env.storage().persistent()
@@ -70,6 +70,7 @@ impl VaulticUserRegistry {
                 address: user.clone(),
                 status: KycStatus::None,
                 metadata_uri: String::from_str(&env, ""),
+                commitment: BytesN::from_array(&env, &[0u8; 32]),
                 updated_at: 0,
             });
 
@@ -80,6 +81,7 @@ impl VaulticUserRegistry {
 
         record.status = KycStatus::Pending;
         record.metadata_uri = metadata_uri;
+        record.commitment = commitment;
         record.updated_at = env.ledger().timestamp();
 
         env.storage().persistent().set(&DataKey::User(user.clone()), &record);
@@ -128,6 +130,7 @@ impl VaulticUserRegistry {
             address: user,
             status: KycStatus::None,
             metadata_uri: String::from_str(&env, ""),
+            commitment: BytesN::from_array(&env, &[0u8; 32]),
             updated_at: 0,
         })
     }
@@ -140,6 +143,7 @@ impl VaulticUserRegistry {
                 address: Address::from_string(&String::from_str(&env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")),
                 status: KycStatus::None,
                 metadata_uri: String::from_str(&env, ""),
+                commitment: BytesN::from_array(&env, &[0u8; 32]),
                 updated_at: 0,
             });
         record.status == KycStatus::Verified
@@ -185,9 +189,11 @@ mod test {
         assert_eq!(client.is_verified(&user), false);
         
         // Submit
-        client.submit_kyc(&user, &String::from_str(&env, "ipfs://identity_hash"));
+        let commitment = BytesN::from_array(&env, &[1u8; 32]);
+        client.submit_kyc(&user, &String::from_str(&env, "ipfs://identity_hash"), &commitment);
         let record = client.get_user(&user);
         assert!(matches!(record.status, KycStatus::Pending));
+        assert_eq!(record.commitment, commitment);
         assert_eq!(client.is_verified(&user), false);
 
         // Approve

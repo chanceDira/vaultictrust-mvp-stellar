@@ -12,6 +12,7 @@ import {
   CubeIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
+import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { useStellarHoldings } from "~~/hooks/stellar/useStellarHoldings";
@@ -21,6 +22,7 @@ import {
   fetchAsset,
   fetchClaimableYield,
   fetchTotalAssets,
+  fetchUserRecord,
   getContractIds,
 } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
@@ -46,6 +48,8 @@ export default function InvestorPage() {
   const [yields, setYields] = useState<YieldInfo[]>([]);
   const [isYieldLoading, setIsYieldLoading] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [kycRecord, setKycRecord] = useState<any>(null);
+  const [isKycLoading, setIsKycLoading] = useState(false);
 
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
@@ -95,9 +99,24 @@ export default function InvestorPage() {
     }
   }, [publicKey, holdings, assetMapping]);
 
+  // Load KYC status
+  const loadKyc = useCallback(async () => {
+    if (!publicKey || !isDeployed) return;
+    setIsKycLoading(true);
+    try {
+      const record = await fetchUserRecord(publicKey);
+      setKycRecord(record);
+    } catch (e) {
+      console.error("KYC load error", e);
+    } finally {
+      setIsKycLoading(false);
+    }
+  }, [publicKey, isDeployed]);
+
   useEffect(() => {
     loadAssetMapping();
-  }, [loadAssetMapping]);
+    loadKyc();
+  }, [loadAssetMapping, loadKyc]);
 
   useEffect(() => {
     loadYields();
@@ -130,7 +149,14 @@ export default function InvestorPage() {
             <ChartBarIcon className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Investor Portfolio</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Investor Portfolio</h1>
+              {isConnected && !isKycLoading && (
+                <KycStatusBadge
+                  status={typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag}
+                />
+              )}
+            </div>
             <p className="text-xs text-base-content/50 uppercase tracking-widest font-semibold">
               Manage Holdings & Claim Yield
             </p>
@@ -268,8 +294,12 @@ export default function InvestorPage() {
                             <p className="font-bold text-sm">{(Number(y.claimable) / 1e7).toFixed(2)} USDC</p>
                             <button
                               onClick={() => handleClaimYield(y.assetId, y.assetCode)}
-                              disabled={isClaiming}
-                              className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest mt-0.5"
+                              disabled={
+                                isClaiming ||
+                                (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
+                                  "Verified"
+                              }
+                              className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest mt-0.5 disabled:opacity-30"
                             >
                               Claim This Asset
                             </button>
@@ -286,7 +316,12 @@ export default function InvestorPage() {
                     </p>
                     <button
                       className="btn btn-success btn-sm w-full gap-2 rounded-xl border-success/30"
-                      disabled={yields.length === 0 || isClaiming}
+                      disabled={
+                        yields.length === 0 ||
+                        isClaiming ||
+                        (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
+                          "Verified"
+                      }
                       onClick={() => yields.length > 0 && handleClaimYield(yields[0].assetId, "All Assets")}
                     >
                       {isClaiming ? (

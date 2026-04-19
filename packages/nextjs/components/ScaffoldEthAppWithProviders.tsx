@@ -7,12 +7,14 @@ import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "react-hot-toast";
 import { Footer } from "~~/components/Footer";
 import { Header } from "~~/components/Header";
+import { GlobalKycBanner } from "~~/components/stellar/GlobalKycBanner";
 import { StellarWalletProvider } from "~~/components/stellar/StellarWalletProvider";
 
 const VaulticApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <div className={`flex flex-col min-h-screen`}>
+        <GlobalKycBanner />
         <Header />
         <main className="relative flex flex-col flex-1">{children}</main>
         <Footer />
