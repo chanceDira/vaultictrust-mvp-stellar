@@ -42,6 +42,7 @@ export const TESTNET_USDC_ASSET = {
 
 export type DeployedSorobanContracts = {
   VaulticAssetRegistry: string | null;
+  VaulticUserRegistry: string | null;
   VaulticInvestmentManager: string | null;
   VaulticDividendManager: string | null;
 };
@@ -49,11 +50,13 @@ export type DeployedSorobanContracts = {
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {
   testnet: {
     VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh
+    VaulticUserRegistry: null, // TODO: run deploy-testnet.sh
     VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh
     VaulticDividendManager: null, // TODO: run deploy-testnet.sh
   },
   mainnet: {
     VaulticAssetRegistry: null, // Not yet deployed
+    VaulticUserRegistry: null, // Not yet deployed
     VaulticInvestmentManager: null, // Not yet deployed
     VaulticDividendManager: null, // Not yet deployed
   },

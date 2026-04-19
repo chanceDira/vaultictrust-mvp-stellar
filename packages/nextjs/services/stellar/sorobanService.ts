@@ -43,6 +43,7 @@ export function getContractIds() {
   const contracts = deployedSorobanContracts["testnet"];
   return {
     registry: contracts?.VaulticAssetRegistry ?? null,
+    userRegistry: contracts?.VaulticUserRegistry ?? null,
     investmentManager: contracts?.VaulticInvestmentManager ?? null,
     dividendManager: contracts?.VaulticDividendManager ?? null,
   };
@@ -463,6 +464,61 @@ export async function claimAllYield(assetId: number, callerPublicKey: string) {
     contractId: dividendManager,
     method: "claim_all_yield",
     args: [new Address(callerPublicKey).toScVal(), nativeToScVal(assetId, { type: "u32" })],
+    callerPublicKey,
+  });
+}
+// ---------------------------------------------------------------------------
+// UserRegistry — Read functions
+// ---------------------------------------------------------------------------
+
+export async function fetchUserRecord(userAddress: string): Promise<any> {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) return null;
+
+  const result = await simulateReadCall({
+    contractId: userRegistry,
+    method: "get_user",
+    args: [new Address(userAddress).toScVal()],
+  });
+  return result ? scValToNative(result) : null;
+}
+
+export async function isVerified(userAddress: string): Promise<boolean> {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) return false;
+
+  const result = await simulateReadCall({
+    contractId: userRegistry,
+    method: "is_verified",
+    args: [new Address(userAddress).toScVal()],
+  });
+  return result ? (scValToNative(result) as boolean) : false;
+}
+
+// ---------------------------------------------------------------------------
+// UserRegistry — Write functions
+// ---------------------------------------------------------------------------
+
+export async function submitKyc(metadataUri: string, callerPublicKey: string) {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) throw new Error("userRegistry contract not deployed");
+
+  return callContract({
+    contractId: userRegistry,
+    method: "submit_kyc",
+    args: [new Address(callerPublicKey).toScVal(), nativeToScVal(metadataUri, { type: "string" })],
+    callerPublicKey,
+  });
+}
+
+export async function setUserStatus(userAddress: string, status: number, callerPublicKey: string) {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) throw new Error("userRegistry contract not deployed");
+
+  return callContract({
+    contractId: userRegistry,
+    method: "set_status",
+    args: [new Address(userAddress).toScVal(), nativeToScVal(status, { type: "u32" })],
     callerPublicKey,
   });
 }
