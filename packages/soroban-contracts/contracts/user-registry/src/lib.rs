@@ -9,7 +9,6 @@ use soroban_sdk::{
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u32)]
 pub enum KycStatus {
     None = 0,
     Pending = 1,
