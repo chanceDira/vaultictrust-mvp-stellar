@@ -393,7 +393,7 @@ impl VaulticInvestmentManager {
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&env.current_contract_address(), &treasury, &fees);
 
-        env.events().publish(symbol_short!("sweep"), fees);
+        env.events().publish((symbol_short!("sweep"),), fees);
     }
 
     // -----------------------------------------------------------------------

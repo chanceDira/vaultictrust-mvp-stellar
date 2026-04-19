@@ -91,7 +91,7 @@ impl VaulticUserRegistry {
         let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
         admin.require_auth();
 
-        let mut record = env.storage().persistent()
+        let mut record: UserRecord = env.storage().persistent()
             .get(&DataKey::User(user.clone()))
             .expect("user record not found");
 
@@ -108,7 +108,7 @@ impl VaulticUserRegistry {
         admin.require_auth();
 
         for user in users.iter() {
-            let mut record = env.storage().persistent()
+            let mut record: UserRecord = env.storage().persistent()
                 .get(&DataKey::User(user.clone()))
                 .expect("user record not found");
             record.status = status;
@@ -124,8 +124,8 @@ impl VaulticUserRegistry {
 
     /// Returns the full user record.
     pub fn get_user(env: Env, user: Address) -> UserRecord {
-        env.storage().persistent().get(&DataKey::User(user)).unwrap_or(UserRecord {
-            address: Address::generate(&env), // dummy for missing
+        env.storage().persistent().get(&DataKey::User(user.clone())).unwrap_or(UserRecord {
+            address: user,
             status: KycStatus::None,
             metadata_uri: String::from_str(&env, ""),
             updated_at: 0,
@@ -137,7 +137,7 @@ impl VaulticUserRegistry {
         let record = env.storage().persistent()
             .get(&DataKey::User(user))
             .unwrap_or(UserRecord {
-                address: Address::generate(&env),
+                address: Address::from_string(&String::from_str(&env, "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF")),
                 status: KycStatus::None,
                 metadata_uri: String::from_str(&env, ""),
                 updated_at: 0,

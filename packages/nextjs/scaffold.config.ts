@@ -49,10 +49,10 @@ export type DeployedSorobanContracts = {
 
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {
   testnet: {
-    VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh
-    VaulticUserRegistry: null, // TODO: run deploy-testnet.sh
-    VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh
-    VaulticDividendManager: null, // TODO: run deploy-testnet.sh
+    VaulticAssetRegistry: "CCOFPXLUGK5ADR4DBDVV7U3AUF72BU22KZ7SGMITFF4MWALM45GYPXPG",
+    VaulticUserRegistry: "CDYF6SNZP5ZHZ3NJOCIIFQIDMXTCPHPYURVJW5AV5KJJY5T5E4JDV5EJ",
+    VaulticInvestmentManager: "CCSSZHDFOCBSOX6SYWHAGDXS73ZOCIK4J4AVWGE3ION76TJEBBBURCDA",
+    VaulticDividendManager: "CAXZKF5EKNVSO533QR2BOL5B3VXOZ2BR4F6BI2CV5ILTZI7TLBY2ZWHM",
   },
   mainnet: {
     VaulticAssetRegistry: null, // Not yet deployed

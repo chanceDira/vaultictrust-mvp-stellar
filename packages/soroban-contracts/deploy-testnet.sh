@@ -14,11 +14,10 @@ set -euo pipefail
 NETWORK="testnet"
 DEPLOYER_ALIAS="deployer"
 CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REGISTRY_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_asset_registry.wasm"
-)
-INVESTMENT_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_investment_manager.wasm"
-DIVIDEND_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_dividend_manager.wasm"
-USER_REGISTRY_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_user_registry.wasm"
+REGISTRY_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_asset_registry.wasm"
+INVESTMENT_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_investment_manager.wasm"
+DIVIDEND_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_dividend_manager.wasm"
+USER_REGISTRY_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_user_registry.wasm"
 
 # Testnet USDC contract (Circle / SDF Testnet)
 TESTNET_USDC="CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
@@ -32,15 +31,21 @@ echo "╚═══════════════════════�
 echo ""
 
 # ---------------------------------------------------------------------------- #
-# 1. BUILD
+# 1. BUILD (Staged to satisfy contractimport dependencies)
 # ---------------------------------------------------------------------------- #
-echo "▶ Step 1: Building Soroban contracts (release mode)..."
-cargo build --manifest-path "$CONTRACT_DIR/Cargo.toml" \
-  --target wasm32-unknown-unknown \
-  --release \
-  --quiet
+echo "▶ Step 1: Building Soroban contracts (staged release mode)..."
 
-echo "   ✓ WASM artifacts built."
+echo "   - Building Registries..."
+stellar contract build --package vaultic-asset-registry --optimize
+stellar contract build --package vaultic-user-registry --optimize
+
+echo "   - Building Investment Manager..."
+stellar contract build --package vaultic-investment-manager --optimize
+
+echo "   - Building Dividend Manager..."
+stellar contract build --package vaultic-dividend-manager --optimize
+
+echo "   ✓ All WASM artifacts built."
 
 # ---------------------------------------------------------------------------- #
 # 2. DEPLOY ASSET REGISTRY
