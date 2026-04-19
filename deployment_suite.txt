@@ -1,0 +1,61 @@
+
+╔══════════════════════════════════════════════════╗
+║   Vaultic Trust — Soroban Testnet Deployment     ║
+╚══════════════════════════════════════════════════╝
+
+▶ Step 1: Building Soroban contracts (staged release mode)...
+   - Building Registries...
+   ✓ All WASM artifacts built.
+
+▶ Step 2: Deploying VaulticAssetRegistry...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/dd96d0575e1072e67489cde2ba27207de4cbc6dd99a056d71047542bb71fd569
+🔗 https://lab.stellar.org/r/testnet/contract/CCOFPXLUGK5ADR4DBDVV7U3AUF72BU22KZ7SGMITFF4MWALM45GYPXPG
+✅ Deployed!
+   ✓ VaulticAssetRegistry deployed: CCOFPXLUGK5ADR4DBDVV7U3AUF72BU22KZ7SGMITFF4MWALM45GYPXPG
+
+▶ Step 3: Deploying VaulticInvestmentManager...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/b2bbd2709c33f67953d44a0851ff317d50a0e9d8adb10f89592c0114d288c970
+🔗 https://lab.stellar.org/r/testnet/contract/CCSSZHDFOCBSOX6SYWHAGDXS73ZOCIK4J4AVWGE3ION76TJEBBBURCDA
+✅ Deployed!
+   ✓ VaulticInvestmentManager deployed: CCSSZHDFOCBSOX6SYWHAGDXS73ZOCIK4J4AVWGE3ION76TJEBBBURCDA
+
+▶ Step 4: Deploying VaulticDividendManager...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/4b41413552d594b963894958ae00d610129abceb76083c2da2023b3d31d95fcf
+🔗 https://lab.stellar.org/r/testnet/contract/CAXZKF5EKNVSO533QR2BOL5B3VXOZ2BR4F6BI2CV5ILTZI7TLBY2ZWHM
+✅ Deployed!
+   ✓ VaulticDividendManager deployed: CAXZKF5EKNVSO533QR2BOL5B3VXOZ2BR4F6BI2CV5ILTZI7TLBY2ZWHM
+
+▶ Step 4a: Deploying VaulticUserRegistry (KYC)...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/1c911018867355a93fe41433e349e69f74ed0641dc10f583927ffdb02d5c3926
+🔗 https://lab.stellar.org/r/testnet/contract/CDYF6SNZP5ZHZ3NJOCIIFQIDMXTCPHPYURVJW5AV5KJJY5T5E4JDV5EJ
+✅ Deployed!
+   ✓ VaulticUserRegistry deployed: CDYF6SNZP5ZHZ3NJOCIIFQIDMXTCPHPYURVJW5AV5KJJY5T5E4JDV5EJ
+
+   Deployer address: GBQKBOTAQBNJF5GHCWKHNJ7A4DEELJEDGU7SOBM5QFBU2QQZOHC3DC5R
+
+▶ Step 5: Initializing VaulticAssetRegistry...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/4e2e428d113e4abda987290ea669d3f1217f04b8cdaae0b3f19a7759e4585417
+   ✓ Registry initialized. Admin=GBQKBOTAQBNJF5GHCWKHNJ7A4DEELJEDGU7SOBM5QFBU2QQZOHC3DC5R, Tokenizer=CCSSZHDFOCBSOX6SYWHAGDXS73ZOCIK4J4AVWGE3ION76TJEBBBURCDA
+
+▶ Step 5a: Initializing VaulticUserRegistry...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/727b7722b87a3316cadb4696662d10440b5330eb0454a7678727f2a33a8bf931
+   ✓ UserRegistry initialized. Admin=GBQKBOTAQBNJF5GHCWKHNJ7A4DEELJEDGU7SOBM5QFBU2QQZOHC3DC5R
+
+▶ Step 6: Initializing VaulticInvestmentManager...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/7bc54b718039df420957c0b9451a36c163d59b18003d8570d316747313660261
+   ✓ InvestmentManager initialized. USDC=CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA, Fee=0.5%
+
+▶ Step 7: Initializing VaulticDividendManager...
+✅ Transaction submitted successfully!
+🔗 https://stellar.expert/explorer/testnet/tx/23bf67193ff2ca598df406dba38a71c3c55767711e4e29f73dc1feb24d48c35c
+   ✓ DividendManager initialized.
+
+All contracts deployed and initialized on Stellar Testnet.
+⚙️  Frontend configuration updated in packages/nextjs/scaffold.config.ts
