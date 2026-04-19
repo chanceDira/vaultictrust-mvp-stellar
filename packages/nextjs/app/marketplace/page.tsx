@@ -4,9 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ArrowRightIcon,
   BuildingOffice2Icon,
+  ClockIcon,
   CubeIcon,
+  ExclamationCircleIcon,
   GlobeAltIcon,
+  IdentificationIcon,
   InformationCircleIcon,
+  ShieldCheckIcon,
   ShoppingBagIcon,
   SparklesIcon,
   Squares2X2Icon,
@@ -15,7 +19,14 @@ import {
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
-import { fetchAsset, fetchTotalAssets, getContractIds, purchaseShares } from "~~/services/stellar/sorobanService";
+import {
+  fetchAsset,
+  fetchTotalAssets,
+  fetchUserRecord,
+  getContractIds,
+  purchaseShares,
+  submitKyc,
+} from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ---------------------------------------------------------------------------
@@ -65,6 +76,11 @@ export default function MarketplacePage() {
   const [isTrustlineModalOpen, setIsTrustlineModalOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
+  // KYC State
+  const [kycRecord, setKycRecord] = useState<any>(null);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [isSubmittingKyc, setIsSubmittingKyc] = useState(false);
+
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -88,11 +104,24 @@ export default function MarketplacePage() {
     }
   }, []);
 
+  const loadKyc = useCallback(async () => {
+    if (!publicKey || !isDeployed) return;
+    try {
+      const record = await fetchUserRecord(publicKey);
+      setKycRecord(record);
+    } catch (e) {
+      console.error("KYC load error", e);
+    }
+  }, [publicKey, isDeployed]);
+
   useEffect(() => {
     if (isConnected && isDeployed) {
       loadAssets();
+      loadKyc();
+    } else {
+      setKycRecord(null);
     }
-  }, [isConnected, isDeployed, loadAssets]);
+  }, [isConnected, isDeployed, loadAssets, loadKyc]);
 
   const handleInvestClick = (asset: OnChainAsset) => {
     if (!publicKey) return;
@@ -130,6 +159,25 @@ export default function MarketplacePage() {
       setIsPurchasing(false);
       notification.remove(notificationId);
       setSelectedAsset(null);
+    }
+  };
+
+  const handleSubmitKyc = async () => {
+    if (!publicKey) return;
+    setIsSubmittingKyc(true);
+    const id = notification.loading("Submitting identity hash for verification...");
+    try {
+      // Mocked metadata URI for MVP (in prod, this is a CID with encrypted PII)
+      const mockCid = `ipfs://kyc-${publicKey.slice(0, 8)}-${Date.now()}`;
+      await submitKyc(mockCid, publicKey);
+      notification.success("KYC application submitted! Please wait for admin approval.");
+      setIsKycModalOpen(false);
+      await loadKyc();
+    } catch (e: any) {
+      notification.error(`Submission failed: ${e.message}`);
+    } finally {
+      setIsSubmittingKyc(false);
+      notification.remove(id);
     }
   };
 
@@ -172,6 +220,54 @@ export default function MarketplacePage() {
                 The Vaultic on-chain registry is currently being synchronized.
               </p>
             </div>
+          </div>
+        ) : kycRecord?.status === 0 || kycRecord?.status === 1 || kycRecord?.status === 3 || kycRecord?.status === 4 ? (
+          <div
+            className={`alert mb-10 shadow-lg border animate-in fade-in slide-in-from-top-4 ${
+              kycRecord.status === 2
+                ? "alert-success bg-emerald-500/5 border-emerald-500/30"
+                : kycRecord.status === 1
+                  ? "alert-warning bg-yellow-500/5 border-yellow-500/30"
+                  : "alert-error bg-red-500/5 border-red-500/30"
+            }`}
+          >
+            {kycRecord.status === 1 ? (
+              <ClockIcon className="h-6 w-6 text-yellow-500" />
+            ) : (
+              <ExclamationCircleIcon className="h-6 w-6" />
+            )}
+            <div className="flex-1">
+              <p className="font-bold">
+                {kycRecord.status === 1
+                  ? "Verification Pending"
+                  : kycRecord.status === 3
+                    ? "Verification Rejected"
+                    : kycRecord.status === 4
+                      ? "Account Suspended"
+                      : "Identity Verification Required"}
+              </p>
+              <p className="text-sm text-base-content/70">
+                {kycRecord.status === 1
+                  ? "Your KYC application is being reviewed by the Vaultic compliance team."
+                  : kycRecord.status === 3
+                    ? "Your application was rejected. Please contact support or resubmit."
+                    : kycRecord.status === 4
+                      ? "Your account has been suspended for compliance reasons."
+                      : "To participate in RWA tokenization, you must first complete your identity verification."}
+              </p>
+            </div>
+            {kycRecord.status === 0 && (
+              <button className="btn btn-primary btn-sm" onClick={() => setIsKycModalOpen(true)}>
+                Verify Identity
+              </button>
+            )}
+          </div>
+        ) : kycRecord?.status === 2 ? (
+          <div className="flex items-center gap-2 mb-8 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 w-fit">
+            <ShieldCheckIcon className="h-4 w-4 text-emerald-500" />
+            <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-500">
+              Verified Investor Profile
+            </span>
           </div>
         ) : null}
 
@@ -255,7 +351,9 @@ export default function MarketplacePage() {
                     <div className="shrink-0">
                       <button
                         onClick={() => handleInvestClick(asset)}
-                        disabled={!isConnected || asset.state.tag === "Active" || isPurchasing}
+                        disabled={
+                          !isConnected || asset.state.tag === "Active" || isPurchasing || kycRecord?.status !== 2
+                        }
                         className={`btn btn-primary btn-lg rounded-2xl px-10 gap-3 shadow-lg shadow-primary/20 ${
                           isPurchasing && selectedAsset?.asset_id === asset.asset_id ? "loading" : ""
                         }`}
@@ -313,6 +411,41 @@ export default function MarketplacePage() {
           issuer={selectedAsset.issuer || ""}
           onSuccess={handleInvestmentSuccess}
         />
+      )}
+
+      {/* KYC Modal */}
+      {isKycModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-6">
+              <IdentificationIcon className="h-9 w-9" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Complete KYC</h2>
+            <p className="text-base-content/60 text-sm mb-8 leading-relaxed">
+              To comply with financial regulations, we require a one-time identity verification. Your data remains
+              private — only a cryptographic proof is stored on-chain.
+            </p>
+
+            <div className="space-y-4 mb-8">
+              <div className="p-4 rounded-xl bg-base-200 border border-base-300 text-xs text-base-content/50 italic">
+                For the MVP, this will submit a hashed identity record to the Vaultic compliance oracle.
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button className="btn btn-ghost flex-1" onClick={() => setIsKycModalOpen(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary flex-1 shadow-lg shadow-primary/20"
+                onClick={handleSubmitKyc}
+                disabled={isSubmittingKyc}
+              >
+                {isSubmittingKyc ? <span className="loading loading-spinner" /> : "Verify Identity"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

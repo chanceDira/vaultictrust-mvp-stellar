@@ -12,6 +12,12 @@ mod registry {
     );
 }
 
+mod user_registry {
+    soroban_sdk::contractimport!(
+        file = "../../target/wasm32-unknown-unknown/release/vaultic_user_registry.wasm"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Structs
 // ---------------------------------------------------------------------------
@@ -49,6 +55,7 @@ pub struct AssetInvestmentPool {
 pub enum DataKey {
     Admin,
     Registry,
+    UserRegistry,
     PaymentToken,   // Testnet USDC contract address
     FeeTreasury,
     ProtocolFeeBps,
@@ -79,6 +86,7 @@ impl VaulticInvestmentManager {
         env: Env,
         admin: Address,
         registry: Address,
+        user_registry: Address,
         payment_token: Address,
         fee_treasury: Address,
         protocol_fee_bps: i128,
@@ -91,6 +99,7 @@ impl VaulticInvestmentManager {
         }
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Registry, &registry);
+        env.storage().instance().set(&DataKey::UserRegistry, &user_registry);
         env.storage().instance().set(&DataKey::PaymentToken, &payment_token);
         env.storage().instance().set(&DataKey::FeeTreasury, &fee_treasury);
         env.storage().instance().set(&DataKey::ProtocolFeeBps, &protocol_fee_bps);
@@ -181,6 +190,13 @@ impl VaulticInvestmentManager {
     /// handles the USDC leg and registry tracking.
     pub fn purchase_shares(env: Env, investor: Address, asset_id: u32, share_amount: i128) {
         investor.require_auth();
+
+        // KYC Gating
+        let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
+        let user_registry_client = user_registry::Client::new(&env, &user_registry_addr);
+        if !user_registry_client.is_verified(&investor) {
+            panic!("investor not KYC verified");
+        }
 
         if share_amount <= 0 {
             panic!("zero purchase amount");
@@ -281,6 +297,13 @@ impl VaulticInvestmentManager {
     /// Buyer pays USDC in full; seller receives net (minus protocol fee).
     pub fn purchase_whole_asset(env: Env, buyer: Address, asset_id: u32) {
         buyer.require_auth();
+
+        // KYC Gating
+        let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
+        let user_registry_client = user_registry::Client::new(&env, &user_registry_addr);
+        if !user_registry_client.is_verified(&buyer) {
+            panic!("buyer not KYC verified");
+        }
 
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
         let registry_client = registry::Client::new(&env, &registry_addr);

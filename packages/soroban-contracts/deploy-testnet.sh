@@ -15,8 +15,10 @@ NETWORK="testnet"
 DEPLOYER_ALIAS="deployer"
 CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REGISTRY_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_asset_registry.wasm"
+)
 INVESTMENT_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_investment_manager.wasm"
 DIVIDEND_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_dividend_manager.wasm"
+USER_REGISTRY_WASM="$CONTRACT_DIR/target/wasm32-unknown-unknown/release/vaultic_user_registry.wasm"
 
 # Testnet USDC contract (Circle / SDF Testnet)
 TESTNET_USDC="CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
@@ -77,6 +79,18 @@ DIVIDEND_ID=$(stellar contract deploy \
 echo "   ✓ VaulticDividendManager deployed: $DIVIDEND_ID"
 
 # ---------------------------------------------------------------------------- #
+# 4a. DEPLOY USER REGISTRY
+# ---------------------------------------------------------------------------- #
+echo ""
+echo "▶ Step 4a: Deploying VaulticUserRegistry (KYC)..."
+USER_REGISTRY_ID=$(stellar contract deploy \
+  --network "$NETWORK" \
+  --source "$DEPLOYER_ALIAS" \
+  --wasm "$USER_REGISTRY_WASM")
+
+echo "   ✓ VaulticUserRegistry deployed: $USER_REGISTRY_ID"
+
+# ---------------------------------------------------------------------------- #
 # 5. GET DEPLOYER PUBLIC KEY
 # ---------------------------------------------------------------------------- #
 DEPLOYER_ADDRESS=$(stellar keys address "$DEPLOYER_ALIAS")
@@ -99,6 +113,20 @@ stellar contract invoke \
 echo "   ✓ Registry initialized. Admin=$DEPLOYER_ADDRESS, Tokenizer=$INVESTMENT_ID"
 
 # ---------------------------------------------------------------------------- #
+# 6a. INITIALIZE — USER REGISTRY
+# ---------------------------------------------------------------------------- #
+echo ""
+echo "▶ Step 5a: Initializing VaulticUserRegistry..."
+stellar contract invoke \
+  --network "$NETWORK" \
+  --source "$DEPLOYER_ALIAS" \
+  --id "$USER_REGISTRY_ID" \
+  -- initialize \
+  --admin "$DEPLOYER_ADDRESS"
+
+echo "   ✓ UserRegistry initialized. Admin=$DEPLOYER_ADDRESS"
+
+# ---------------------------------------------------------------------------- #
 # 7. INITIALIZE — INVESTMENT MANAGER
 # ---------------------------------------------------------------------------- #
 echo ""
@@ -110,6 +138,7 @@ stellar contract invoke \
   -- initialize \
   --admin "$DEPLOYER_ADDRESS" \
   --registry "$REGISTRY_ID" \
+  --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC" \
   --fee_treasury "$DEPLOYER_ADDRESS" \
   --protocol_fee_bps "50"
@@ -138,9 +167,10 @@ echo "   ✓ DividendManager initialized."
 echo ""
 echo "▶ Step 8: Updating scaffold.config.ts with deployed contract IDs..."
 sed -i.bak \
-  -e "s|VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh|VaulticAssetRegistry: \"$REGISTRY_ID\",|g" \
-  -e "s|VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh|VaulticInvestmentManager: \"$INVESTMENT_ID\",|g" \
-  -e "s|VaulticDividendManager: null, // TODO: run deploy-testnet.sh|VaulticDividendManager: \"$DIVIDEND_ID\",|g" \
+  -e "s\|VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh\|VaulticAssetRegistry: \"$REGISTRY_ID\",\|g" \
+  -e "s\|VaulticUserRegistry: null, // TODO: run deploy-testnet.sh\|VaulticUserRegistry: \"$USER_REGISTRY_ID\",\|g" \
+  -e "s\|VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh\|VaulticInvestmentManager: \"$INVESTMENT_ID\",\|g" \
+  -e "s\|VaulticDividendManager: null, // TODO: run deploy-testnet.sh\|VaulticDividendManager: \"$DIVIDEND_ID\",\|g" \
   "$CONFIG_TS"
 
 echo "   ✓ scaffold.config.ts updated."
@@ -155,6 +185,7 @@ echo "╠═══════════════════════�
 printf "║  %-18s  %-38s ║\n" "Contract" "Contract ID"
 echo "╠══════════════════════════════════════════════════════════════╣"
 printf "║  %-18s  %-38s ║\n" "AssetRegistry" "$REGISTRY_ID"
+printf "║  %-18s  %-38s ║\n" "UserRegistry" "$USER_REGISTRY_ID"
 printf "║  %-18s  %-38s ║\n" "InvestManager" "$INVESTMENT_ID"
 printf "║  %-18s  %-38s ║\n" "DividendManager" "$DIVIDEND_ID"
 echo "╠══════════════════════════════════════════════════════════════╣"

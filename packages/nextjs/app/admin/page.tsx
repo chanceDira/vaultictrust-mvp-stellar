@@ -9,7 +9,9 @@ import {
   ClockIcon,
   CubeTransparentIcon,
   ExclamationTriangleIcon,
+  IdentificationIcon,
   ShieldCheckIcon,
+  UserGroupIcon,
   WalletIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -20,7 +22,9 @@ import {
   approveAsset,
   fetchAsset,
   fetchTotalAssets,
+  fetchUserRecord,
   getContractIds,
+  setUserStatus,
   sweepFees,
   tokenizeAsset,
 } from "~~/services/stellar/sorobanService";
@@ -32,6 +36,7 @@ import { notification } from "~~/utils/scaffold-eth";
 
 type AssetStateKey = "Pending" | "Active" | "Tokenized" | "Closed" | "Relisted";
 type OwnershipModelKey = "WholeOwnership" | "Fractional";
+type UserTab = "assets" | "compliance";
 
 interface OnChainAsset {
   asset_id: number;
@@ -64,6 +69,14 @@ const STATE_CONFIG: Record<AssetStateKey, { label: string; color: string; icon: 
   },
   Closed: { label: "Closed", color: "text-red-400 bg-red-400/10 border-red-400/20", icon: XCircleIcon },
   Relisted: { label: "Relisted", color: "text-blue-400 bg-blue-400/10 border-blue-400/20", icon: ArrowPathIcon },
+};
+
+const KYC_CONFIG: Record<number, { label: string; color: string }> = {
+  0: { label: "None", color: "text-base-content/40 bg-base-300/20" },
+  1: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10" },
+  2: { label: "Verified", color: "text-emerald-400 bg-emerald-400/10" },
+  3: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
+  4: { label: "Suspended", color: "text-orange-400 bg-orange-400/10" },
 };
 
 // ---------------------------------------------------------------------------
@@ -297,12 +310,19 @@ function AssetRow({
 
 export default function AdminPage() {
   const { isConnected, publicKey } = useStellarWallet();
+  const [activeTab, setActiveTab] = useState<UserTab>("assets");
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [tokenizeTarget, setTokenizeTarget] = useState<OnChainAsset | null>(null);
   const [isSweeping, setIsSweeping] = useState(false);
   const [filter, setFilter] = useState<AssetStateKey | "All">("All");
+
+  // KYC States
+  const [kycSearchAddr, setKycSearchAddr] = useState("");
+  const [foundUser, setFoundUser] = useState<any>(null);
+  const [isSearchingUser, setIsSearchingUser] = useState(false);
+  const [isUpdatingKyc, setIsUpdatingKyc] = useState(false);
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -356,6 +376,40 @@ export default function AdminPage() {
       notification.error(`Sweep failed: ${e.message}`);
     } finally {
       setIsSweeping(false);
+      notification.remove(notifId);
+    }
+  };
+
+  const handleSearchUser = async () => {
+    if (!kycSearchAddr) return;
+    setIsSearchingUser(true);
+    try {
+      const user = await fetchUserRecord(kycSearchAddr);
+      if (user && user.address !== "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF") {
+        setFoundUser(user);
+      } else {
+        notification.error("User not found or never registered");
+        setFoundUser(null);
+      }
+    } catch {
+      notification.error("Invalid address or RPC error");
+    } finally {
+      setIsSearchingUser(false);
+    }
+  };
+
+  const handleUpdateKyc = async (status: number) => {
+    if (!publicKey || !foundUser) return;
+    setIsUpdatingKyc(true);
+    const notifId = notification.loading("Updating KYC status on-chain...");
+    try {
+      await setUserStatus(foundUser.address, status, publicKey);
+      notification.success("KYC Status updated!");
+      await handleSearchUser(); // refresh
+    } catch (e: any) {
+      notification.error(`Update failed: ${e.message}`);
+    } finally {
+      setIsUpdatingKyc(false);
       notification.remove(notifId);
     }
   };
@@ -443,69 +497,212 @@ export default function AdminPage() {
               })}
             </div>
 
-            {/* Actions Row */}
-            <div className="flex flex-wrap gap-3 mb-6">
-              <button className="btn btn-outline btn-sm gap-2" onClick={loadAssets} disabled={isLoading}>
-                <ArrowPathIcon className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                Refresh
+            {/* Tabs */}
+            <div className="flex border-b border-base-300 mb-6 gap-6">
+              <button
+                className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
+                  activeTab === "assets"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-base-content/40 hover:text-base-content/60"
+                }`}
+                onClick={() => setActiveTab("assets")}
+              >
+                Asset Management
               </button>
-
-              <button className="btn btn-warning btn-sm gap-2" onClick={handleSweepFees} disabled={isSweeping}>
-                {isSweeping ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  <BanknotesIcon className="h-4 w-4" />
-                )}
-                Sweep Protocol Fees
+              <button
+                className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
+                  activeTab === "compliance"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-base-content/40 hover:text-base-content/60"
+                }`}
+                onClick={() => setActiveTab("compliance")}
+              >
+                Compliance &amp; Users
               </button>
-
-              <div className="ml-auto">
-                <span className="text-xs text-base-content/40 font-mono">
-                  Registry:{" "}
-                  <span className="text-primary">
-                    {contracts.registry ? shortenStellarAddress(contracts.registry, 6) : "–"}
-                  </span>
-                </span>
-              </div>
             </div>
 
-            {/* Filter label */}
-            {filter !== "All" && (
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm text-base-content/60">Showing:</span>
-                <span className={`text-sm font-bold ${STATE_CONFIG[filter].color.split(" ")[0]}`}>{filter}</span>
-                <button
-                  className="text-xs underline text-base-content/40 hover:text-primary"
-                  onClick={() => setFilter("All")}
-                >
-                  Clear
-                </button>
-              </div>
-            )}
+            {activeTab === "assets" ? (
+              <>
+                {/* Actions Row */}
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <button className="btn btn-outline btn-sm gap-2" onClick={loadAssets} disabled={isLoading}>
+                    <ArrowPathIcon className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    Refresh
+                  </button>
 
-            {/* Asset List */}
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <span className="loading loading-dots loading-lg text-primary" />
-              </div>
-            ) : filteredAssets.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-base-300 p-10 text-center">
-                <ChartBarIcon className="h-10 w-10 text-base-content/20 mx-auto mb-3" />
-                <p className="font-bold text-base-content/50">
-                  {filter === "All" ? "No assets registered yet." : `No ${filter} assets.`}
-                </p>
-              </div>
+                  <button className="btn btn-warning btn-sm gap-2" onClick={handleSweepFees} disabled={isSweeping}>
+                    {isSweeping ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      <BanknotesIcon className="h-4 w-4" />
+                    )}
+                    Sweep Protocol Fees
+                  </button>
+
+                  <div className="ml-auto">
+                    <span className="text-xs text-base-content/40 font-mono">
+                      Registry:{" "}
+                      <span className="text-primary">
+                        {contracts.registry ? shortenStellarAddress(contracts.registry, 6) : "–"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filter label */}
+                {filter !== "All" && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-sm text-base-content/60">Showing:</span>
+                    <span className={`text-sm font-bold ${STATE_CONFIG[filter].color.split(" ")[0]}`}>{filter}</span>
+                    <button
+                      className="text-xs underline text-base-content/40 hover:text-primary"
+                      onClick={() => setFilter("All")}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                {/* Asset List */}
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <span className="loading loading-dots loading-lg text-primary" />
+                  </div>
+                ) : filteredAssets.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-base-300 p-10 text-center">
+                    <ChartBarIcon className="h-10 w-10 text-base-content/20 mx-auto mb-3" />
+                    <p className="font-bold text-base-content/50">
+                      {filter === "All" ? "No assets registered yet." : `No ${filter} assets.`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredAssets.map(asset => (
+                      <AssetRow
+                        key={asset.asset_id}
+                        asset={asset}
+                        onApprove={handleApprove}
+                        onTokenize={setTokenizeTarget}
+                        isApproving={approvingId === asset.asset_id}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="space-y-3">
-                {filteredAssets.map(asset => (
-                  <AssetRow
-                    key={asset.asset_id}
-                    asset={asset}
-                    onApprove={handleApprove}
-                    onTokenize={setTokenizeTarget}
-                    isApproving={approvingId === asset.asset_id}
-                  />
-                ))}
+              <div className="space-y-6">
+                {/* KYC Management */}
+                <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <IdentificationIcon className="h-6 w-6 text-primary" />
+                    <h2 className="text-xl font-bold">User KYC Management</h2>
+                  </div>
+                  <p className="text-sm text-base-content/60 mb-6">
+                    Search for a user by their Stellar public key to review or update their compliance status.
+                  </p>
+
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder="Enter user address (G...)"
+                      className="input input-bordered grow font-mono text-sm"
+                      value={kycSearchAddr}
+                      onChange={e => setKycSearchAddr(e.target.value)}
+                    />
+                    <button className="btn btn-primary" onClick={handleSearchUser} disabled={isSearchingUser}>
+                      {isSearchingUser ? <span className="loading loading-spinner loading-xs" /> : "Lookup"}
+                    </button>
+                  </div>
+
+                  {foundUser && (
+                    <div className="mt-8 p-6 rounded-xl bg-base-200/50 border border-base-300 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-1">
+                            User Address
+                          </p>
+                          <p className="font-mono text-sm break-all">{foundUser.address}</p>
+
+                          <div className="mt-4 flex items-center gap-4">
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-1">
+                                Current Status
+                              </p>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-bold border ${KYC_CONFIG[foundUser.status]?.color}`}
+                              >
+                                {KYC_CONFIG[foundUser.status]?.label ?? "Unknown"}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-1">
+                                Last Updated
+                              </p>
+                              <p className="text-sm">
+                                {new Date(Number(foundUser.updated_at) * 1000).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          {foundUser.metadata_uri && (
+                            <div className="mt-4">
+                              <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-1">
+                                Identity Metadata
+                              </p>
+                              <a
+                                href={foundUser.metadata_uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-primary underline"
+                              >
+                                {foundUser.metadata_uri}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-2 shrink-0 sm:w-48">
+                          <button
+                            className="btn btn-success btn-sm w-full"
+                            onClick={() => handleUpdateKyc(2)}
+                            disabled={isUpdatingKyc || foundUser.status === 2}
+                          >
+                            Verify User
+                          </button>
+                          <button
+                            className="btn btn-warning btn-sm w-full"
+                            onClick={() => handleUpdateKyc(4)}
+                            disabled={isUpdatingKyc || foundUser.status === 4}
+                          >
+                            Suspend User
+                          </button>
+                          <button
+                            className="btn btn-error btn-outline btn-sm w-full"
+                            onClick={() => handleUpdateKyc(3)}
+                            disabled={isUpdatingKyc || foundUser.status === 3}
+                          >
+                            Reject KYC
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info Card */}
+                <div className="rounded-xl bg-primary/5 border border-primary/10 p-6">
+                  <div className="flex gap-4">
+                    <UserGroupIcon className="h-6 w-6 text-primary shrink-0" />
+                    <div>
+                      <h3 className="font-bold text-primary mb-1">Hybrid KYC Architecture</h3>
+                      <p className="text-sm text-base-content/70">
+                        This system uses an on-chain registry to store compliance flags. Privacy is maintained by
+                        keeping PII off-chain, while the Soroban contracts can atomically enforce investment gating
+                        using these flags.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </>
