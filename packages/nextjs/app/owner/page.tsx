@@ -316,30 +316,30 @@ export default function OwnerPage() {
                           <div className="flex gap-2 mt-2">
                             <span
                               className={`badge badge-sm font-bold uppercase tracking-widest ${
-                                asset.state.tag === "Pending"
+                                (asset.state?.tag || asset.state) === "Pending"
                                   ? "badge-warning"
-                                  : asset.state.tag === "Active"
+                                  : (asset.state?.tag || asset.state) === "Active"
                                     ? "badge-success"
                                     : "badge-primary"
                               }`}
                             >
-                              {asset.state.tag}
+                              {asset.state?.tag || asset.state}
                             </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex gap-2 shrink-0">
-                        {asset.state.tag === "Pending" && (
+                        {(asset.state?.tag || asset.state) === "Pending" && (
                           <div className="alert alert-warning py-2 text-[10px] font-bold uppercase tracking-widest border-warning/20 bg-warning/5 rounded-xl">
                             Waiting for Admin Approval
                           </div>
                         )}
-                        {asset.state.tag === "Active" && (
+                        {(asset.state?.tag || asset.state) === "Active" && (
                           <div className="alert alert-success py-2 text-[10px] font-bold uppercase tracking-widest border-success/20 bg-success/5 rounded-xl">
                             Ready for Tokenization
                           </div>
                         )}
-                        {asset.state.tag === "Tokenized" && (
+                        {(asset.state?.tag || asset.state) === "Tokenized" && (
                           <Link href="/marketplace" className="btn btn-primary btn-outline btn-sm gap-2 rounded-xl">
                             View in Marketplace <ArrowRightIcon className="h-3 w-3" />
                           </Link>

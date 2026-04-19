@@ -12,10 +12,10 @@ The full ecosystem is currently deployed and operational on the Stellar Testnet.
 
 | Contract | Role | Contract ID (Soroban) |
 | :--- | :--- | :--- |
-| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CCOFPXLUGK5ADR4DBDVV7U3AUF72BU22KZ7SGMITFF4MWALM45GYPXPG` |
-| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CDYF6SNZP5ZHZ3NJOCIIFQIDMXTCPHPYURVJW5AV5KJJY5T5E4JDV5EJ` |
-| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CCSSZHDFOCBSOX6SYWHAGDXS73ZOCIK4J4AVWGE3ION76TJEBBBURCDA` |
-| **VaulticDividendManager** | Yield/Dividend Distribution | `CAXZKF5EKNVSO533QR2BOL5B3VXOZ2BR4F6BI2CV5ILTZI7TLBY2ZWHM` |
+| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CDGNWRTPYNRIPE5T7OXDDTR75UBTDGRJL4WFA77N5YHIXFUHVTJLDUQB` |
+| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CA55GXQHWV25WIK2672ORMAUNO6RKKRWMBDQDRBCVVJSHDS5PPJDYCY2` |
+| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CAUVFRAURDHU3RAUFIEZBTMFW2ZFNS5YWR4O3NF67PHF37J5IQ6OGCUO` |
+| **VaulticDividendManager** | Yield/Dividend Distribution | `CATOYWJPPFGPXZ5RS3ELPJLGUXW4JEDWPSWTTYAKHQDF6RN2BEWEF2OC` |
 
 ---
 
@@ -61,14 +61,30 @@ Clone the repository and install dependencies:
 yarn install
 ```
 
-### 3. Deploying Contracts (Development/Testnet)
-Deploy the full suite to Stellar Testnet using the optimized orchestrator:
+### 3. Detailed Deployment Steps (CLI)
+For a fresh ecosystem bootstrap, follow these commands:
+
 ```bash
-cd packages/soroban-contracts
-chmod +x deploy-testnet.sh
-./deploy-testnet.sh
+# 1. Generate a local deployment key (alias: deployer)
+stellar keys generate deployer --network testnet
+
+# 2. Fund the deployer account with testnet XLM
+stellar keys fund deployer --network testnet
+
+# 3. Build optimized WASM binaries for the contracts
+stellar contract build --package vaultic-user-registry --optimize
+
+# 4. Deploy the WASM binary to the network to get a Contract ID
+stellar contract deploy --wasm target/wasm32v1-none/release/vaultic_user_registry.wasm --source deployer --network testnet
+
+# 5. Initialize the contract with your Admin Address
+stellar contract invoke --id [ID] --source deployer --network testnet -- initialize --admin [YOUR_ADDRESS]
 ```
-*Note: This script handles WASM optimization, deployment, and automatic update of the frontend configuration.*
+
+*Note: You can automate this entire process using our orchestrated script:*
+```bash
+cd packages/soroban-contracts && ./deploy-testnet.sh
+```
 
 ### 4. Start Frontend
 ```bash
