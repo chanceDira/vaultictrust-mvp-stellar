@@ -163,6 +163,45 @@ async function simulateReadCall({
 // AssetRegistry — Read functions
 // ---------------------------------------------------------------------------
 
+function normalizeAssetRecord(rawAsset: any) {
+  if (!rawAsset) return null;
+
+  const states = ["Pending", "Active", "Tokenized", "Closed", "Relisted"];
+  const models = ["WholeOwnership", "Fractional"];
+
+  let stateTag = rawAsset.state;
+  if (typeof stateTag === "number") {
+    stateTag = states[stateTag] || "Pending";
+  }
+
+  let modelTag = rawAsset.model;
+  if (typeof modelTag === "number") {
+    modelTag = models[modelTag] || "WholeOwnership";
+  }
+
+  return {
+    ...rawAsset,
+    state: typeof rawAsset.state === "object" ? rawAsset.state : { ...rawAsset.state, tag: stateTag },
+    model: typeof rawAsset.model === "object" ? rawAsset.model : { ...rawAsset.model, tag: modelTag },
+  };
+}
+
+function normalizeKycRecord(rawRecord: any) {
+  if (!rawRecord) return null;
+
+  const statuses = ["None", "Pending", "Verified", "Rejected", "Suspended"];
+
+  let statusTag = rawRecord.status;
+  if (typeof statusTag === "number") {
+    statusTag = statuses[statusTag] || "None";
+  }
+
+  return {
+    ...rawRecord,
+    status: typeof rawRecord.status === "object" ? rawRecord.status : { ...rawRecord.status, tag: statusTag },
+  };
+}
+
 export async function fetchTotalAssets(): Promise<number> {
   const { registry } = getContractIds();
   if (!registry) return 0;
@@ -184,7 +223,7 @@ export async function fetchAsset(assetId: number): Promise<any> {
     method: "get_asset",
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
-  return result ? scValToNative(result) : null;
+  return result ? normalizeAssetRecord(scValToNative(result)) : null;
 }
 
 export async function fetchAssetsByOwner(ownerAddress: string): Promise<number[]> {
@@ -254,7 +293,7 @@ export async function registerAsset(
       nativeToScVal(params.assetCode, { type: "string" }),
       nativeToScVal(params.metadataUri, { type: "string" }),
       nativeToScVal(params.valuation, { type: "i128" }),
-      nativeToScVal(params.model, { type: "symbol" }),
+      nativeToScVal(params.model === "Fractional" ? 1 : 0, { type: "u32" }),
     ],
     callerPublicKey,
   });
@@ -480,7 +519,7 @@ export async function fetchUserRecord(userAddress: string): Promise<any> {
     method: "get_user",
     args: [new Address(userAddress).toScVal()],
   });
-  return result ? scValToNative(result) : null;
+  return result ? normalizeKycRecord(scValToNative(result)) : null;
 }
 
 export async function isVerified(userAddress: string): Promise<boolean> {
