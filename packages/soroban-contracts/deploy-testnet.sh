@@ -138,9 +138,9 @@ echo "   ✓ DividendManager initialized."
 echo ""
 echo "▶ Step 8: Updating scaffold.config.ts with deployed contract IDs..."
 sed -i.bak \
-  -e "s|VaulticAssetRegistry: null.*// TODO: deploy Soroban contract|VaulticAssetRegistry: \"$REGISTRY_ID\",|g" \
-  -e "s|VaulticInvestmentManager: null.*// TODO: deploy Soroban contract|VaulticInvestmentManager: \"$INVESTMENT_ID\",|g" \
-  -e "s|VaulticFractionalOwnershipToken: null.*// TODO: deploy Soroban contract|VaulticDividendManager: \"$DIVIDEND_ID\",|g" \
+  -e "s|VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh|VaulticAssetRegistry: \"$REGISTRY_ID\",|g" \
+  -e "s|VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh|VaulticInvestmentManager: \"$INVESTMENT_ID\",|g" \
+  -e "s|VaulticDividendManager: null, // TODO: run deploy-testnet.sh|VaulticDividendManager: \"$DIVIDEND_ID\",|g" \
   "$CONFIG_TS"
 
 echo "   ✓ scaffold.config.ts updated."
