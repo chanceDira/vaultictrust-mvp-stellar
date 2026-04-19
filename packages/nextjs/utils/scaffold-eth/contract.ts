@@ -14,18 +14,17 @@ export const ContractCodeStatusEnum = { LOADING: "LOADING", DEPLOYED: "DEPLOYED"
 export type AllowedChainIds = string | number;
 
 // Stubs for types referenced by dead-code hooks
-export type AbiFunctionInputs<_A, _F extends string> = readonly unknown[];
-export type AbiFunctionArguments<_A, _F extends string> = readonly unknown[];
-export type AbiFunctionOutputs<_A, _F extends string> = readonly unknown[];
-export type AbiFunctionReturnType<_A, _F extends string> = unknown;
-export type ContractAbi<_T extends ContractName = ContractName> = unknown[];
+export type AbiFunctionInputs = readonly unknown[];
+export type AbiFunctionArguments = readonly unknown[];
+export type AbiFunctionOutputs = readonly unknown[];
+export type AbiFunctionReturnType = unknown;
+export type ContractAbi = unknown[];
 export type UseDeployedContractConfig<T extends ContractName> = { contractName: T; chainId?: AllowedChainIds };
 
 export const contracts: GenericContractsDeclaration | null = null;
 
-export const getParsedErrorWithAllAbis = (error: unknown, _chainId: AllowedChainIds): string =>
-  String(error);
+export const getParsedErrorWithAllAbis = (error: unknown): string => String(error);
 
-export const simulateContractWriteAndNotifyError = async (_params: unknown): Promise<void> => {
+export const simulateContractWriteAndNotifyError = async (): Promise<void> => {
   // no-op stub
 };

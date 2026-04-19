@@ -1,6 +1,9 @@
 # dependencies
 node_modules
 
+# env
+.env.*
+
 # yarn
 .yarn/*
 !.yarn/patches
