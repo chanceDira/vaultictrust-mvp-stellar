@@ -9,7 +9,6 @@ use soroban_sdk::{
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u32)]
 pub enum AssetState {
     Pending = 0,
     Active = 1,
@@ -20,7 +19,6 @@ pub enum AssetState {
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u32)]
 pub enum OwnershipModel {
     WholeOwnership = 0,
     Fractional = 1,

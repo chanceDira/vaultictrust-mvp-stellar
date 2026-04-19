@@ -1,0 +1,9 @@
+/Users/0xjonaseb11/Documents/COLLABORATION/VAULTIC-STELLAR/packages/soroban-contracts/target/debug/deps/ark_serialize-3d0186b6b600f8bc.d: /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/lib.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/error.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/flags.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/impls.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/../README.md
+
+/Users/0xjonaseb11/Documents/COLLABORATION/VAULTIC-STELLAR/packages/soroban-contracts/target/debug/deps/libark_serialize-3d0186b6b600f8bc.rmeta: /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/lib.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/error.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/flags.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/impls.rs /Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/../README.md
+
+/Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/lib.rs:
+/Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/error.rs:
+/Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/flags.rs:
+/Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/impls.rs:
+/Users/0xjonaseb11/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ark-serialize-0.4.2/src/../README.md:
