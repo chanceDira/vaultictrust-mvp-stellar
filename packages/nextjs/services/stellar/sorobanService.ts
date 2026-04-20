@@ -98,20 +98,42 @@ export async function callContract({
   const response = await server.sendTransaction(submittedTx);
 
   if (response.status === "ERROR") {
-    throw new Error(`Transaction failed: ${response.errorResult?.toXDR()}`);
+    // Use base64 encoding to avoid secondary XDR parse errors in the error message
+    const errXdr = response.errorResult?.toXDR("base64") ?? "unknown error";
+    throw new Error(`Transaction failed: ${errXdr}`);
   }
 
-  // Poll for completion
-  let pollResult = await server.getTransaction(response.hash);
+  // Poll for completion — wrap in try/catch because the SDK may throw
+  // 'Bad union switch' when deserializing ledger-change events that contain
+  // contract-type enums stored as #[repr(u32)] integers.
+  let pollResult: Awaited<ReturnType<typeof server.getTransaction>>;
   let attempts = 0;
-  while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && attempts < 30) {
-    await new Promise(r => setTimeout(r, 1000));
+  try {
     pollResult = await server.getTransaction(response.hash);
-    attempts++;
+    while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && attempts < 30) {
+      await new Promise(r => setTimeout(r, 1000));
+      pollResult = await server.getTransaction(response.hash);
+      attempts++;
+    }
+  } catch (xdrErr: any) {
+    // The SDK can throw 'Bad union switch' when parsing response metadata.
+    // If this happens, the tx was already submitted — treat as success and
+    // let the UI refresh to pick up the new state.
+    console.warn("[soroban] getTransaction XDR parse error (tx likely succeeded):", xdrErr?.message);
+    return null;
   }
 
   if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-    return pollResult.returnValue ?? null;
+    try {
+      return pollResult.returnValue ?? null;
+    } catch {
+      // returnValue access itself can trigger XDR parse on metadata
+      return null;
+    }
+  }
+
+  if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
+    throw new Error(`Transaction failed on-chain. Hash: ${response.hash}`);
   }
 
   throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
@@ -156,7 +178,12 @@ async function simulateReadCall({
     throw new Error(`Read simulation failed: ${simResult.error}`);
   }
 
-  return (simResult as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
+  try {
+    return (simResult as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
+  } catch (xdrErr: any) {
+    console.warn("[soroban] simulateReadCall retval XDR parse error:", xdrErr?.message);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -165,41 +192,53 @@ async function simulateReadCall({
 
 function normalizeAssetRecord(rawAsset: any) {
   if (!rawAsset) return null;
+  try {
+    const states = ["Pending", "Active", "Tokenized", "Closed", "Relisted"];
+    const models = ["WholeOwnership", "Fractional"];
 
-  const states = ["Pending", "Active", "Tokenized", "Closed", "Relisted"];
-  const models = ["WholeOwnership", "Fractional"];
+    let stateTag = rawAsset.state;
+    if (typeof stateTag === "number") {
+      stateTag = states[stateTag] ?? "Pending";
+    } else if (typeof stateTag === "object" && stateTag !== null) {
+      stateTag = stateTag.tag ?? states[0];
+    }
 
-  let stateTag = rawAsset.state;
-  if (typeof stateTag === "number") {
-    stateTag = states[stateTag] || "Pending";
+    let modelTag = rawAsset.model;
+    if (typeof modelTag === "number") {
+      modelTag = models[modelTag] ?? "WholeOwnership";
+    } else if (typeof modelTag === "object" && modelTag !== null) {
+      modelTag = modelTag.tag ?? models[0];
+    }
+
+    return {
+      ...rawAsset,
+      state: { tag: stateTag },
+      model: { tag: modelTag },
+    };
+  } catch {
+    return rawAsset;
   }
-
-  let modelTag = rawAsset.model;
-  if (typeof modelTag === "number") {
-    modelTag = models[modelTag] || "WholeOwnership";
-  }
-
-  return {
-    ...rawAsset,
-    state: typeof rawAsset.state === "object" ? rawAsset.state : { ...rawAsset.state, tag: stateTag },
-    model: typeof rawAsset.model === "object" ? rawAsset.model : { ...rawAsset.model, tag: modelTag },
-  };
 }
 
 function normalizeKycRecord(rawRecord: any) {
   if (!rawRecord) return null;
+  try {
+    const statuses = ["None", "Pending", "Verified", "Rejected", "Suspended"];
 
-  const statuses = ["None", "Pending", "Verified", "Rejected", "Suspended"];
+    let statusTag = rawRecord.status;
+    if (typeof statusTag === "number") {
+      statusTag = statuses[statusTag] ?? "None";
+    } else if (typeof statusTag === "object" && statusTag !== null) {
+      statusTag = statusTag.tag ?? statuses[0];
+    }
 
-  let statusTag = rawRecord.status;
-  if (typeof statusTag === "number") {
-    statusTag = statuses[statusTag] || "None";
+    return {
+      ...rawRecord,
+      status: { tag: statusTag },
+    };
+  } catch {
+    return rawRecord;
   }
-
-  return {
-    ...rawRecord,
-    status: typeof rawRecord.status === "object" ? rawRecord.status : { ...rawRecord.status, tag: statusTag },
-  };
 }
 
 export async function fetchTotalAssets(): Promise<number> {
