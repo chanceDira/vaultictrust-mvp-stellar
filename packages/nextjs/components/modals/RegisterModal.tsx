@@ -96,10 +96,12 @@ export function RegisterModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
         {/* Header */}
-        <div className="flex justify-between items-start p-6 pb-4 border-b border-base-300">
+        <div className="flex justify-between items-start p-8 pb-6 border-b border-base-300">
           <div>
-            <h2 className="text-xl font-bold">Register Real-World Asset</h2>
-            <p className="text-sm text-base-content/50 mt-0.5">Submit your asset for Vaultic compliance review.</p>
+            <h2 className="text-3xl font-black uppercase tracking-tighter italic">Register RWA</h2>
+            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold mt-1">
+              Submit for Compliance Review
+            </p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm ml-4 shrink-0">
             <XMarkIcon className="h-5 w-5" />
@@ -220,16 +222,18 @@ export function RegisterModal({
             </label>
             <div className="flex gap-4">
               <div
-                className={`flex-1 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                className={`flex-1 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                   model === "Fractional"
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-base-300 hover:border-base-content/20"
+                    ? "border-primary bg-primary/5 shadow-inner"
+                    : "border-base-300 hover:border-base-content/10"
                 }`}
                 onClick={() => !loading && setModel("Fractional")}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-3 h-3 rounded-full ${model === "Fractional" ? "bg-primary" : "bg-base-300"}`} />
-                  <span className="font-bold text-sm">Fractional Shares</span>
+                  <div
+                    className={`w-3 h-3 rounded-full ${model === "Fractional" ? "bg-primary shadow-[0_0_8px] shadow-primary" : "bg-base-300"}`}
+                  />
+                  <span className="font-black uppercase tracking-widest text-[10px]">Fractional</span>
                 </div>
                 <p className="text-[10px] text-base-content/50 leading-tight">
                   Asset is split into shares for multiple investors to pool funds.
@@ -237,18 +241,18 @@ export function RegisterModal({
               </div>
 
               <div
-                className={`flex-1 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                className={`flex-1 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                   model === "WholeOwnership"
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-base-300 hover:border-base-content/20"
+                    ? "border-primary bg-primary/5 shadow-inner"
+                    : "border-base-300 hover:border-base-content/10"
                 }`}
                 onClick={() => !loading && setModel("WholeOwnership")}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div
-                    className={`w-3 h-3 rounded-full ${model === "WholeOwnership" ? "bg-primary" : "bg-base-300"}`}
+                    className={`w-3 h-3 rounded-full ${model === "WholeOwnership" ? "bg-primary shadow-[0_0_8px] shadow-primary" : "bg-base-300"}`}
                   />
-                  <span className="font-bold text-sm">Whole Asset</span>
+                  <span className="font-black uppercase tracking-widest text-[10px]">Whole Asset</span>
                 </div>
                 <p className="text-[10px] text-base-content/50 leading-tight">
                   The entire asset is purchased by a single investor at full valuation.
@@ -269,12 +273,16 @@ export function RegisterModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 pt-0">
-          <button className="btn btn-ghost flex-1 rounded-xl" onClick={onClose} disabled={loading}>
+        <div className="flex gap-4 p-8 pt-4">
+          <button
+            className="btn btn-ghost flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]"
+            onClick={onClose}
+            disabled={loading}
+          >
             Cancel
           </button>
           <button
-            className="btn btn-primary flex-1 rounded-xl gap-2"
+            className="btn btn-primary flex-1 rounded-2xl gap-3 stellar-glow shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
             onClick={handleSubmit}
             disabled={loading || valuationStroops <= 0n || !name.trim() || !code.trim()}
           >
@@ -283,7 +291,7 @@ export function RegisterModal({
             ) : (
               <CheckCircleIcon className="h-5 w-5" />
             )}
-            Submit for Review
+            Register Asset
           </button>
         </div>
       </div>

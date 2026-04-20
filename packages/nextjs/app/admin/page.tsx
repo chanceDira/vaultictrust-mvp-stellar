@@ -87,7 +87,7 @@ function AssetRow({
     asset.total_shares > 0n ? Math.round((Number(asset.sold_shares) / Number(asset.total_shares)) * 100) : 0;
 
   return (
-    <div className="rounded-xl border border-base-300 bg-base-200/30 p-5 hover:border-primary/30 transition-all">
+    <div className="rounded-2xl border border-base-300 bg-base-100/50 backdrop-blur-sm p-5 hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
@@ -358,7 +358,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="flex flex-col grow bg-base-200/20 min-h-screen">
+    <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 max-w-6xl mx-auto w-full">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
@@ -418,13 +418,15 @@ export default function AdminPage() {
                   <button
                     key={state}
                     onClick={() => setFilter(filter === state ? "All" : state)}
-                    className={`rounded-xl border p-3 text-left transition-all hover:scale-[1.02] ${
-                      filter === state ? "ring-2 ring-primary" : "border-base-300 bg-base-100"
+                    className={`rounded-2xl border p-4 text-left transition-all hover:scale-[1.02] hover:shadow-lg ${
+                      filter === state
+                        ? "ring-2 ring-primary border-transparent bg-primary/5 shadow-primary/10"
+                        : "border-base-300 bg-base-100"
                     }`}
                   >
-                    <Icon className={`h-5 w-5 mb-1 ${cfg.color.split(" ")[0]}`} />
-                    <p className="text-xl font-bold">{counts[state]}</p>
-                    <p className="text-xs text-base-content/50 font-semibold uppercase tracking-widest">{state}</p>
+                    <Icon className={`h-6 w-6 mb-2 ${cfg.color.split(" ")[0]}`} />
+                    <p className="text-2xl font-black italic">{counts[state]}</p>
+                    <p className="text-[10px] text-base-content/40 font-bold uppercase tracking-[0.2em]">{state}</p>
                   </button>
                 );
               })}
@@ -525,10 +527,17 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-6">
                 {/* KYC Management */}
-                <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <IdentificationIcon className="h-6 w-6 text-primary" />
-                    <h2 className="text-xl font-bold">User KYC Management</h2>
+                <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-8 shadow-2xl shadow-primary/5">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-primary/10 rounded-2xl">
+                      <IdentificationIcon className="h-7 w-7 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black uppercase tracking-tight">Compliance Management</h2>
+                      <p className="text-xs text-base-content/40 uppercase tracking-widest font-bold">
+                        User Registry Control
+                      </p>
+                    </div>
                   </div>
                   <p className="text-sm text-base-content/60 mb-6">
                     Search for a user by their Stellar public key to review or update their compliance status.
@@ -542,8 +551,12 @@ export default function AdminPage() {
                       value={kycSearchAddr}
                       onChange={e => setKycSearchAddr(e.target.value)}
                     />
-                    <button className="btn btn-primary" onClick={handleSearchUser} disabled={isSearchingUser}>
-                      {isSearchingUser ? <span className="loading loading-spinner loading-xs" /> : "Lookup"}
+                    <button
+                      className="btn btn-primary rounded-xl px-8 shadow-lg shadow-primary/20 stellar-glow"
+                      onClick={handleSearchUser}
+                      disabled={isSearchingUser}
+                    >
+                      {isSearchingUser ? <span className="loading loading-spinner loading-xs" /> : "Lookup User"}
                     </button>
                   </div>
 

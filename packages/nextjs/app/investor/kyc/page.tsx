@@ -11,34 +11,36 @@ export default function KycPage() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col grow bg-base-200/20 min-h-screen">
+    <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 md:py-16 max-w-4xl mx-auto w-full">
         {/* Breadcrumb / Back */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-base-content/40 hover:text-primary transition-colors mb-8 group"
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/30 hover:text-primary transition-all mb-10 group"
         >
           <ChevronLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Dashboard
+          Dashboard
         </button>
 
         {!isConnected ? (
-          <div className="max-w-xl mx-auto text-center py-20 bg-base-100 rounded-3xl border border-dashed border-base-300 shadow-sm p-12">
-            <ShieldCheckIcon className="h-16 w-16 text-base-content/10 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold mb-4">Identity Verification</h1>
-            <p className="text-base-content/60 mb-8 leading-relaxed">
-              Please connect your Stellar wallet (Freighter) to begin the verification process. Your verification status
-              will be tied to your public key.
+          <div className="max-w-xl mx-auto text-center py-20 bg-base-100/40 backdrop-blur-md rounded-[2.5rem] border border-base-300 shadow-2xl shadow-primary/5 p-12">
+            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-primary/20 shadow-inner">
+              <ShieldCheckIcon className="h-10 w-10 text-primary" />
+            </div>
+            <h1 className="text-4xl font-black uppercase tracking-tighter mb-4 italic">Verification</h1>
+            <p className="text-sm text-base-content/60 mb-10 leading-relaxed max-w-sm mx-auto">
+              Please connect your Stellar wallet (Freighter) to initiate the institutional-grade verification process.
             </p>
             <StellarConnectButton />
           </div>
         ) : (
           <div className="animate-in fade-in zoom-in-95 duration-700">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold tracking-tight mb-4">Compliance Center</h1>
-              <p className="text-base-content/50 max-w-lg mx-auto leading-relaxed">
-                Vaultic Trust implements institutional-grade KYC protocols to ensure all Real-World Asset tokenization
-                remains compliant with regional regulations.
+            <div className="text-center mb-16">
+              <h1 className="text-5xl font-black tracking-tighter mb-4 uppercase">
+                Compliance <span className="text-primary italic">Center</span>
+              </h1>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-base-content/30 max-w-lg mx-auto leading-relaxed">
+                Vaultic implements institutional-grade KYC protocols for compliant RWA tokenization.
               </p>
             </div>
 

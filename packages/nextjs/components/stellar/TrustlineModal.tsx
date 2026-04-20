@@ -76,35 +76,41 @@ export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, 
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box relative bg-base-100 border border-base-300 shadow-2xl">
-        <button onClick={onClose} className="btn btn-sm btn-circle absolute right-2 top-2">
+    <div className="modal modal-open backdrop-blur-sm bg-black/60">
+      <div className="modal-box relative bg-base-100/80 backdrop-blur-md border border-base-300 shadow-2xl rounded-3xl p-8 max-w-md">
+        <button
+          onClick={onClose}
+          className="btn btn-sm btn-circle absolute right-4 top-4 hover:rotate-90 transition-transform"
+        >
           ✕
         </button>
 
         <div className="flex flex-col items-center text-center p-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 border border-primary/20 shadow-inner">
             {renderStatusIcon()}
           </div>
 
-          <h3 className="text-xl font-bold text-base-content uppercase tracking-tight">
-            {checking ? "Checking Compliance..." : hasTrustline ? "Trustline Verified" : "Establish Trustline"}
+          <h3 className="text-3xl font-black text-base-content uppercase tracking-tighter italic">
+            {checking ? "Verifying..." : hasTrustline ? "Verified" : "Trustline"}
           </h3>
 
           <p className="py-4 text-sm text-base-content/70">{renderStatusText()}</p>
 
           {!checking && !hasTrustline && (
-            <div className="flex flex-col w-full gap-3 mt-4">
+            <div className="flex flex-col w-full gap-4 mt-6">
               <button
                 onClick={handleAddTrustline}
-                className={`btn btn-primary w-full gap-2 ${busy ? "loading" : ""}`}
+                className={`btn btn-primary btn-lg w-full gap-3 stellar-glow shadow-lg shadow-primary/20 rounded-2xl font-black uppercase tracking-widest text-xs ${busy ? "loading" : ""}`}
                 disabled={busy}
               >
-                {busy ? "Signing..." : "Establish Trustline"}
-                {!busy && <ShieldCheckIcon className="h-4 w-4" />}
+                {busy ? "Authenticating..." : "Approve Trustline"}
+                {!busy && <ShieldCheckIcon className="h-5 w-5" />}
               </button>
-              <button onClick={onClose} className="btn btn-ghost btn-sm">
-                Cancel
+              <button
+                onClick={onClose}
+                className="btn btn-ghost btn-md font-bold uppercase tracking-widest text-[10px] opacity-50 hover:opacity-100"
+              >
+                Decline
               </button>
             </div>
           )}
