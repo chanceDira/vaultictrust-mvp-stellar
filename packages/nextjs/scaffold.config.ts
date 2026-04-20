@@ -76,7 +76,7 @@ export const deployedSorobanContracts: Partial<Record<StellarNetworkId, Deployed
 
 export const PROTOCOL_METADATA = {
   // Vaultic Organization identity for PII encryption (Curve25519 target)
-  VAULTIC_ORG_PUBLIC_KEY: "GCL3YKO5Z2T2TUYLMQKQLWHRQIXCNBHBQDSEQ7IY2AGVJENDJDWFALG5",
+  VAULTIC_ORG_PUBLIC_KEY: "GBFUEPUJ5JVBI7ZMFUE4MPVDACCWOOSOV4XSGMOO7Q6H7LAD7UPIXRA7",
   ENCRYPTION_SCHEME: "AES-GCM-256 / NaCl Box",
 };
 
