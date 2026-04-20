@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
   BanknotesIcon,
   ChartBarIcon,
   CheckCircleIcon,
@@ -11,7 +13,6 @@ import {
   CubeTransparentIcon,
   ExclamationTriangleIcon,
   IdentificationIcon,
-  ShieldCheckIcon,
   UserGroupIcon,
   WalletIcon,
   XCircleIcon,
@@ -19,7 +20,7 @@ import {
 import { TokenizeModal } from "~~/components/modals/TokenizeModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { ADMIN_ADDRESSES } from "~~/scaffold.config";
+import { ADMIN_ADDRESSES, PROTOCOL_METADATA } from "~~/scaffold.config";
 import { decryptFileAsAdmin } from "~~/services/stellar/cryptoService";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
@@ -38,10 +39,6 @@ import {
 import { AssetStateKey, OnChainAsset, UserTab } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const STATE_CONFIG: Record<AssetStateKey, { label: string; color: string; icon: React.ElementType }> = {
   Pending: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20", icon: ClockIcon },
   Active: { label: "Active", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20", icon: CheckCircleIcon },
@@ -55,23 +52,12 @@ const STATE_CONFIG: Record<AssetStateKey, { label: string; color: string; icon: 
 };
 
 const KYC_CONFIG: Record<string | number, { label: string; color: string }> = {
-  // Legacy integer mapping
-  0: { label: "None", color: "text-base-content/40 bg-base-300/20" },
-  1: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10" },
-  2: { label: "Verified", color: "text-emerald-400 bg-emerald-400/10" },
-  3: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
-  4: { label: "Suspended", color: "text-orange-400 bg-orange-400/10" },
-  // String-based Symbol mapping (Soroban native)
   None: { label: "None", color: "text-base-content/40 bg-base-300/20" },
   Pending: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10" },
   Verified: { label: "Verified", color: "text-emerald-400 bg-emerald-400/10" },
   Rejected: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
   Suspended: { label: "Suspended", color: "text-orange-400 bg-orange-400/10" },
 };
-
-// ---------------------------------------------------------------------------
-// Asset Row
-// ---------------------------------------------------------------------------
 
 function AssetRow({
   asset,
@@ -180,8 +166,6 @@ function AssetRow({
   );
 }
 
-// --- Sub-components for Admin UI ---
-
 function NotAuthorized() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-base-200/30 rounded-3xl border border-dashed border-base-content/10 mx-4">
@@ -213,15 +197,10 @@ function NotAuthorized() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main Admin Page
-// ---------------------------------------------------------------------------
-
 export default function AdminPage() {
   const { isConnected, publicKey } = useStellarWallet();
   const [activeTab, setActiveTab] = useState<UserTab>("assets");
 
-  // Guard Check
   const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
 
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
@@ -236,7 +215,6 @@ export default function AdminPage() {
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [totalPlatformAssets, setTotalPlatformAssets] = useState<number>(0);
 
-  // KYC States
   const [kycSearchAddr, setKycSearchAddr] = useState("");
   const [foundUser, setFoundUser] = useState<any>(null);
   const [isSearchingUser, setIsSearchingUser] = useState(false);
@@ -256,9 +234,7 @@ export default function AdminPage() {
         const asset = await fetchAsset(i);
         if (asset) items.push(asset);
       }
-      setAssets([...items].reverse()); // newest first
-    } catch (error: any) {
-      console.error("Failed to load assets:", error);
+      setAssets([...items].reverse());
     } finally {
       setIsLoading(false);
     }
@@ -267,12 +243,9 @@ export default function AdminPage() {
   const loadKycSubmissions = useCallback(async () => {
     setIsLoadingKycApps(true);
     try {
-      // 1. Get event-based submissions (fast, recent)
-      const eventApps = await fetchKycSubmissions();
-      // 2. Get registry-based submissions (robust, persistent)
       const registryApps = await fetchAllUserAddresses();
+      const eventApps = await fetchKycSubmissions();
 
-      // Merge and deduplicate
       const merged = Array.from(new Set([...eventApps, ...registryApps]));
       setKycApplications(merged);
     } catch (error) {
@@ -318,8 +291,20 @@ export default function AdminPage() {
     setApprovingId(assetId);
     const notifId = notification.loading("Approving asset on-chain...");
     try {
-      await approveAsset(assetId, publicKey);
-      notification.success("Asset approved! Status → Active");
+      const { hash } = await approveAsset(assetId, publicKey);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">Asset approved! Status → Active</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
       await loadAssets();
     } catch (err: any) {
       notification.error(`Approval failed: ${err.message || "Unknown error"}`);
@@ -334,8 +319,20 @@ export default function AdminPage() {
     setIsSweeping(true);
     const notifId = notification.loading("Sweeping protocol fees to treasury...");
     try {
-      await sweepFees(publicKey);
-      notification.success("Protocol fees swept to treasury.");
+      const { hash } = await sweepFees(publicKey);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">Protocol fees swept to treasury</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
     } catch (err: any) {
       notification.error(`Sweep failed: ${err.message || "Unknown error"}`);
     } finally {
@@ -367,9 +364,21 @@ export default function AdminPage() {
     setIsUpdatingKyc(true);
     const notifId = notification.loading("Updating KYC status on-chain...");
     try {
-      await setUserStatus(foundUser.address, status, publicKey);
-      notification.success("KYC Status updated!");
-      await handleSearchUser(); // refresh
+      const { hash } = await setUserStatus(foundUser.address, status, publicKey);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">KYC Status updated!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
+      await handleSearchUser();
     } catch (err: any) {
       notification.error(`Update failed: ${err.message || "Unknown error"}`);
     } finally {
@@ -386,15 +395,32 @@ export default function AdminPage() {
     setIsDecrypting(true);
     const notifId = notification.loading("Decrypting document via Vaultic Org Key...");
     try {
-      // 1. Fetch encrypted JSON from IPFS
-      const cid = foundUser.metadata_uri.replace("ipfs://", "");
-      const response = await fetch(`https://gateway.pinata.cloud/ipfs/${cid}`);
-      const encryptedData = await response.json();
+      const cid = foundUser.metadata_uri;
+      const cidClean = cid.replace("ipfs://", "");
+      let encryptedData;
 
-      // 2. Decrypt
+      try {
+        const gatewayUrl = `https://ipfs.io/ipfs/${cidClean}`;
+        const response = await fetch(gatewayUrl);
+
+        if (!response.ok) {
+          throw new Error(`Gateway returned ${response.status}`);
+        }
+        encryptedData = await response.json();
+      } catch {
+        const mockKey = `vltc_mock_${cid}`;
+        const mockData = localStorage.getItem(mockKey);
+
+        if (mockData) {
+          console.warn("[ADMIN] IPFS Fetch failed, loading from local mock cache:", mockKey);
+          encryptedData = JSON.parse(mockData);
+        } else {
+          throw new Error("Unable to retrieve encrypted document from IPFS or local cache. Ensure the file is pinned.");
+        }
+      }
+
       const decryptedBuffer = await decryptFileAsAdmin(encryptedData, adminOrgKey);
 
-      // 3. Create blob URL
       const blob = new Blob([decryptedBuffer], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
       setDecryptedFileUrl(url);
@@ -420,11 +446,8 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 max-w-6xl mx-auto w-full">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <ShieldCheckIcon className="h-5 w-5 text-primary" />
-          </div>
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"></div>
           <div>
             <h1 className="text-2xl font-bold uppercase tracking-tight">Admin Dashboard</h1>
             <p className="text-xs text-base-content/50 uppercase tracking-widest">
@@ -437,7 +460,6 @@ export default function AdminPage() {
           wallets.
         </p>
 
-        {/* Not connected */}
         {!isConnected && (
           <div className="rounded-2xl border border-dashed border-base-300 p-8 text-center bg-base-100 mb-6">
             <WalletIcon className="h-12 w-12 text-base-content/20 mx-auto mb-3" />
@@ -449,7 +471,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Contracts not deployed */}
         {isConnected && !isDeployed && (
           <div className="alert alert-warning mb-6">
             <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
@@ -469,7 +490,6 @@ export default function AdminPage() {
 
         {isConnected && isDeployed && (
           <>
-            {/* Platform Oversight Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="stats shadow-2xl bg-base-100 border border-base-300">
                 <div className="stat">
@@ -507,7 +527,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Asset State Filter Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
               {(Object.keys(STATE_CONFIG) as AssetStateKey[]).map(state => {
                 const cfg = STATE_CONFIG[state];
@@ -530,7 +549,6 @@ export default function AdminPage() {
               })}
             </div>
 
-            {/* Tabs */}
             <div className="flex border-b border-base-300 mb-6 gap-6">
               <button
                 className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
@@ -556,7 +574,6 @@ export default function AdminPage() {
 
             {activeTab === "assets" ? (
               <>
-                {/* Actions Row */}
                 <div className="flex flex-wrap gap-3 mb-6">
                   <button className="btn btn-outline btn-sm gap-2" onClick={loadAssets} disabled={isLoading}>
                     <ArrowPathIcon className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -582,7 +599,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Filter label */}
                 {filter !== "All" && (
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-sm text-base-content/60">Showing:</span>
@@ -596,7 +612,6 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* Asset List */}
                 {isLoading ? (
                   <div className="flex items-center justify-center py-16">
                     <span className="loading loading-dots loading-lg text-primary" />
@@ -624,7 +639,6 @@ export default function AdminPage() {
               </>
             ) : (
               <div className="space-y-6">
-                {/* KYC Management */}
                 <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-8 shadow-2xl shadow-primary/5">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="p-3 bg-primary/10 rounded-2xl">
@@ -733,21 +747,20 @@ export default function AdminPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="mt-2 text-center">
-                                    <div className="relative group">
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={decryptedFileUrl}
-                                        alt="Decrypted ID"
-                                        className="max-h-64 rounded-lg mx-auto shadow-xl border-2 border-primary/30"
-                                      />
-                                      <button
-                                        className="btn btn-circle btn-xs absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => setDecryptedFileUrl(null)}
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
+                                  <div className="mt-2 text-center relative group">
+                                    <Image
+                                      src={decryptedFileUrl}
+                                      alt="Decrypted ID"
+                                      width={500}
+                                      height={300}
+                                      className="max-h-64 rounded-lg mx-auto shadow-xl border-2 border-primary/30"
+                                    />
+                                    <button
+                                      className="btn btn-circle btn-xs absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={() => setDecryptedFileUrl(null)}
+                                    >
+                                      ✕
+                                    </button>
                                     <p className="text-[10px] text-success mt-2 font-bold uppercase tracking-[0.2em]">
                                       Decrypted Successfully
                                     </p>
@@ -894,8 +907,8 @@ export default function AdminPage() {
       {/* Tokenize Modal */}
       {tokenizeTarget && publicKey && (
         <TokenizeModal
-          asset={tokenizeTarget}
-          publicKey={publicKey}
+          asset={tokenizeTarget!}
+          publicKey={publicKey!}
           onClose={() => setTokenizeTarget(null)}
           onSuccess={async () => {
             setTokenizeTarget(null);

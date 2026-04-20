@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import { encryptFileForAdmin } from "~~/services/stellar/cryptoService";
+import { uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { submitKyc } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -30,7 +31,6 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
   const [idFile, setIdFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper to generate a ZK-Commitment Hash using Web Crypto API
   const generateCommitment = async () => {
     const encoder = new TextEncoder();
     const secret = window.crypto.getRandomValues(new Uint8Array(16));
@@ -53,22 +53,28 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
     setIsSubmitting(true);
     const notif = notification.loading("Encrypting & Submitting KYC Proof...");
     try {
-      // 1. Encrypt File for Admin Org
       const encryptedPayload = await encryptFileForAdmin(idFile, PROTOCOL_METADATA.VAULTIC_ORG_PUBLIC_KEY);
 
-      // 2. Generate ZK-Commitment
       const commitment = await generateCommitment();
 
-      // 3. Simulated IPFS Upload (Representing the encrypted container)
-      // In a full prod environment, we would use bgipfs/web3-storage here.
-      console.log("[KYC] Encrypted Payload ready for pinning:", encryptedPayload);
+      const ipfsUri = await uploadToIpfs(encryptedPayload, `kyc_${publicKey.substring(0, 8)}.json`);
+      console.log("[KYC] Encrypted Payload pinned to IPFS:", ipfsUri);
 
-      const mockCid = `ipfs://vltc_${Math.random().toString(36).substring(2, 15)}`;
+      const { hash } = await submitKyc(ipfsUri, commitment, publicKey);
 
-      // 4. Submit to Soroban
-      await submitKyc(mockCid, commitment, publicKey);
-
-      notification.success("KYC Details Submitted Successfully!");
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">KYC Details Submitted!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            View on Explorer <RocketLaunchIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
       setStep("success");
     } catch (e: any) {
       console.error("KYC Submission Error:", e);
@@ -81,7 +87,6 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
 
   return (
     <div className="bg-base-100 rounded-3xl border border-base-300 shadow-2xl overflow-hidden max-w-xl w-full mx-auto">
-      {/* Progress Header */}
       <div className="bg-base-200/50 p-6 border-b border-base-300 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-xl">

@@ -51,7 +51,6 @@ const MAP_INT_STATUS: Record<number, KycStatus> = {
 };
 
 export const KycStatusBadge: React.FC<KycStatusBadgeProps> = ({ status, showIcon = true, className = "" }) => {
-  // Handle both string and legacy integer statuses
   const statusKey = typeof status === "number" ? MAP_INT_STATUS[status] || "None" : status;
   const config = STATUS_CONFIG[statusKey] || STATUS_CONFIG.None;
   const Icon = config.icon;

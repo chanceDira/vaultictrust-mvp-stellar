@@ -10,7 +10,7 @@ import { Asset, BASE_FEE, Keypair, Operation, TransactionBuilder } from "@stella
 // Placeholder for Testnet USDC - in a real app this would be constant from a known issuer.
 export const TESTNET_USDC_ASSET = new Asset(
   "USDC",
-  "GBMSZTLNGY2YKQWFEOPO2OIU6D3SZNTGY5FNPCSMG5H5QYFHQ5D34DG3", // Valid Testnet Placeholder
+  "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5", // Match scaffold.config.ts (Circle Testnet Issuer)
 );
 
 /**
@@ -39,7 +39,16 @@ export async function setupTrustline(publicKey: string, assetCode: string, issue
   // Sign with Freighter - explicitly pass networkPassphrase to avoid "Main Net" warnings
   const signedResult = await signTransaction(transaction.toXDR(), { networkPassphrase });
   const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
-  return server.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
+
+  try {
+    return await server.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
+  } catch (error: any) {
+    console.error("[stellarService] setupTrustline error details:", error?.response?.data || error);
+    if (error?.response?.data?.extras?.result_codes) {
+      console.error("[stellarService] extras.result_codes:", error.response.data.extras.result_codes);
+    }
+    throw error;
+  }
 }
 
 /**

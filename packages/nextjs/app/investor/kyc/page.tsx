@@ -13,7 +13,6 @@ export default function KycPage() {
   return (
     <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 md:py-16 max-w-4xl mx-auto w-full">
-        {/* Breadcrumb / Back */}
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/30 hover:text-primary transition-all mb-10 group"

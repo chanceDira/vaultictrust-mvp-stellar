@@ -22,6 +22,11 @@ node_modules
 .vscode
 .idea
 
+# build artifacts
+target
+.next
+.cache
+
 # cli
 dist
 

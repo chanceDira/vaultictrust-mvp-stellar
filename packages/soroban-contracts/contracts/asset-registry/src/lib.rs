@@ -3,9 +3,8 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, Address, BytesN, Env, String, Vec, symbol_short,
 };
 
-// ---------------------------------------------------------------------------
-// Enums
-// ---------------------------------------------------------------------------
+
+#[contracttype]
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -24,11 +23,9 @@ pub enum OwnershipModel {
     Fractional = 1,
 }
 
-// ---------------------------------------------------------------------------
-// Structs
-// ---------------------------------------------------------------------------
 
-/// Canonical on-chain record for a registered real-world asset.
+
+/* @notice Canonical on-chain record for a registered real-world asset. */
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct AssetRecord {
@@ -41,9 +38,11 @@ pub struct AssetRecord {
     pub total_shares: i128,
     pub price_per_share: i128,
     pub sold_shares: i128,
-    /// Stellar Native Asset Code (e.g. VTGOLD)
+    
+    /* @notice Stellar Native Asset Code (e.g. VTGOLD) */
     pub asset_code: String,
-    /// Stellar Native Asset Issuer (set upon tokenization)
+
+    /* @notice Stellar Native Asset Issuer (set upon tokenization) */
     pub issuer: Option<Address>,
     pub tokenized_at: u64,
     pub relist_count: u32,
@@ -53,9 +52,6 @@ pub struct AssetRecord {
     pub metadata_uri: String,
 }
 
-// ---------------------------------------------------------------------------
-// Storage Keys
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 pub enum DataKey {
@@ -66,20 +62,18 @@ pub enum DataKey {
     OwnerAssets(Address),
 }
 
-// ---------------------------------------------------------------------------
-// Contract
-// ---------------------------------------------------------------------------
 
 #[contract]
 pub struct VaulticAssetRegistry;
 
 #[contractimpl]
 impl VaulticAssetRegistry {
-    // -----------------------------------------------------------------------
-    // Initialization
-    // -----------------------------------------------------------------------
 
-    /// Initializes the registry. Must be called exactly once.
+    /* @notice Initializes the registry. Must be called exactly once.
+     * @param env The Soroban environment.
+     * @param admins A vector of administrative addresses.
+     * @param tokenizer The address authorized to tokenize assets.
+     */
     pub fn initialize(env: Env, admins: Vec<Address>, tokenizer: Address) {
         if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
@@ -92,11 +86,12 @@ impl VaulticAssetRegistry {
         env.storage().instance().set(&DataKey::AssetCounter, &1u32);
     }
 
-    // -----------------------------------------------------------------------
-    // Admin Governance
-    // -----------------------------------------------------------------------
 
-    /// Updates the tokenizer address. Admin only.
+    /* @notice Updates the tokenizer address. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator calling the function.
+     * @param new_tokenizer The new address authorized to tokenize assets.
+     */
     pub fn set_tokenizer(env: Env, caller: Address, new_tokenizer: Address) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -107,7 +102,11 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("tok_upd"),), new_tokenizer);
     }
 
-    /// Transfers administrative power to a new set of addresses. Admin only.
+    /* @notice Transfers administrative power to a new set of addresses. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the current administrator.
+     * @param new_admins The new vector of administrative addresses.
+     */
     pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -122,7 +121,11 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    /// Upgrades the contract WASM. Admin only.
+    /* @notice Upgrades the contract WASM. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator.
+     * @param new_wasm_hash The hash of the new WASM binary.
+     */
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -132,26 +135,34 @@ impl VaulticAssetRegistry {
         env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 
-    /// Returns the current admins.
+
     pub fn get_admins(env: Env) -> Vec<Address> {
         env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 
-    /// Returns the current tokenizer address.
+
     pub fn get_tokenizer(env: Env) -> Address {
         env.storage().instance().get(&DataKey::Tokenizer).expect("not initialized")
     }
 
-    /// Returns the current asset counter value.
+
     pub fn get_counter(env: Env) -> u32 {
         env.storage().instance().get(&DataKey::AssetCounter).expect("not initialized")
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Registration
-    // -----------------------------------------------------------------------
 
-    /// Registers a new real-world asset. Admin only. Returns the assigned asset_id.
+    /* @notice Registers a new real-world asset. Admin only.
+     * @param env The Soroban environment.
+     * @param asset_owner The initial owner of the asset record.
+     * @param caller The administrator registering the asset.
+     * @param asset_name The human-readable name of the asset.
+     * @param asset_category The classification of the asset (e.g. "Mining").
+     * @param asset_code The token symbol to be used upon tokenization.
+     * @param metadata_uri IPFS URI for extended documentation.
+     * @param valuation The initial valuation in USDC (7 decimal precision).
+     * @param model The ownership model (Whole vs Fractional).
+     * @return u32 The assigned unique asset ID.
+     */
     pub fn register_asset(
         env: Env,
         asset_owner: Address,
@@ -216,11 +227,12 @@ impl VaulticAssetRegistry {
         asset_id
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Admin Approval (Pending → Active)
-    // -----------------------------------------------------------------------
 
-    /// Approves a PENDING asset, making it ACTIVE for investment. Admin only.
+    /* @notice Approves a PENDING asset, making it ACTIVE for investment. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The administrator approving the asset.
+     * @param asset_id The ID of the asset to approve.
+     */
     pub fn approve_asset(env: Env, caller: Address, asset_id: u32) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -239,11 +251,14 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("aprv_ast"), asset_id), caller);
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Tokenization (Active → Tokenized)
-    // -----------------------------------------------------------------------
 
-    /// Records tokenization details using Stellar Native Assets. Tokenizer only.
+    /* @notice Records tokenization details using Stellar Native Assets. Tokenizer only.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset being tokenized.
+     * @param issuer The Stellar issuer account address.
+     * @param total_shares The total number of fractional units created.
+     * @param price_per_share The price per share in USDC (7 decimal precision).
+     */
     pub fn record_tokenization(
         env: Env,
         asset_id: u32,
@@ -279,11 +294,12 @@ impl VaulticAssetRegistry {
         );
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Shares Tracking
-    // -----------------------------------------------------------------------
 
-    /// Records additional shares sold for a fractional asset. Tokenizer only.
+    /* @notice Records additional shares sold for a fractional asset. Tokenizer only.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset.
+     * @param shares_delta The number of new shares sold.
+     */
     pub fn record_shares_sold(env: Env, asset_id: u32, shares_delta: i128) {
         let tokenizer: Address = env.storage().instance().get(&DataKey::Tokenizer).expect("not initialized");
         tokenizer.require_auth();
@@ -298,11 +314,12 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("sold_upd"), asset_id), record.sold_shares);
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Close
-    // -----------------------------------------------------------------------
 
-    /// Closes an asset (marks as CLOSED). Callable by admin or tokenizer.
+    /* @notice Closes an asset (marks as CLOSED). Callable by admin or tokenizer.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset to close.
+     * @param caller The authorized administrator or tokenizer.
+     */
     pub fn close_asset(env: Env, asset_id: u32, caller: Address) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -331,11 +348,12 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("cls_ast"), asset_id), caller);
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Ownership Transfer
-    // -----------------------------------------------------------------------
 
-    /// Transfers registered asset ownership to a new address. Tokenizer only.
+    /* @notice Transfers registered asset ownership to a new address. Tokenizer only.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset.
+     * @param new_owner The address of the new asset owner.
+     */
     pub fn transfer_asset_ownership(env: Env, asset_id: u32, new_owner: Address) {
         let tokenizer: Address = env.storage().instance().get(&DataKey::Tokenizer).expect("not initialized");
         tokenizer.require_auth();
@@ -344,10 +362,9 @@ impl VaulticAssetRegistry {
 
         let previous_owner = record.asset_owner.clone();
         if previous_owner == new_owner {
-            return; // no-op
+            return;
         }
 
-        // Remove from old owner's list
         let mut prev_list: Vec<u32> = env
             .storage()
             .persistent()
@@ -362,7 +379,6 @@ impl VaulticAssetRegistry {
         prev_list = new_prev_list;
         env.storage().persistent().set(&DataKey::OwnerAssets(previous_owner.clone()), &prev_list);
 
-        // Add to new owner's list
         let mut new_list: Vec<u32> = env
             .storage()
             .persistent()
@@ -376,11 +392,13 @@ impl VaulticAssetRegistry {
         env.events().publish((symbol_short!("own_xfr"), asset_id, previous_owner), new_owner);
     }
 
-    // -----------------------------------------------------------------------
-    // Asset Lifecycle: Relisting (CLOSED → RELISTED / ACTIVE)
-    // -----------------------------------------------------------------------
 
-    /// Relists a CLOSED FRACTIONAL asset for a new offering round. Tokenizer only.
+    /* @notice Relists a CLOSED FRACTIONAL asset for a new offering round. Tokenizer only.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset.
+     * @param new_valuation the updated valuation.
+     * @param new_metadata_uri the updated IPFS metadata.
+     */
     pub fn relist_asset(
         env: Env,
         asset_id: u32,
@@ -420,7 +438,7 @@ impl VaulticAssetRegistry {
         );
     }
 
-    /// Relists a CLOSED WHOLE asset for sale as whole again. Tokenizer only.
+
     pub fn relist_whole_asset(
         env: Env,
         asset_id: u32,
@@ -454,7 +472,7 @@ impl VaulticAssetRegistry {
         );
     }
 
-    /// Converts a CLOSED WHOLE asset to FRACTIONAL for tokenization. Tokenizer only.
+
     pub fn relist_asset_as_fractional(
         env: Env,
         asset_id: u32,
@@ -495,9 +513,6 @@ impl VaulticAssetRegistry {
         );
     }
 
-    // -----------------------------------------------------------------------
-    // View Functions
-    // -----------------------------------------------------------------------
 
     pub fn get_asset(env: Env, asset_id: u32) -> AssetRecord {
         env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found")
@@ -527,9 +542,6 @@ impl VaulticAssetRegistry {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod test {
@@ -568,7 +580,6 @@ mod test {
         let owner = Address::generate(&env);
         let issuer = Address::generate(&env);
 
-        // Register
         let asset_id = client.register_asset(
             &owner,
             &String::from_str(&env, "Gold Mine Shares"),
@@ -581,28 +592,23 @@ mod test {
         assert_eq!(asset_id, 1);
         assert!(matches!(client.get_asset(&asset_id).state, AssetState::Pending));
 
-        // Approve
         client.approve_asset(&asset_id);
         assert!(matches!(client.get_asset(&asset_id).state, AssetState::Active));
 
-        // Tokenize
         client.record_tokenization(&asset_id, &issuer, &10_000i128, &100i128);
         let record = client.get_asset(&asset_id);
         assert!(matches!(record.state, AssetState::Tokenized));
         assert_eq!(record.issuer.unwrap(), issuer);
         assert_eq!(record.total_shares, 10_000i128);
 
-        // Sell some shares
         client.record_shares_sold(&asset_id, &500i128);
         let (sold, total) = client.get_funding_progress(&asset_id);
         assert_eq!(sold, 500i128);
         assert_eq!(total, 10_000i128);
 
-        // Close
         client.close_asset(&asset_id, &tokenizer);
         assert!(matches!(client.get_asset(&asset_id).state, AssetState::Closed));
 
-        // Relist
         client.relist_asset(
             &asset_id,
             &1_200_000i128,

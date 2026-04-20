@@ -3,9 +3,6 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, Address, Env, String, Vec, symbol_short, BytesN,
 };
 
-// ---------------------------------------------------------------------------
-// Enums
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -17,23 +14,19 @@ pub enum KycStatus {
     Suspended = 4,
 }
 
-// ---------------------------------------------------------------------------
-// Structs
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct UserRecord {
     pub address: Address,
     pub status: KycStatus,
-    pub metadata_uri: String, // IPFS CID for identity metadata (encrypted/hashed)
-    pub commitment: BytesN<32>, // ZK commitment hash (secret + data)
+    /* @notice IPFS CID for identity metadata (encrypted/hashed) */
+    pub metadata_uri: String,
+    /* @notice ZK commitment hash (secret + data) */
+    pub commitment: BytesN<32>,
     pub updated_at: u64,
 }
 
-// ---------------------------------------------------------------------------
-// Storage Keys
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 pub enum DataKey {
@@ -43,9 +36,6 @@ pub enum DataKey {
     TotalUsers,
 }
 
-// ---------------------------------------------------------------------------
-// Contract
-// ---------------------------------------------------------------------------
 
 #[contract]
 pub struct VaulticUserRegistry;
@@ -53,7 +43,10 @@ pub struct VaulticUserRegistry;
 #[contractimpl]
 impl VaulticUserRegistry {
     
-    /// Initializes the registry with a set of admin addresses.
+    /* @notice Initializes the registry with a set of admin addresses.
+     * @param env The Soroban environment.
+     * @param admins A vector of administrative addresses.
+     */
     pub fn initialize(env: Env, admins: Vec<Address>) {
         if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
@@ -66,7 +59,12 @@ impl VaulticUserRegistry {
         env.storage().persistent().set(&DataKey::UserList, &Vec::<Address>::new(&env));
     }
 
-    /// Submits a KYC application. Sets status to PENDING.
+    /* @notice Submits a KYC application. Sets status to PENDING.
+     * @param env The Soroban environment.
+     * @param user The address of the user submitting the application.
+     * @param metadata_uri IPFS CID for identity metadata (encrypted/hashed).
+     * @param commitment ZK commitment hash for verification.
+     */
     pub fn submit_kyc(env: Env, user: Address, metadata_uri: String, commitment: BytesN<32>) {
         user.require_auth();
 
@@ -80,12 +78,10 @@ impl VaulticUserRegistry {
                 updated_at: 0,
             });
 
-        // Prevention: don't overwrite a Verified status without admin intervention
         if record.status == KycStatus::Verified {
             panic!("user already verified");
         }
 
-        // Tracking for Admin Dashboard oversight
         if record.updated_at == 0 {
             let mut total: u32 = env.storage().instance().get(&DataKey::TotalUsers).unwrap_or(0);
             total += 1;
@@ -105,7 +101,12 @@ impl VaulticUserRegistry {
         env.events().publish((symbol_short!("kyc_sub"), user), env.ledger().timestamp());
     }
 
-    /// Updates a user's KYC status. Admin only.
+    /* @notice Updates a user's KYC status. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator.
+     * @param user The address of the user whose status is being updated.
+     * @param status The new KYC status.
+     */
     pub fn set_status(env: Env, caller: Address, user: Address, status: KycStatus) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -124,7 +125,12 @@ impl VaulticUserRegistry {
         env.events().publish((symbol_short!("kyc_upd"), user), status as u32);
     }
 
-    /// Batch update statuses for efficiency. Admin only.
+    /* @notice Batch update statuses for efficiency. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator.
+     * @param users A vector of user addresses.
+     * @param status The new status for all specified users.
+     */
     pub fn batch_set_status(env: Env, caller: Address, users: soroban_sdk::Vec<Address>, status: KycStatus) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -143,11 +149,12 @@ impl VaulticUserRegistry {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // View Functions
-    // -----------------------------------------------------------------------
 
-    /// Returns the full user record.
+    /* @notice Returns the full user record.
+     * @param env The Soroban environment.
+     * @param user The address of the user.
+     * @return UserRecord The complete user profile.
+     */
     pub fn get_user(env: Env, user: Address) -> UserRecord {
         env.storage().persistent().get(&DataKey::User(user.clone())).unwrap_or(UserRecord {
             address: user,
@@ -158,7 +165,11 @@ impl VaulticUserRegistry {
         })
     }
 
-    /// Simple check for other contracts.
+    /* @notice Simple check for other contracts.
+     * @param env The Soroban environment.
+     * @param user The address of the user.
+     * @return bool True if the user is verified.
+     */
     pub fn is_verified(env: Env, user: Address) -> bool {
         let record = env.storage().persistent()
             .get(&DataKey::User(user))
@@ -172,12 +183,16 @@ impl VaulticUserRegistry {
         record.status == KycStatus::Verified
     }
 
-    /// Returns the current admins.
+
     pub fn get_admins(env: Env) -> Vec<Address> {
         env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 
-    /// Transfers administrative power to a new set of addresses. Admin only.
+    /* @notice Transfers administrative power to a new set of addresses. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the current administrator.
+     * @param new_admins The new vector of administrative addresses.
+     */
     pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -191,7 +206,11 @@ impl VaulticUserRegistry {
         env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    /// Upgrades the contract WASM. Admin only.
+    /* @notice Upgrades the contract WASM. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator.
+     * @param new_wasm_hash The hash of the new WASM binary.
+     */
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -201,12 +220,12 @@ impl VaulticUserRegistry {
         env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 
-    /// Returns the total number of registered users.
+
     pub fn get_total_users(env: Env) -> u32 {
         env.storage().instance().get(&DataKey::TotalUsers).unwrap_or(0)
     }
 
-    /// Returns a paginated list of all registered users.
+
     pub fn get_all_users(env: Env, offset: u32, limit: u32) -> Vec<Address> {
         let list: Vec<Address> = env.storage().persistent().get(&DataKey::UserList).unwrap_or(Vec::new(&env));
         let mut result = Vec::new(&env);
@@ -218,9 +237,6 @@ impl VaulticUserRegistry {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod test {
@@ -238,13 +254,11 @@ mod test {
         let contract_id = env.register_contract(None, VaulticUserRegistry);
         let client = VaulticUserRegistryClient::new(&env, &contract_id);
 
-        // Initialize with a Vec as required by current signature
+
         client.initialize(&Vec::from_array(&env, [admin.clone()]));
 
-        // Initial check
         assert_eq!(client.is_verified(&user), false);
         
-        // Submit
         let commitment = BytesN::from_array(&env, &[1u8; 32]);
         client.submit_kyc(&user, &String::from_str(&env, "ipfs://identity_hash"), &commitment);
         let record = client.get_user(&user);
@@ -252,11 +266,9 @@ mod test {
         assert_eq!(record.commitment, commitment);
         assert_eq!(client.is_verified(&user), false);
 
-        // Approve (Passing admin as caller)
         client.set_status(&admin, &user, &KycStatus::Verified);
         assert_eq!(client.is_verified(&user), true);
 
-        // Suspend (Passing admin as caller)
         client.set_status(&admin, &user, &KycStatus::Suspended);
         assert_eq!(client.is_verified(&user), false);
     }

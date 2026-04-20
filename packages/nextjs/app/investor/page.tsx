@@ -16,6 +16,7 @@ import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { useStellarHoldings } from "~~/hooks/stellar/useStellarHoldings";
+import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   claimAllYield,
@@ -27,19 +28,11 @@ import {
 } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 interface YieldInfo {
   assetId: number;
   assetCode: string;
   claimable: bigint;
 }
-
-// ---------------------------------------------------------------------------
-// Investor Page
-// ---------------------------------------------------------------------------
 
 export default function InvestorPage() {
   const { isConnected, publicKey } = useStellarWallet();
@@ -54,7 +47,6 @@ export default function InvestorPage() {
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
-  // Build mapping of Asset Code -> On-chain Asset ID
   const loadAssetMapping = useCallback(async () => {
     if (!isDeployed) return;
     try {
@@ -72,7 +64,6 @@ export default function InvestorPage() {
     }
   }, [isDeployed]);
 
-  // Fetch yield for all held assets
   const loadYields = useCallback(async () => {
     if (!publicKey || Object.keys(assetMapping).length === 0) return;
     setIsYieldLoading(true);
@@ -99,7 +90,6 @@ export default function InvestorPage() {
     }
   }, [publicKey, holdings, assetMapping]);
 
-  // Load KYC status
   const loadKyc = useCallback(async () => {
     if (!publicKey || !isDeployed) return;
     setIsKycLoading(true);
@@ -127,8 +117,20 @@ export default function InvestorPage() {
     setIsClaiming(true);
     const notifId = notification.loading(`Claiming yield for ${assetCode}...`);
     try {
-      await claimAllYield(assetId, publicKey);
-      notification.success(`Dividends for ${assetCode} claimed successfully!`);
+      const { hash } = await claimAllYield(assetId, publicKey);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">Yield claimed!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
       await loadYields();
     } catch (e: any) {
       notification.error(`Claim failed: ${e.message}`);
@@ -143,7 +145,6 @@ export default function InvestorPage() {
   return (
     <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
             <ChartBarIcon className="h-6 w-6 text-primary" />
@@ -167,7 +168,6 @@ export default function InvestorPage() {
           liquidity in the African real economy.
         </p>
 
-        {/* Not connected */}
         {!isConnected ? (
           <div className="rounded-3xl border border-dashed border-base-300 p-12 text-center bg-base-100 shadow-sm">
             <WalletIcon className="h-16 w-16 text-base-content/20 mx-auto mb-4" />
@@ -179,7 +179,6 @@ export default function InvestorPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Top Bar Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-xl shadow-primary/5">
                 <div className="flex items-center gap-2 text-base-content/40 mb-1">
@@ -208,9 +207,7 @@ export default function InvestorPage() {
               </div>
             </div>
 
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* holdings list */}
               <div className="lg:col-span-2 space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
                   <CheckBadgeIcon className="h-4 w-4" /> Your Active Positions
@@ -266,7 +263,6 @@ export default function InvestorPage() {
                 )}
               </div>
 
-              {/* Yield Claim Section */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
                   <ClockIcon className="h-4 w-4" /> Payout Schedule

@@ -1,13 +1,3 @@
-/**
- * Vaultic Trust — Soroban Contract Client Service
- *
- * Handles all interactions with the deployed Soroban contracts via
- * the Stellar JS SDK's SorobanRpc server and Freighter wallet signing.
- *
- * Architecture:
- *   - Read calls: use SorobanRpc.Server.simulateTransaction (free, no signing)
- *   - Write calls: build tx → sign with Freighter → submit to SorobanRpc
- */
 import { getNetworkPassphrase, getSorobanRpcUrl } from "./horizonClient";
 import {
   Address,
@@ -20,11 +10,7 @@ import {
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
-import { deployedSorobanContracts } from "~~/scaffold.config";
-
-// ---------------------------------------------------------------------------
-// RPC Client (singleton)
-// ---------------------------------------------------------------------------
+import { TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
 
 let _rpcServer: rpc.Server | null = null;
 
@@ -34,10 +20,6 @@ function getRpcServer(): rpc.Server {
   }
   return _rpcServer;
 }
-
-// ---------------------------------------------------------------------------
-// Contract addresses
-// ---------------------------------------------------------------------------
 
 export function getContractIds() {
   const contracts = deployedSorobanContracts["testnet"];
@@ -49,10 +31,6 @@ export function getContractIds() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helper: build, sign (Freighter), and submit a Soroban transaction
-// ---------------------------------------------------------------------------
-
 export async function callContract({
   contractId,
   method,
@@ -63,7 +41,7 @@ export async function callContract({
   method: string;
   args: xdr.ScVal[];
   callerPublicKey: string;
-}): Promise<xdr.ScVal | null> {
+}): Promise<{ result: xdr.ScVal | null; hash: string }> {
   const server = getRpcServer();
   const networkPassphrase = getNetworkPassphrase();
 
@@ -78,7 +56,6 @@ export async function callContract({
     .setTimeout(30)
     .build();
 
-  // Simulate to get footprint + resource fee
   const simResult = await server.simulateTransaction(tx);
   if (rpc.Api.isSimulationError(simResult)) {
     const errorMsg = parseSorobanError(simResult);
@@ -87,27 +64,21 @@ export async function callContract({
 
   const preparedTx = rpc.assembleTransaction(tx, simResult).build();
 
-  // Sign with Freighter
   const { signTransaction } = await import("@stellar/freighter-api");
   const signedResult = await signTransaction(preparedTx.toXDR(), {
     networkPassphrase,
   });
   const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
 
-  // Submit
   const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
   const response = await server.sendTransaction(submittedTx);
 
   if (response.status === "ERROR") {
-    // Use base64 encoding to avoid secondary XDR parse errors in the error message
     const errXdr = response.errorResult?.toXDR("base64") ?? "unknown error";
     throw new Error(`Transaction failed: ${errXdr}`);
   }
 
-  // Poll for completion — wrap in try/catch because the SDK may throw
-  // 'Bad union switch' when deserializing ledger-change events that contain
-  // contract-type enums stored as #[repr(u32)] integers.
-  let pollResult: Awaited<ReturnType<typeof server.getTransaction>>;
+  let pollResult: Awaited<ReturnType<typeof server.getTransaction>> = null as any;
   let attempts = 0;
   try {
     pollResult = await server.getTransaction(response.hash);
@@ -116,24 +87,20 @@ export async function callContract({
       pollResult = await server.getTransaction(response.hash);
       attempts++;
     }
-  } catch (xdrErr: any) {
-    // The SDK can throw 'Bad union switch' when parsing response metadata.
-    // If this happens, the tx was already submitted — treat as success and
-    // let the UI refresh to pick up the new state.
-    console.warn("[soroban] getTransaction XDR parse error (tx likely succeeded):", xdrErr?.message);
-    return null;
+  } catch {
+    return { result: null, hash: response.hash };
   }
 
   if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
     try {
-      return pollResult.returnValue ?? null;
+      const result = (pollResult as any).returnValue ?? null;
+      return { result, hash: response.hash };
     } catch {
-      return null;
+      return { result: null, hash: response.hash };
     }
   }
 
   if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
-    // Attempt to find Diagnostic Events for human readable errors
     const errorMessage = parseSorobanError(pollResult);
     throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
   }
@@ -141,16 +108,11 @@ export async function callContract({
   throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
 }
 
-/**
- * Parses Soroban simulation & transaction errors into human-readable strings.
- */
 function parseSorobanError(result: any): string | null {
   if (!result) return null;
 
-  // Extract from simulation error string
   const errorStr = result.error?.toString() || "";
 
-  // Extract from diagnostic events (more descriptive)
   const events = result.diagnosticEvents || result.result?.diagnosticEvents || [];
   let detailedError = "";
 
@@ -160,7 +122,6 @@ function parseSorobanError(result: any): string | null {
       try {
         const nativeData = scValToNative(data);
         if (Array.isArray(nativeData)) {
-          // Look for common panic patterns
           if (nativeData.includes("UnreachableCodeReached"))
             detailedError = "Contract logic error (Trap). Check requirements.";
           if (nativeData.includes("already initialized")) detailedError = "The protocol is already initialized.";
@@ -179,16 +140,11 @@ function parseSorobanError(result: any): string | null {
 
   if (detailedError) return detailedError;
 
-  // Fallback pattern matching on raw error string
   if (errorStr.includes("InvalidAction")) return "Action not permitted by contract logic.";
   if (errorStr.includes("HostError")) return "Network execution error. Check your inputs or permissions.";
 
   return errorStr || null;
 }
-
-// ---------------------------------------------------------------------------
-// Helper: read-only simulation (no signing needed)
-// ---------------------------------------------------------------------------
 
 async function simulateReadCall({
   contractId,
@@ -202,7 +158,6 @@ async function simulateReadCall({
   const server = getRpcServer();
   const networkPassphrase = getNetworkPassphrase();
 
-  // Use a dummy keypair for simulation reads (no real signing)
   const dummyKeypair = Keypair.random();
   const dummyAccount = await server.getAccount(dummyKeypair.publicKey()).catch(() => ({
     accountId: () => dummyKeypair.publicKey(),
@@ -232,10 +187,6 @@ async function simulateReadCall({
     return null;
   }
 }
-
-// ---------------------------------------------------------------------------
-// AssetRegistry — Read functions
-// ---------------------------------------------------------------------------
 
 function normalizeAssetRecord(rawAsset: any) {
   if (!rawAsset) return null;
@@ -338,10 +289,6 @@ export async function fetchFundingProgress(assetId: number): Promise<{ sold: big
   return { sold, total };
 }
 
-// ---------------------------------------------------------------------------
-// AssetRegistry — Write functions
-// ---------------------------------------------------------------------------
-
 export async function approveAsset(assetId: number, callerPublicKey: string) {
   const { registry } = getContractIds();
   if (!registry) throw new Error("registry contract not deployed");
@@ -385,10 +332,6 @@ export async function registerAsset(
     callerPublicKey,
   });
 }
-
-// ---------------------------------------------------------------------------
-// InvestmentManager — Read functions
-// ---------------------------------------------------------------------------
 
 export async function fetchPool(assetId: number): Promise<any> {
   const { investmentManager } = getContractIds();
@@ -543,9 +486,39 @@ export async function sweepFees(callerPublicKey: string) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// DividendManager — Read functions
-// ---------------------------------------------------------------------------
+export async function increaseAllowance(amount: bigint, callerPublicKey: string, spenderOverride?: string) {
+  const { investmentManager } = getContractIds();
+  const spender = spenderOverride || investmentManager;
+
+  if (!spender) throw new Error("Spender contract not targetable");
+
+  return callContract({
+    contractId: TESTNET_USDC_CONTRACT,
+    method: "incr_allow",
+    args: [
+      new Address(callerPublicKey).toScVal(),
+      new Address(spender).toScVal(),
+      nativeToScVal(amount, { type: "i128" }),
+    ],
+    callerPublicKey,
+  });
+}
+
+export async function fetchYieldRound(assetId: number, roundIndex: number) {
+  const { dividendManager } = getContractIds();
+  if (!dividendManager) return null;
+
+  try {
+    const result = await simulateReadCall({
+      contractId: dividendManager,
+      method: "get_yield_round",
+      args: [nativeToScVal(assetId, { type: "u32" }), nativeToScVal(roundIndex, { type: "u32" })],
+    });
+    return result ? scValToNative(result) : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function fetchClaimableYield(assetId: number, investor: string): Promise<bigint> {
   const { dividendManager } = getContractIds();
@@ -570,10 +543,6 @@ export async function fetchYieldRoundCount(assetId: number): Promise<number> {
   });
   return result ? Number(scValToNative(result)) : 0;
 }
-
-// ---------------------------------------------------------------------------
-// DividendManager — Write functions
-// ---------------------------------------------------------------------------
 
 export async function depositYield(
   params: { assetId: number; amount: bigint; totalSharesOutstanding: bigint },
@@ -618,9 +587,6 @@ export async function fetchTotalFees(): Promise<bigint> {
   });
   return result ? (scValToNative(result) as bigint) : 0n;
 }
-// ---------------------------------------------------------------------------
-// UserRegistry — Read functions
-// ---------------------------------------------------------------------------
 
 export async function fetchUserRecord(userAddress: string): Promise<any> {
   const { userRegistry } = getContractIds();
@@ -669,10 +635,6 @@ export async function fetchAllUserAddresses(offset = 0, limit = 100): Promise<st
   });
   return result ? (scValToNative(result) as string[]) : [];
 }
-
-// ---------------------------------------------------------------------------
-// UserRegistry — Write functions
-// ---------------------------------------------------------------------------
 
 export async function submitKyc(metadataUri: string, commitment: Uint8Array, callerPublicKey: string) {
   const { userRegistry } = getContractIds();
@@ -724,10 +686,6 @@ export async function batchSetUserStatus(userAddresses: string[], status: number
   });
 }
 
-/**
- * Fetches recent KYC submissions from the UserRegistry by querying on-chain events.
- * Uses a lookback period of ~24 hours.
- */
 export async function fetchKycSubmissions(): Promise<string[]> {
   const server = getRpcServer();
   const { userRegistry } = getContractIds();
