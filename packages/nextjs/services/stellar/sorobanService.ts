@@ -81,7 +81,8 @@ export async function callContract({
   // Simulate to get footprint + resource fee
   const simResult = await server.simulateTransaction(tx);
   if (rpc.Api.isSimulationError(simResult)) {
-    throw new Error(`Simulation failed: ${simResult.error}`);
+    const errorMsg = parseSorobanError(simResult);
+    throw new Error(errorMsg || `Simulation failed: ${simResult.error}`);
   }
 
   const preparedTx = rpc.assembleTransaction(tx, simResult).build();
@@ -127,16 +128,62 @@ export async function callContract({
     try {
       return pollResult.returnValue ?? null;
     } catch {
-      // returnValue access itself can trigger XDR parse on metadata
       return null;
     }
   }
 
   if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
-    throw new Error(`Transaction failed on-chain. Hash: ${response.hash}`);
+    // Attempt to find Diagnostic Events for human readable errors
+    const errorMessage = parseSorobanError(pollResult);
+    throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
   }
 
   throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
+}
+
+/**
+ * Parses Soroban simulation & transaction errors into human-readable strings.
+ */
+function parseSorobanError(result: any): string | null {
+  if (!result) return null;
+
+  // Extract from simulation error string
+  const errorStr = result.error?.toString() || "";
+
+  // Extract from diagnostic events (more descriptive)
+  const events = result.diagnosticEvents || result.result?.diagnosticEvents || [];
+  let detailedError = "";
+
+  for (const event of events) {
+    if (event.event?.type()?.name === "diagnostic") {
+      const data = event.event.v0().data();
+      try {
+        const nativeData = scValToNative(data);
+        if (Array.isArray(nativeData)) {
+          // Look for common panic patterns
+          if (nativeData.includes("UnreachableCodeReached"))
+            detailedError = "Contract logic error (Trap). Check requirements.";
+          if (nativeData.includes("already initialized")) detailedError = "The protocol is already initialized.";
+          if (nativeData.includes("not an admin"))
+            detailedError = "Unauthorized: Caller is not a protocol administrator.";
+          if (nativeData.includes("not found")) detailedError = "The requested record was not found on-chain.";
+          if (nativeData.includes("invalid valuation"))
+            detailedError = "The provided asset valuation is invalid (must be positive).";
+          if (nativeData.includes("already registered"))
+            detailedError = "This asset has already been submitted to the registry.";
+          if (nativeData.includes("user already verified")) detailedError = "This user is already KYC verified.";
+        }
+      } catch {}
+    }
+  }
+
+  if (detailedError) return detailedError;
+
+  // Fallback pattern matching on raw error string
+  if (errorStr.includes("InvalidAction")) return "Action not permitted by contract logic.";
+  if (errorStr.includes("HostError")) return "Network execution error. Check your inputs or permissions.";
+
+  return errorStr || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -625,4 +672,49 @@ export async function setUserStatus(userAddress: string, status: number, callerP
     ],
     callerPublicKey,
   });
+}
+
+/**
+ * Fetches recent KYC submissions from the UserRegistry by querying on-chain events.
+ * Uses a lookback period of ~24 hours.
+ */
+export async function fetchKycSubmissions(): Promise<string[]> {
+  const server = getRpcServer();
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) return [];
+
+  try {
+    // Get latest ledger for lookback window (~24 hours / 15,000 ledgers)
+    const latestLedger = await server.getLatestLedger();
+    const startLedger = Math.max(1, latestLedger.sequence - 15000);
+
+    const eventResponse = await server.getEvents({
+      startLedger,
+      filters: [
+        {
+          type: "contract",
+          contractIds: [userRegistry],
+          topics: [[nativeToScVal("kyc_sub", { type: "symbol" }).toXDR("base64"), "*"]],
+        },
+      ],
+    });
+
+    // Extract user addresses from topic[1]
+    const userSet = new Set<string>();
+    for (const event of eventResponse.events) {
+      if (event.topic.length >= 2) {
+        try {
+          const userAddr = scValToNative(event.topic[1]);
+          if (typeof userAddr === "string") {
+            userSet.add(userAddr);
+          }
+        } catch {}
+      }
+    }
+
+    return Array.from(userSet);
+  } catch (err) {
+    console.error("[soroban] fetchKycSubmissions error:", err);
+    return [];
+  }
 }

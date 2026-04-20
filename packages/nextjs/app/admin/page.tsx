@@ -24,6 +24,7 @@ import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   approveAsset,
   fetchAsset,
+  fetchKycSubmissions,
   fetchTotalAssets,
   fetchUserRecord,
   getContractIds,
@@ -220,7 +221,9 @@ export default function AdminPage() {
   const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
 
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [kycApplications, setKycApplications] = useState<string[]>([]);
+  const [isLoadingKycApps, setIsLoadingKycApps] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [tokenizeTarget, setTokenizeTarget] = useState<OnChainAsset | null>(null);
   const [isSweeping, setIsSweeping] = useState(false);
@@ -251,11 +254,29 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadKycSubmissions = useCallback(async () => {
+    setIsLoadingKycApps(true);
+    try {
+      const apps = await fetchKycSubmissions();
+      setKycApplications(apps);
+    } catch (error) {
+      console.error("Failed to load KYC submissions:", error);
+    } finally {
+      setIsLoadingKycApps(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAssets();
+    loadKycSubmissions();
+  }, [loadAssets, loadKycSubmissions]);
+
   useEffect(() => {
     if (isConnected && isDeployed) {
       loadAssets();
+      loadKycSubmissions();
     }
-  }, [isConnected, isDeployed, loadAssets]);
+  }, [isConnected, isDeployed, loadAssets, loadKycSubmissions]);
 
   if (isConnected && !isAdmin) {
     return <NotAuthorized />;
@@ -631,6 +652,65 @@ export default function AdminPage() {
                           </button>
                         </div>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent KYC Applications List */}
+                <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <UserGroupIcon className="h-6 w-6 text-primary" />
+                      <h2 className="text-xl font-bold">Recent KYC Applications</h2>
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm gap-2"
+                      onClick={loadKycSubmissions}
+                      disabled={isLoadingKycApps}
+                    >
+                      <ArrowPathIcon className={`h-4 w-4 ${isLoadingKycApps ? "animate-spin" : ""}`} />
+                      Refresh List
+                    </button>
+                  </div>
+
+                  {isLoadingKycApps ? (
+                    <div className="flex justify-center py-8">
+                      <span className="loading loading-dots loading-md text-primary" />
+                    </div>
+                  ) : kycApplications.length === 0 ? (
+                    <div className="text-center py-8 border border-dashed border-base-300 rounded-xl">
+                      <p className="text-sm text-base-content/40">No recent KYC submissions found.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="table table-zebra w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-xs uppercase tracking-widest text-base-content/40">User Address</th>
+                            <th className="text-xs uppercase tracking-widest text-base-content/40 text-right">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {kycApplications.map(addr => (
+                            <tr key={addr} className="hover:bg-primary/5 transition-colors">
+                              <td className="font-mono text-xs">{addr}</td>
+                              <td className="text-right">
+                                <button
+                                  className="btn btn-primary btn-xs"
+                                  onClick={() => {
+                                    setKycSearchAddr(addr);
+                                    setTimeout(() => handleSearchUser(), 100);
+                                  }}
+                                >
+                                  Review
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
