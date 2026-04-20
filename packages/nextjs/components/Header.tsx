@@ -18,9 +18,9 @@ type HeaderMenuLink = {
 
 const menuLinks: HeaderMenuLink[] = [
   { label: "Home", href: "/" },
-  { label: "Owner", href: "/owner" },
+  { label: "My assets", href: "/owner" },
   { label: "Marketplace", href: "/marketplace" },
-  { label: "Investor", href: "/investor" },
+  { label: "My investments", href: "/investor" },
   { label: "Admin", href: "/admin", adminOnly: true },
   { label: "Litepaper", href: "/litepaper" },
 ];
