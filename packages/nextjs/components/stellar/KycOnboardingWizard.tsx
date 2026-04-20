@@ -90,11 +90,11 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
           <h2 className="font-bold uppercase tracking-tight text-sm">Investor Verification</h2>
         </div>
         <div className="flex gap-1.5">
-          {(["intro", "data", "submit", "success"] as WizardStep[]).map((s, i) => (
+          {(["intro", "data", "proof", "submit", "success"] as WizardStep[]).map((s, i) => (
             <div
               key={s}
               className={`h-1.5 w-6 rounded-full transition-all ${
-                ["intro", "data", "submit", "success"].indexOf(step) >= i ? "bg-primary" : "bg-base-300"
+                ["intro", "data", "proof", "submit", "success"].indexOf(step) >= i ? "bg-primary" : "bg-base-300"
               }`}
             />
           ))}
