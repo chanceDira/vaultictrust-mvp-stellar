@@ -175,6 +175,16 @@ impl VaulticUserRegistry {
         env.storage().instance().set(&DataKey::Admins, &new_admins);
         env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
+
+    /// Upgrades the contract WASM. Admin only.
+    pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+    }
 }
 
 // ---------------------------------------------------------------------------
