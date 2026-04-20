@@ -14,10 +14,6 @@ type TrustlineModalProps = {
   onSuccess: () => void;
 };
 
-/**
- * TrustlineModal: Checks for an existing trustline and prompts the user to add it if missing.
- * Critical UX for Stellar RWA investment.
- */
 export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, onSuccess }: TrustlineModalProps) => {
   const [checking, setChecking] = useState(true);
   const [hasTrustline, setHasTrustline] = useState(false);
@@ -31,7 +27,6 @@ export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, 
       const exists = account.balances.some((b: any) => b.asset_code === assetCode && b.asset_issuer === issuer);
       setHasTrustline(exists);
       if (exists) {
-        // If they already have it, we can auto-continue or just show success
         setTimeout(onSuccess, 1000);
       }
     } catch (e) {

@@ -3,9 +3,7 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, token, Address, BytesN, Env, Vec, symbol_short,
 };
 
-// ---------------------------------------------------------------------------
-// Cross-contract interfaces
-// ---------------------------------------------------------------------------
+
 mod investment_manager {
     soroban_sdk::contractimport!(
         file = "../../target/wasm32-unknown-unknown/release/vaultic_investment_manager.wasm"
@@ -18,9 +16,6 @@ mod user_registry {
     );
 }
 
-// ---------------------------------------------------------------------------
-// Data Structures
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -32,9 +27,6 @@ pub struct YieldRound {
     pub round_index: u32,
 }
 
-// ---------------------------------------------------------------------------
-// Storage Keys
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 pub enum DataKey {
@@ -47,9 +39,6 @@ pub enum DataKey {
     Claimed(u32, u32, Address),
 }
 
-// ---------------------------------------------------------------------------
-// Contract
-// ---------------------------------------------------------------------------
 
 #[contract]
 pub struct VaulticDividendManager;
@@ -57,13 +46,14 @@ pub struct VaulticDividendManager;
 #[contractimpl]
 impl VaulticDividendManager {
     
+    /* @notice Initializes the dividend manager. Must be called exactly once.
+     * @param env The Soroban environment.
+     * @param admins A vector of administrative addresses.
+     * @param investment_manager The address of the Investment Manager contract.
+     * @param user_registry The address of the User Registry contract.
+     * @param payment_token The USDC token contract address.
+     */
     pub fn initialize(
-        env: Env,
-        admins: Vec<Address>,
-        investment_manager: Address,
-        user_registry: Address,
-        payment_token: Address,
-    ) {
         if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
         }
@@ -76,13 +66,14 @@ impl VaulticDividendManager {
         env.storage().instance().set(&DataKey::PaymentToken, &payment_token);
     }
 
+    /* @notice Deposits yield for a specific asset to be shared among token holders.
+     * @param env The Soroban environment.
+     * @param caller The address of the asset owner depositing the yield.
+     * @param asset_id The ID of the asset.
+     * @param amount The total yield amount in USDC (7 decimal precision).
+     * @param total_shares_outstanding The snapshot of total shares for distribution calculation.
+     */
     pub fn deposit_yield(
-        env: Env,
-        caller: Address,
-        asset_id: u32,
-        amount: i128,
-        total_shares_outstanding: i128,
-    ) {
         caller.require_auth();
 
         if amount <= 0 { panic!("invalid yield amount"); }
@@ -107,10 +98,15 @@ impl VaulticDividendManager {
         env.events().publish((symbol_short!("yld_dep"), asset_id, caller), amount);
     }
 
+    /* @notice Claims yield for a specific round.
+     * @param env The Soroban environment.
+     * @param investor The address of the investor.
+     * @param asset_id The ID of the asset.
+     * @param round_index The index of the specific yield round.
+     */
     pub fn claim_yield(env: Env, investor: Address, asset_id: u32, round_index: u32) {
         investor.require_auth();
 
-        // KYC Gating
         let ur_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
         let ur_client = user_registry::Client::new(&env, &ur_addr);
         if !ur_client.is_verified(&investor) {
@@ -140,10 +136,15 @@ impl VaulticDividendManager {
         env.events().publish((symbol_short!("yld_clm"), asset_id, investor), investor_yield);
     }
 
+    /* @notice Claims all pending yield for an investor across all rounds of an asset.
+     * @param env The Soroban environment.
+     * @param investor The address of the investor.
+     * @param asset_id The ID of the asset.
+     * @return i128 The total amount claimed in USDC.
+     */
     pub fn claim_all_yield(env: Env, investor: Address, asset_id: u32) -> i128 {
         investor.require_auth();
 
-        // KYC Gating
         let ur_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
         let ur_client = user_registry::Client::new(&env, &ur_addr);
         if !ur_client.is_verified(&investor) {
@@ -179,10 +180,21 @@ impl VaulticDividendManager {
         total_claimed
     }
 
+    /* @notice Returns the number of yield rounds for an asset.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset.
+     * @return u32 The total number of rounds.
+     */
     pub fn get_yield_round_count(env: Env, asset_id: u32) -> u32 {
         env.storage().persistent().get(&DataKey::YieldRoundCount(asset_id)).unwrap_or(0)
     }
 
+    /* @notice Returns the total claimable yield for an investor.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset.
+     * @param investor The address of the investor.
+     * @return i128 The total claimable USDC amount.
+     */
     pub fn get_claimable_yield(env: Env, asset_id: u32, investor: Address) -> i128 {
         let round_count: u32 = env.storage().persistent().get(&DataKey::YieldRoundCount(asset_id)).unwrap_or(0);
         let im_addr: Address = env.storage().instance().get(&DataKey::InvestmentManager).unwrap();
@@ -201,6 +213,11 @@ impl VaulticDividendManager {
         total
     }
 
+    /* @notice Transfers administrative power to a new set of addresses. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the current administrator.
+     * @param new_admins The new vector of administrative addresses.
+     */
     pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -214,7 +231,11 @@ impl VaulticDividendManager {
         env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    /// Upgrades the contract WASM. Admin only.
+    /* @notice Upgrades the contract WASM. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator.
+     * @param new_wasm_hash The hash of the new WASM binary.
+     */
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");

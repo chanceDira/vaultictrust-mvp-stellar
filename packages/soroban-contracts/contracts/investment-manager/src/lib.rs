@@ -5,9 +5,7 @@ use soroban_sdk::{
     vec,
 };
 
-// ---------------------------------------------------------------------------
-// Cross-contract registry interface
-// ---------------------------------------------------------------------------
+
 mod registry {
     soroban_sdk::contractimport!(
         file = "../../target/wasm32-unknown-unknown/release/vaultic_asset_registry.wasm"
@@ -20,45 +18,40 @@ mod user_registry {
     );
 }
 
-// ---------------------------------------------------------------------------
-// Structs
-// ---------------------------------------------------------------------------
 
-/// Per-asset investment pool state for the current offering round.
-/// Hybrid model: USDC payments tracked on-contract, RWA distribution via Native Stellar Asset.
+/* @notice Per-asset investment pool state for the current offering round.
+ * @notice Hybrid model: USDC payments tracked on-contract, RWA distribution via Native Stellar Asset.
+ */
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct AssetInvestmentPool {
-    /// Total fractional shares issued (matches native asset supply).
+    /* @notice Total fractional shares issued (matches native asset supply). */
     pub total_shares: i128,
-    /// Shares sold in current round.
+    /* @notice Shares sold in current round. */
     pub sold_shares: i128,
-    /// USDC price per share (7 decimal places).
+    /* @notice USDC price per share (7 decimal places). */
     pub price_per_share: i128,
-    /// Max shares an investor can hold (0 = uncapped).
+    /* @notice Max shares an investor can hold (0 = uncapped). */
     pub investor_cap: i128,
-    /// Stellar Native Asset issuer account for the RWA token.
+    /* @notice Stellar Native Asset issuer account for the RWA token. */
     pub rwa_issuer: Address,
-    /// Stellar Native Asset code (e.g. "VTGOLD").
+    /* @notice Stellar Native Asset code (e.g. "VTGOLD"). */
     pub rwa_asset_code: soroban_sdk::String,
-    /// Whether this offering round is fully subscribed.
+    /* @notice Whether this offering round is fully subscribed. */
     pub is_fully_subscribed: bool,
-    /// Net proceeds collected from investors (after fee deduction).
+    /* @notice Net proceeds collected from investors (after fee deduction). */
     pub proceeds_collected: i128,
-    /// Net proceeds already withdrawn by asset owner.
+    /* @notice Net proceeds already withdrawn by asset owner. */
     pub proceeds_withdrawn: i128,
 }
 
-// ---------------------------------------------------------------------------
-// Storage Keys
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 pub enum DataKey {
     Admins,
     Registry,
     UserRegistry,
-    PaymentToken,   // Testnet USDC contract address
+    PaymentToken,
     FeeTreasury,
     ProtocolFeeBps,
     AccumulatedFees,
@@ -67,9 +60,6 @@ pub enum DataKey {
     InvestorList(u32),
 }
 
-// ---------------------------------------------------------------------------
-// Contract
-// ---------------------------------------------------------------------------
 
 #[contract]
 pub struct VaulticInvestmentManager;
@@ -78,12 +68,16 @@ const BPS_DENOMINATOR: i128 = 10_000;
 
 #[contractimpl]
 impl VaulticInvestmentManager {
-    // -----------------------------------------------------------------------
-    // Initialization
-    // -----------------------------------------------------------------------
 
-    /// Initializes the investment manager. Must be called exactly once.
-    /// payment_token is the Testnet USDC contract address.
+    /* @notice Initializes the investment manager. Must be called exactly once.
+     * @param env The Soroban environment.
+     * @param admins A vector of administrative addresses.
+     * @param registry The address of the Vaultic Asset Registry contract.
+     * @param user_registry The address of the Vaultic User Registry contract.
+     * @param payment_token The USDC token contract address.
+     * @param fee_treasury The address where protocol fees are collected.
+     * @param protocol_fee_bps The protocol fee in basis points (e.g., 250 for 2.5%).
+     */
     pub fn initialize(
         env: Env,
         admins: Vec<Address>,
@@ -111,9 +105,6 @@ impl VaulticInvestmentManager {
         env.storage().instance().set(&DataKey::AccumulatedFees, &0i128);
     }
 
-    // -----------------------------------------------------------------------
-    // Admin governance
-    // -----------------------------------------------------------------------
 
     pub fn set_protocol_fee(env: Env, caller: Address, new_fee_bps: i128) {
         caller.require_auth();
@@ -136,7 +127,11 @@ impl VaulticInvestmentManager {
         env.storage().instance().set(&DataKey::FeeTreasury, &new_treasury);
     }
 
-    /// Transfers administrative power to a new set of addresses. Admin only.
+    /* @notice Transfers administrative power to a new set of addresses. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the current administrator.
+     * @param new_admins The new vector of administrative addresses.
+     */
     pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -150,7 +145,11 @@ impl VaulticInvestmentManager {
         env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    /// Upgrades the contract WASM. Admin only.
+    /* @notice Upgrades the contract WASM. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The address of the administrator.
+     * @param new_wasm_hash The hash of the new WASM binary.
+     */
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -160,15 +159,21 @@ impl VaulticInvestmentManager {
         env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 
-    /// Returns the current admins.
+
     pub fn get_admins(env: Env) -> Vec<Address> {
         env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 
-    /// Opens an investment pool for a FRACTIONAL asset that has been marked Active in the registry.
-    /// The caller (admin) provides the rwa_issuer & rwa_asset_code which represent the
-    /// Stellar Native Asset that will be distributed to investors.
-    /// The InvestmentManager account must be the native asset's distribution account.
+    /* @notice Opens an investment pool for a FRACTIONAL asset. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The administrator opening the pool.
+     * @param asset_id The ID of the asset from the Registry.
+     * @param total_shares The total number of shares to offer.
+     * @param price_per_share The price per share in USDC (7 decimal precision).
+     * @param investor_cap The maximum number of shares per investor (0 for uncapped).
+     * @param rwa_issuer The Stellar issuer account address for the native asset.
+     * @param rwa_asset_code The Stellar asset code (e.g. VTGOLD).
+     */
     pub fn tokenize_asset(
         env: Env,
         caller: Address,
@@ -192,10 +197,8 @@ impl VaulticInvestmentManager {
             panic!("invalid price");
         }
 
-        // Notify registry of tokenization
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
         
-        // Authorize this current contract for the call to the registry
         env.authorize_as_current_contract(vec![
             &env,
             InvokerContractAuthEntry::Contract(SubContractInvocation {
@@ -232,20 +235,16 @@ impl VaulticInvestmentManager {
         env.events().publish((symbol_short!("tokenized"), asset_id, rwa_issuer), total_shares);
     }
 
-    // -----------------------------------------------------------------------
-    // Investment: Purchase Fractional Shares
-    // -----------------------------------------------------------------------
 
-    /// Atomically: investor pays USDC → InvestmentManager records → Stellar Native RWA
-    /// tokens must be transferred separately by the distribution account (or via trustline setup).
-    ///
-    /// In the full native asset model the distribution of RWA tokens happens via a separate
-    /// Stellar Horizon payment transaction signed by the distribution account. This function
-    /// handles the USDC leg and registry tracking.
+    /* @notice Purchases fractional shares of an asset using USDC.
+     * @param env The Soroban environment.
+     * @param investor The address of the investor.
+     * @param asset_id The ID of the asset pool.
+     * @param share_amount The number of shares to purchase.
+     */
     pub fn purchase_shares(env: Env, investor: Address, asset_id: u32, share_amount: i128) {
         investor.require_auth();
 
-        // KYC Gating
         let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
         let user_registry_client = user_registry::Client::new(&env, &user_registry_addr);
         if !user_registry_client.is_verified(&investor) {
@@ -287,31 +286,26 @@ impl VaulticInvestmentManager {
         let fee = (gross_cost * fee_bps) / BPS_DENOMINATOR;
         let net_cost = gross_cost - fee;
 
-        // Transfer USDC from investor → InvestmentManager (gross amount)
         let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&investor, &env.current_contract_address(), &gross_cost);
 
-        // Update pool state
         pool.sold_shares += share_amount;
         pool.proceeds_collected += net_cost;
         if pool.sold_shares >= pool.total_shares {
             pool.is_fully_subscribed = true;
         }
 
-        // Fee tracking
         let mut fees: i128 = env.storage().instance().get(&DataKey::AccumulatedFees).unwrap();
         fees += fee;
         env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
 
-        // Investor holdings tracking (for cap enforcement & dividend eligibility)
         let current_holding: i128 = env
             .storage()
             .persistent()
             .get(&DataKey::InvestorHoldings(asset_id, investor.clone()))
             .unwrap_or(0);
         if current_holding == 0 {
-            // First purchase: add to investor list
             let mut investor_list: Vec<Address> = env
                 .storage()
                 .persistent()
@@ -325,7 +319,6 @@ impl VaulticInvestmentManager {
             &(current_holding + share_amount),
         );
 
-        // Notify registry of shares sold
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
 
         env.authorize_as_current_contract(vec![
@@ -345,7 +338,6 @@ impl VaulticInvestmentManager {
 
         env.storage().persistent().set(&DataKey::Pool(asset_id), &pool);
 
-        // If fully subscribed, close the asset in registry
         if pool.is_fully_subscribed {
             env.authorize_as_current_contract(vec![
                 &env,
@@ -367,16 +359,15 @@ impl VaulticInvestmentManager {
         );
     }
 
-    // -----------------------------------------------------------------------
-    // Investment: Purchase Whole Asset
-    // -----------------------------------------------------------------------
 
-    /// Purchases a WHOLE_OWNERSHIP asset for its full valuation.
-    /// Buyer pays USDC in full; seller receives net (minus protocol fee).
+    /* @notice Purchases a WHOLE_OWNERSHIP asset for its full valuation.
+     * @param env The Soroban environment.
+     * @param buyer The address of the buyer.
+     * @param asset_id The ID of the asset record.
+     */
     pub fn purchase_whole_asset(env: Env, buyer: Address, asset_id: u32) {
         buyer.require_auth();
 
-        // KYC Gating
         let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
         let user_registry_client = user_registry::Client::new(&env, &user_registry_addr);
         if !user_registry_client.is_verified(&buyer) {
@@ -396,19 +387,15 @@ impl VaulticInvestmentManager {
         let fee = (gross_payment * fee_bps) / BPS_DENOMINATOR;
         let net_to_seller = gross_payment - fee;
 
-        // Fee accounting
         let mut fees: i128 = env.storage().instance().get(&DataKey::AccumulatedFees).unwrap();
         fees += fee;
         env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
 
-        // Buyer pays InvestmentManager
         let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&buyer, &env.current_contract_address(), &gross_payment);
-        // Manager pays seller net
         payment_client.transfer(&env.current_contract_address(), &asset.asset_owner, &net_to_seller);
 
-        // Transfer ownership and close in registry
         env.authorize_as_current_contract(vec![
             &env,
             InvokerContractAuthEntry::Contract(SubContractInvocation {
@@ -437,11 +424,11 @@ impl VaulticInvestmentManager {
         );
     }
 
-    // -----------------------------------------------------------------------
-    // Proceeds & Fees
-    // -----------------------------------------------------------------------
 
-    /// Withdraws accumulated net proceeds to the registered asset owner. Pull-over-push pattern.
+    /* @notice Withdraws accumulated net proceeds to the registered asset owner.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the asset pool.
+     */
     pub fn withdraw_proceeds(env: Env, asset_id: u32) {
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
         let registry_client = registry::Client::new(&env, &registry_addr);
@@ -473,7 +460,10 @@ impl VaulticInvestmentManager {
         );
     }
 
-    /// Sweeps accumulated protocol fees to the fee treasury. Admin only.
+    /* @notice Sweeps accumulated protocol fees to the fee treasury. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The administrator sweeping the fees.
+     */
     pub fn sweep_fees(env: Env, caller: Address) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
@@ -496,11 +486,7 @@ impl VaulticInvestmentManager {
         env.events().publish((symbol_short!("sweep"),), fees);
     }
 
-    // -----------------------------------------------------------------------
-    // Relisting a CLOSED asset
-    // -----------------------------------------------------------------------
 
-    /// Allows the registered asset owner to relist a CLOSED FRACTIONAL asset for a new round.
     pub fn relist_asset(
         env: Env,
         caller: Address,
@@ -526,7 +512,7 @@ impl VaulticInvestmentManager {
             panic!("not asset owner");
         }
 
-        // Ask registry to relist
+
         env.authorize_as_current_contract(vec![
             &env,
             InvokerContractAuthEntry::Contract(SubContractInvocation {
@@ -540,7 +526,6 @@ impl VaulticInvestmentManager {
         ]);
         registry_client.relist_asset(&asset_id, &new_valuation, &new_metadata_uri);
 
-        // Reset the local pool
         let pool = AssetInvestmentPool {
             total_shares: new_total_shares,
             sold_shares: 0,
@@ -554,10 +539,8 @@ impl VaulticInvestmentManager {
         };
         env.storage().persistent().set(&DataKey::Pool(asset_id), &pool);
 
-        // Clear investor list for new round
         env.storage().persistent().set(&DataKey::InvestorList(asset_id), &Vec::<Address>::new(&env));
 
-        // Record tokenization in registry
         registry_client.record_tokenization(
             &asset_id,
             &pool.rwa_issuer,
@@ -572,9 +555,6 @@ impl VaulticInvestmentManager {
         );
     }
 
-    // -----------------------------------------------------------------------
-    // View Functions
-    // -----------------------------------------------------------------------
 
     pub fn get_pool(env: Env, asset_id: u32) -> AssetInvestmentPool {
         env.storage().persistent().get(&DataKey::Pool(asset_id)).expect("not found")

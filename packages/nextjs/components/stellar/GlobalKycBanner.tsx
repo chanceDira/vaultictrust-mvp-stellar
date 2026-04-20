@@ -15,7 +15,6 @@ export const GlobalKycBanner: React.FC = () => {
       fetchUserRecord(publicKey)
         .then(record => {
           if (record) {
-            // Success: record.status is an enum object or symbol string
             const tag = typeof record.status === "string" ? record.status : record.status?.tag;
             setStatus(tag || "None");
           } else {

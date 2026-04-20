@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircleIcon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { uploadMetadataToIPFS } from "~~/services/stellar/ipfsService";
+import {
+  ArrowTopRightOnSquareIcon,
+  CheckCircleIcon,
+  InformationCircleIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { registerAsset } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -18,13 +24,11 @@ export function RegisterModal({
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Real Estate");
   const [code, setCode] = useState("");
-  // Human-readable USDC amount (e.g. "50000" means $50,000 USDC)
   const [valuationUsdc, setValuationUsdc] = useState("");
   const [description, setDescription] = useState("");
   const [model, setModel] = useState<"Fractional" | "WholeOwnership">("Fractional");
   const [loading, setLoading] = useState(false);
 
-  // Convert real USDC → stroops for the contract (1 USDC = 10_000_000 stroops)
   const usdcToStroops = (usdc: string): bigint => {
     const parsed = parseFloat(usdc);
     if (isNaN(parsed) || parsed <= 0) return 0n;
@@ -56,33 +60,46 @@ export function RegisterModal({
     setLoading(true);
     const id = notification.loading(`Uploading metadata and registering ${name}...`);
     try {
-      // 1. Upload metadata to IPFS (store human-readable USDC value)
-      const metadataResult = await uploadMetadataToIPFS({
-        name,
-        description,
-        category,
-        valuation: parseFloat(valuationUsdc), // real USDC, not stroops
-        currency: "USDC",
-        assetCode: code.toUpperCase(),
-        createdAt: new Date().toISOString(),
-        platform: "Vaultic Trust v1",
-      });
+      const metadataUri = await uploadToIpfs(
+        {
+          name,
+          description,
+          category,
+          valuation: parseFloat(valuationUsdc), // real USDC, not stroops
+          currency: "USDC",
+          assetCode: code.toUpperCase(),
+          createdAt: new Date().toISOString(),
+          platform: "Vaultic Trust v1",
+        },
+        `metadata_${code.toUpperCase()}.json`,
+      );
 
-      // 2. Transact with Soroban (pass stroops to the contract)
-      await registerAsset(
+      const { hash } = await registerAsset(
         {
           assetOwner: publicKey,
           assetName: name,
           assetCategory: category,
           assetCode: code.toUpperCase(),
-          metadataUri: metadataResult.uri,
+          metadataUri: metadataUri,
           valuation: valuationStroops,
           model: model,
         },
         publicKey,
       );
 
-      notification.success(`${name} registered in Vaultic Registry!`);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">{name} registered!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
       onSuccess();
     } catch (e: any) {
       notification.error(`Registration failed: ${e.message}`);
@@ -95,7 +112,6 @@ export function RegisterModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
-        {/* Header */}
         <div className="flex justify-between items-start p-8 pb-6 border-b border-base-300">
           <div>
             <h2 className="text-3xl font-black uppercase tracking-tighter italic">Register RWA</h2>
@@ -109,7 +125,6 @@ export function RegisterModal({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Asset Name */}
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">
@@ -130,7 +145,6 @@ export function RegisterModal({
             </label>
           </div>
 
-          {/* Ticker + Category row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control w-full">
               <label className="label pb-1">
@@ -169,7 +183,6 @@ export function RegisterModal({
             </div>
           </div>
 
-          {/* Valuation */}
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">
@@ -200,7 +213,6 @@ export function RegisterModal({
             </label>
           </div>
 
-          {/* Description */}
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">Description & Location</span>
@@ -215,7 +227,6 @@ export function RegisterModal({
             />
           </div>
 
-          {/* Ownership Model */}
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">Ownership Model</span>
@@ -261,7 +272,6 @@ export function RegisterModal({
             </div>
           </div>
 
-          {/* Info banner */}
           <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm">
             <InformationCircleIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div className="text-base-content/60 text-xs leading-relaxed">
@@ -272,7 +282,6 @@ export function RegisterModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex gap-4 p-8 pt-4">
           <button
             className="btn btn-ghost flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]"

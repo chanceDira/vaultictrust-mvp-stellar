@@ -50,7 +50,6 @@ export const Footer = () => {
       </nav>
 
       <div className="flex flex-wrap items-center justify-center gap-2 md:place-self-end md:justify-self-end">
-        {/* Stellar network badge */}
         <a
           href="https://stellar.org"
           target="_blank"

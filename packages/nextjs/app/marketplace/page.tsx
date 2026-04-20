@@ -16,41 +16,21 @@ import {
   Squares2X2Icon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
+import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
+import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import {
   fetchAsset,
   fetchTotalAssets,
   fetchUserRecord,
   getContractIds,
-  purchaseShares,
+  increaseAllowance,
   purchaseWholeAsset,
 } from "~~/services/stellar/sorobanService";
+import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type AssetStateKey = "Pending" | "Active" | "Tokenized" | "Closed" | "Relisted";
-type OwnershipModelKey = "WholeOwnership" | "Fractional";
-
-interface OnChainAsset {
-  asset_id: number;
-  asset_name: string;
-  asset_category: string;
-  asset_code: string;
-  asset_owner: string;
-  state: { tag: AssetStateKey };
-  model: { tag: OwnershipModelKey };
-  valuation: bigint;
-  total_shares: bigint;
-  price_per_share: bigint;
-  sold_shares: bigint;
-  metadata_uri: string;
-  issuer: string | null;
-}
 
 const CATEGORY_ICONS: Record<string, any> = {
   "Real Estate": BuildingOffice2Icon,
@@ -64,19 +44,15 @@ function getAssetIcon(category: string) {
   return CATEGORY_ICONS[category] || CubeIcon;
 }
 
-// ---------------------------------------------------------------------------
-// Marketplace Component
-// ---------------------------------------------------------------------------
-
 export default function MarketplacePage() {
   const { isConnected, publicKey } = useStellarWallet();
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<OnChainAsset | null>(null);
   const [isTrustlineModalOpen, setIsTrustlineModalOpen] = useState(false);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // KYC State
   const [kycRecord, setKycRecord] = useState<any>(null);
 
   const contracts = getContractIds();
@@ -89,7 +65,6 @@ export default function MarketplacePage() {
       const items: OnChainAsset[] = [];
       for (let i = 1; i <= total; i++) {
         const asset = await fetchAsset(i);
-        // Only show Active and Tokenized assets in marketplace
         if (asset && (asset.state.tag === "Active" || asset.state.tag === "Tokenized")) {
           items.push(asset as OnChainAsset);
         }
@@ -124,7 +99,11 @@ export default function MarketplacePage() {
   const handleInvestClick = (asset: OnChainAsset) => {
     if (!publicKey) return;
 
-    // For fractional assets, they must be "Tokenized" before they can be invested in
+    if (asset.asset_owner === publicKey) {
+      notification.error("Owners cannot purchase their own assets.");
+      return;
+    }
+
     if (asset.model.tag === "Fractional" && asset.state.tag === "Active") {
       notification.info("This asset is being tokenized. Please check back soon.");
       return;
@@ -132,12 +111,9 @@ export default function MarketplacePage() {
 
     setSelectedAsset(asset);
 
-    // Fractional assets require a trustline for the RWA token.
-    // WholeOwnership assets are bought directly with USDC (no native RWA token distribution needed for buyer).
     if (asset.model.tag === "Fractional") {
       setIsTrustlineModalOpen(true);
     } else {
-      // Direct purchase flow for Whole Ownership
       handleInvestmentSuccess(asset);
     }
   };
@@ -147,6 +123,12 @@ export default function MarketplacePage() {
     if (!asset || !publicKey) return;
 
     setIsTrustlineModalOpen(false);
+
+    if (asset.model.tag === "Fractional") {
+      setIsBuyModalOpen(true);
+      return;
+    }
+
     setIsPurchasing(true);
 
     const isWhole = asset.model.tag === "WholeOwnership";
@@ -154,33 +136,30 @@ export default function MarketplacePage() {
     const notificationId = notification.loading(`${actionLabel} for ${asset.asset_name}...`);
 
     try {
-      if (isWhole) {
-        // Purchase whole asset
-        await purchaseWholeAsset(
-          {
-            buyer: publicKey,
-            assetId: asset.asset_id,
-          },
-          publicKey,
-        );
-      } else {
-        // For MVP fractional investment, we purchase 1 share
-        await purchaseShares(
-          {
-            investor: publicKey,
-            assetId: asset.asset_id,
-            shareAmount: 1n,
-          },
-          publicKey,
-        );
-      }
+      await increaseAllowance(asset.valuation, publicKey);
 
-      const successMsg = isWhole
-        ? `Successfully purchased ${asset.asset_name}!`
-        : `Successfully invested in ${asset.asset_name}!`;
+      const { hash } = await purchaseWholeAsset(
+        {
+          buyer: publicKey,
+          assetId: asset.asset_id,
+        },
+        publicKey,
+      );
 
-      notification.success(successMsg);
-      await loadAssets(); // Refresh
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold uppercase tracking-tight text-xs">Purchase Successful!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Stellar Expert <ArrowRightIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
+      await loadAssets();
     } catch (error: any) {
       console.error(error);
       notification.error(`Investment failed: ${error.message || "Soroban contract error"}`);
@@ -194,7 +173,6 @@ export default function MarketplacePage() {
   return (
     <div className="flex flex-col grow">
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
             <Squares2X2Icon className="h-6 w-6 text-primary" />
@@ -211,7 +189,6 @@ export default function MarketplacePage() {
           sustainable infrastructure, and industrial ventures.
         </p>
 
-        {/* Status Alert */}
         {!isConnected ? (
           <div className="rounded-2xl border border-dashed border-base-300 p-8 text-center bg-base-100 shadow-sm mb-10">
             <WalletIcon className="h-12 w-12 text-base-content/20 mx-auto mb-3" />
@@ -281,7 +258,6 @@ export default function MarketplacePage() {
           </div>
         ) : null}
 
-        {/* Asset Grid */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <span className="loading loading-bars loading-lg text-primary" />
@@ -418,19 +394,27 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* Trustline and Purchase Guard */}
       {selectedAsset && (
-        <TrustlineModal
-          isOpen={isTrustlineModalOpen}
-          onClose={() => {
-            setIsTrustlineModalOpen(false);
-            setSelectedAsset(null);
-          }}
-          publicKey={publicKey || ""}
-          assetCode={selectedAsset.asset_code}
-          issuer={selectedAsset.issuer || ""}
-          onSuccess={handleInvestmentSuccess}
-        />
+        <>
+          <TrustlineModal
+            isOpen={isTrustlineModalOpen}
+            onClose={() => setIsTrustlineModalOpen(false)}
+            publicKey={publicKey ?? ""}
+            assetCode={selectedAsset.asset_code}
+            issuer={selectedAsset.issuer ?? ""}
+            onSuccess={() => handleInvestmentSuccess()}
+          />
+          <BuySharesModal
+            isOpen={isBuyModalOpen}
+            onClose={() => setIsBuyModalOpen(false)}
+            asset={selectedAsset as any}
+            publicKey={publicKey ?? ""}
+            onSuccess={() => {
+              setIsBuyModalOpen(false);
+              loadAssets();
+            }}
+          />
+        </>
       )}
     </div>
   );

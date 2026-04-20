@@ -2,11 +2,6 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-/**
- * Stellar wallet context (Freighter)
- * Wraps @stellar/freighter-api to provide a clean React interface.
- */
-
 interface StellarWalletContextValue {
   publicKey: string | null;
   isConnected: boolean;
@@ -34,28 +29,24 @@ export const StellarWalletProvider = ({ children }: { children: React.ReactNode 
   const [isFreighterInstalled, setIsFreighterInstalled] = useState(false);
   const [network, setNetwork] = useState<string | null>(null);
 
-  // Check Freighter installation and existing session on mount
   useEffect(() => {
     const checkFreighter = async () => {
       try {
-        // Dynamic import to avoid SSR issues
         const freighter = await import("@stellar/freighter-api");
         const { isConnected: connected } = await freighter.isConnected();
         setIsFreighterInstalled(connected !== undefined);
 
         if (connected) {
-          setIsFreighterInstalled(true);
           try {
             const { address } = await freighter.getAddress();
             if (address) {
               setPublicKey(address);
               setIsConnected(true);
-              // Get network
               const { network: net } = await freighter.getNetworkDetails();
               setNetwork(net ?? null);
             }
           } catch {
-            // Not yet authorized — that's fine
+            // User likely hasn't granted access yet on this specific session
           }
         }
       } catch {

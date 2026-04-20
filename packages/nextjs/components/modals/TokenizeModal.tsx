@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowTopRightOnSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import { tokenizeAsset } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
@@ -18,13 +19,11 @@ export function TokenizeModal({
   publicKey: string;
 }>) {
   const [totalShares, setTotalShares] = useState("10000");
-  // Human-readable USDC price per share (e.g. "5" = $5 USDC per share)
   const [priceUsdc, setPriceUsdc] = useState("");
   const [investorCap, setInvestorCap] = useState("0");
   const [rwaIssuer, setRwaIssuer] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Convert real USDC → stroops (1 USDC = 10_000_000 stroops)
   const usdcToStroops = (usdc: string): bigint => {
     const parsed = parseFloat(usdc);
     if (isNaN(parsed) || parsed <= 0) return 0n;
@@ -35,7 +34,6 @@ export function TokenizeModal({
   const totalSharesNum = parseInt(totalShares) || 0;
   const totalPoolUsdc = (parseFloat(priceUsdc) || 0) * totalSharesNum;
 
-  // Asset valuation from registration (stored as stroops)
   const registrationValuationUsdc = asset.valuation ? Number(asset.valuation) / 1e7 : 0;
 
   const handleSubmit = async () => {
@@ -54,7 +52,7 @@ export function TokenizeModal({
     setLoading(true);
     const id = notification.loading(`Tokenizing ${asset.asset_name}...`);
     try {
-      await tokenizeAsset(
+      const { hash } = await tokenizeAsset(
         {
           assetId: asset.asset_id,
           totalShares: BigInt(totalShares),
@@ -65,7 +63,19 @@ export function TokenizeModal({
         },
         publicKey,
       );
-      notification.success(`${asset.asset_name} tokenized on Stellar!`);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">{asset.asset_name} Initialized!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify Tokenization <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
       onSuccess();
     } catch (e: any) {
       notification.error(`Tokenization failed: ${e.message || "Unknown error"}`);
@@ -78,7 +88,6 @@ export function TokenizeModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-base-100 border border-base-300 rounded-2xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
-        {/* Header */}
         <div className="flex justify-between items-start p-8 pb-6 border-b border-base-300">
           <div>
             <h2 className="text-3xl font-black uppercase tracking-tighter italic">Tokenize Asset</h2>
@@ -92,7 +101,6 @@ export function TokenizeModal({
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Locked: Asset info from registration */}
           <div className="rounded-xl bg-base-200/60 border border-base-300 p-4 space-y-3">
             <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-2">
               Registered Asset Details
@@ -123,7 +131,6 @@ export function TokenizeModal({
             </div>
           </div>
 
-          {/* Editable: Tokenization parameters */}
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control w-full">
               <label className="label pb-1">
@@ -176,7 +183,6 @@ export function TokenizeModal({
             </div>
           </div>
 
-          {/* Pool value preview */}
           {totalPoolUsdc > 0 && (
             <div className="flex items-center justify-between p-3 rounded-xl bg-success/5 border border-success/20">
               <span className="text-xs font-semibold text-base-content/60 uppercase tracking-widest">
@@ -188,7 +194,6 @@ export function TokenizeModal({
             </div>
           )}
 
-          {/* Investor cap */}
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">Max Shares per Investor</span>
@@ -210,7 +215,6 @@ export function TokenizeModal({
             </label>
           </div>
 
-          {/* RWA Issuer */}
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">
@@ -233,7 +237,6 @@ export function TokenizeModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex gap-4 p-8 pt-4">
           <button
             className="btn btn-ghost flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]"

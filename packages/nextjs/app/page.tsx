@@ -78,9 +78,7 @@ const STELLAR_ADVANTAGES = [
 const Home: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative px-5 py-20 sm:px-8 sm:py-24 lg:px-12 lg:py-32 overflow-hidden">
-        {/* Subtle background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl opacity-50" />
           <div className="absolute top-1/4 right-0 h-[600px] w-[600px] rounded-full bg-violet-600/5 blur-3xl" />
@@ -131,7 +129,6 @@ const Home: NextPage = () => {
         </div>
       </section>
 
-      {/* ── Asset preview ─────────────────────────────────────────────────── */}
       <section className="border-t border-base-300/80 bg-base-200/60 py-16 lg:py-20">
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12">
           <div className="mb-8 sm:mb-10">
@@ -152,7 +149,7 @@ const Home: NextPage = () => {
               </div>
             ))}
           </div>
-          {/* Sample asset card */}
+
           <div className="mt-8 rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 sm:mt-10 sm:p-8 lg:p-10">
             <p className="font-bold text-base-content sm:text-lg">VT-RWA: Kigali Green Tower</p>
             <p className="mt-2 text-sm leading-relaxed text-base-content/60">
@@ -181,7 +178,6 @@ const Home: NextPage = () => {
         </div>
       </section>
 
-      {/* ── How it works ──────────────────────────────────────────────────── */}
       <section id="how-it-works" className="bg-base-100 py-16 lg:py-20">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-8 lg:px-12">
           <div className="mb-12 text-center lg:mb-14">
@@ -210,7 +206,6 @@ const Home: NextPage = () => {
         </div>
       </section>
 
-      {/* ── Why Stellar ───────────────────────────────────────────────────── */}
       <section className="border-t border-base-300/80 bg-base-200/60 py-16 lg:py-20">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-8 lg:px-12">
           <div className="mb-12 text-center">
@@ -237,7 +232,6 @@ const Home: NextPage = () => {
         </div>
       </section>
 
-      {/* ── Bottom strip ──────────────────────────────────────────────────── */}
       <section className="border-t border-base-300/80 bg-base-200/50 py-8 sm:py-10">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-8 lg:px-12">
           <p className="text-center text-sm text-base-content/70">

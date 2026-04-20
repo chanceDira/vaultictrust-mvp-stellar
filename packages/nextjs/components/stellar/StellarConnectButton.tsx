@@ -2,10 +2,6 @@
 
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 
-/**
- * Freighter-based connect/disconnect button for the Vaultic Trust header.
- * Shows abbreviated G… address when connected.
- */
 export const StellarConnectButton = () => {
   const { publicKey, isConnected, isLoading, isFreighterInstalled, connect, disconnect } = useStellarWallet();
 

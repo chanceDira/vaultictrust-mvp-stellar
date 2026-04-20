@@ -1,21 +1,14 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, Vec, symbol_short};
 
-// ---------------------------------------------------------------------------
-// NOTE: In the Stellar Native Asset model, the primary RWA token lives on the
-// native Stellar ledger (managed by an issuer account + trustlines).
-// This contract serves as an **on-chain fractional share record** for compliance
-// and for the dividend/yield distribution logic that needs to query holdings.
-// It mirrors the investor's on-chain Stellar balance as updated by the InvestmentManager.
-// ---------------------------------------------------------------------------
 
 #[contracttype]
 pub enum DataKey {
     Admins,
-    Minter,           // InvestmentManager address
+    Minter,
     AssetId,
     AssetName,
-    Balance(Address), // Tracked holdings (mirrors native asset)
+    Balance(Address),
     TotalSupply,
     IsFrozen(Address),
 }
@@ -25,8 +18,15 @@ pub struct VaulticFractionalToken;
 
 #[contractimpl]
 impl VaulticFractionalToken {
-    /// Initializes the record token for a specific RWA asset.
-    /// Mints full supply to `initial_holder` (InvestmentManager) as a starting point.
+    /* @notice Initializes the record token for a specific RWA asset.
+     * @param env The Soroban environment.
+     * @param admins A vector of administrative addresses.
+     * @param minter The address of the minter (InvestmentManager).
+     * @param asset_id The ID of the asset.
+     * @param asset_name The name of the asset.
+     * @param total_supply The total supply of shares.
+     * @param initial_holder The address initially holding all shares.
+     */
     pub fn initialize(
         env: Env,
         admins: Vec<Address>,
@@ -52,7 +52,6 @@ impl VaulticFractionalToken {
         env.storage().instance().set(&DataKey::AssetName, &asset_name);
         env.storage().instance().set(&DataKey::TotalSupply, &total_supply);
 
-        // Record full supply with minter initially
         env.storage().persistent().set(&DataKey::Balance(initial_holder.clone()), &total_supply);
 
         env.events().publish(
@@ -61,7 +60,7 @@ impl VaulticFractionalToken {
         );
     }
 
-    /// Records transfer of shares from minter → investor (called by InvestmentManager).
+    /* @notice Records transfer of shares from minter to investor. */
     pub fn dispatch_shares(env: Env, investor: Address, amount: i128) {
         let minter: Address = env.storage().instance().get(&DataKey::Minter).unwrap();
         minter.require_auth();
@@ -95,7 +94,7 @@ impl VaulticFractionalToken {
         env.events().publish((symbol_short!("dispatch"), investor), amount);
     }
 
-    /// Reclaims all shares from holders back to the minter (used on relist).
+    /* @notice Reclaims all shares from holders back to the minter. */
     pub fn reclaim_shares(env: Env, holders: Vec<Address>) -> i128 {
         let minter: Address = env.storage().instance().get(&DataKey::Minter).unwrap();
         minter.require_auth();
@@ -159,7 +158,6 @@ impl VaulticFractionalToken {
         env.storage().instance().get(&DataKey::Admins).unwrap()
     }
 
-    // -- Read functions --
 
     pub fn balance_of(env: Env, owner: Address) -> i128 {
         env.storage().persistent().get(&DataKey::Balance(owner)).unwrap_or(0)
@@ -170,7 +168,7 @@ impl VaulticFractionalToken {
     }
 
     pub fn decimals(_env: Env) -> u32 {
-        0 // Whole shares only
+        0
     }
 
     pub fn name(env: Env) -> String {
