@@ -57,10 +57,10 @@ export const ADMIN_ADDRESSES = [
 
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {
   testnet: {
-    VaulticAssetRegistry: "CBPVPOTPFDXXVG57BDTWCIHZFGEM5F5ZTOGW67BMEBS5VEN7URZ7GJVP",
-    VaulticUserRegistry: "CC6JWHFZKEW3BEBYKB3GXO4RKUOONAS4SHL5NQ24PGAP5HPGRSRK5H26",
-    VaulticInvestmentManager: "CA662IT6QY5ASH2P2XNXBML6TGP2G7AKLIOJPZRDGUO644TNOJWYG4EZ",
-    VaulticDividendManager: "CAWYSFMX7XM5RLXEX6E67AREV4XSSAMAX2JGF2UZLXMKMXLLOOXB62OC",
+    VaulticAssetRegistry: "CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB",
+    VaulticUserRegistry: "CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR",
+    VaulticInvestmentManager: "CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG",
+    VaulticDividendManager: "CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF",
   },
   mainnet: {
     VaulticAssetRegistry: null, // Not yet deployed
@@ -68,6 +68,16 @@ export const deployedSorobanContracts: Partial<Record<StellarNetworkId, Deployed
     VaulticInvestmentManager: null, // Not yet deployed
     VaulticDividendManager: null, // Not yet deployed
   },
+};
+
+// ---------------------------------------------------------------------------
+// Protocol Metadata & Privacy Configuration
+// ---------------------------------------------------------------------------
+
+export const PROTOCOL_METADATA = {
+  // Vaultic Organization identity for PII encryption (Curve25519 target)
+  VAULTIC_ORG_PUBLIC_KEY: "GCL3YKO5Z2T2TUYLMQKQLWHRQIXCNBHBQDSEQ7IY2AGVJENDJDWFALG5",
+  ENCRYPTION_SCHEME: "AES-GCM-256 / NaCl Box",
 };
 
 // ---------------------------------------------------------------------------

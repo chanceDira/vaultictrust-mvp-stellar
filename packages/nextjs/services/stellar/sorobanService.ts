@@ -606,6 +606,18 @@ export async function claimAllYield(assetId: number, callerPublicKey: string) {
     callerPublicKey,
   });
 }
+
+export async function fetchTotalFees(): Promise<bigint> {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) return 0n;
+
+  const result = await simulateReadCall({
+    contractId: investmentManager,
+    method: "accumulated_fees",
+    args: [],
+  });
+  return result ? (scValToNative(result) as bigint) : 0n;
+}
 // ---------------------------------------------------------------------------
 // UserRegistry — Read functions
 // ---------------------------------------------------------------------------
@@ -632,6 +644,30 @@ export async function isVerified(userAddress: string): Promise<boolean> {
     args: [new Address(userAddress).toScVal()],
   });
   return result ? (scValToNative(result) as boolean) : false;
+}
+
+export async function fetchTotalUsers(): Promise<number> {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) return 0;
+
+  const result = await simulateReadCall({
+    contractId: userRegistry,
+    method: "get_total_users",
+    args: [],
+  });
+  return result ? Number(scValToNative(result)) : 0;
+}
+
+export async function fetchAllUserAddresses(offset = 0, limit = 100): Promise<string[]> {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) return [];
+
+  const result = await simulateReadCall({
+    contractId: userRegistry,
+    method: "get_all_users",
+    args: [nativeToScVal(offset, { type: "u32" }), nativeToScVal(limit, { type: "u32" })],
+  });
+  return result ? (scValToNative(result) as string[]) : [];
 }
 
 // ---------------------------------------------------------------------------

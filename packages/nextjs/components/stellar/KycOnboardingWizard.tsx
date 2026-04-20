@@ -8,6 +8,8 @@ import {
   RocketLaunchIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
+import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { encryptFileForAdmin } from "~~/services/stellar/cryptoService";
 import { submitKyc } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -25,35 +27,55 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
     documentId: "",
     country: "Rwanda",
   });
+  const [idFile, setIdFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper to generate a ZK-Commitment Hash using Web Crypto API
   const generateCommitment = async () => {
     const encoder = new TextEncoder();
     const secret = window.crypto.getRandomValues(new Uint8Array(16));
-    const dataString = JSON.stringify({ ...formData, secret: Array.from(secret) });
+    const dataString = JSON.stringify({
+      fullName: formData.fullName,
+      documentId: formData.documentId,
+      country: formData.country,
+      secret: Array.from(secret),
+    });
     const data = encoder.encode(dataString);
     const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
     return new Uint8Array(hashBuffer);
   };
 
   const handleSubmit = async () => {
+    if (!idFile) {
+      notification.error("Please upload an identity document first.");
+      return;
+    }
     setIsSubmitting(true);
-    const id = notification.loading("Generating Commitment & Submitting On-Chain...");
+    const notif = notification.loading("Encrypting & Submitting KYC Proof...");
     try {
-      const commitment = await generateCommitment();
-      // For the URI, we'll use a mock CID representing the user's data (encrypted)
-      // In a real app, we'd upload to IPFS here.
-      const mockCid = `ipfs://vaultic_kyc_${Math.random().toString(36).substring(7)}`;
+      // 1. Encrypt File for Admin Org
+      const encryptedPayload = await encryptFileForAdmin(idFile, PROTOCOL_METADATA.VAULTIC_ORG_PUBLIC_KEY);
 
+      // 2. Generate ZK-Commitment
+      const commitment = await generateCommitment();
+
+      // 3. Simulated IPFS Upload (Representing the encrypted container)
+      // In a full prod environment, we would use bgipfs/web3-storage here.
+      console.log("[KYC] Encrypted Payload ready for pinning:", encryptedPayload);
+
+      const mockCid = `ipfs://vltc_${Math.random().toString(36).substring(2, 15)}`;
+
+      // 4. Submit to Soroban
       await submitKyc(mockCid, commitment, publicKey);
+
       notification.success("KYC Details Submitted Successfully!");
       setStep("success");
     } catch (e: any) {
+      console.error("KYC Submission Error:", e);
       notification.error(`Submission failed: ${e.message}`);
     } finally {
       setIsSubmitting(false);
-      notification.remove(id);
+      notification.remove(notif);
     }
   };
 
@@ -176,9 +198,77 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
               <button
                 className="btn btn-primary flex-1 rounded-xl"
                 disabled={!formData.fullName || !formData.documentId}
+                onClick={() => setStep("proof")}
+              >
+                Next Step
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "proof" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-xl font-bold mb-2">Identity Verification</h3>
+            <p className="text-xs text-base-content/50 mb-6 font-medium">
+              Upload a clear photo of your ID, Passport or Resident Card. It will be encrypted browser-side.
+            </p>
+
+            <div
+              className={`border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer mb-8 ${
+                idFile
+                  ? "border-emerald-500/50 bg-emerald-500/5"
+                  : "border-base-300 hover:border-primary/50 bg-base-200/30"
+              }`}
+              onClick={() => document.getElementById("id-upload")?.click()}
+            >
+              <input
+                id="id-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={e => setIdFile(e.target.files?.[0] || null)}
+              />
+              {idFile ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center">
+                    <CheckCircleIcon className="h-6 w-6" />
+                  </div>
+                  <p className="font-bold text-sm">{idFile.name}</p>
+                  <p className="text-[10px] opacity-40 uppercase tracking-widest">
+                    {(idFile.size / 1024).toFixed(1)} KB · Ready to Encrypt
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                    <IdentificationIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">Select identity document</p>
+                    <p className="text-[10px] opacity-40 uppercase tracking-widest mt-1">PNG, JPG up to 5MB</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-primary/5 rounded-2xl p-4 mb-8 flex gap-3 items-start border border-primary/10">
+              <LockClosedIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <p className="text-[10px] text-primary/80 leading-relaxed font-medium">
+                Vaultic uses <span className="font-bold">AES-256-GCM</span> browser-side encryption. Your raw image is
+                converted to a secure payload that only the authorized compliance team can decrypt.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button className="btn btn-ghost flex-1 rounded-xl" onClick={() => setStep("data")}>
+                Back
+              </button>
+              <button
+                className="btn btn-primary flex-1 rounded-xl shadow-lg shadow-primary/20"
+                disabled={!idFile}
                 onClick={() => setStep("submit")}
               >
-                Review & Confirm
+                Proceed to Cryptography
               </button>
             </div>
           </div>

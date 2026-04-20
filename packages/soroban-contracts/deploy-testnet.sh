@@ -11,6 +11,9 @@
 
 set -euo pipefail
 
+# Ensure Stellar CLI is in path (common Homebrew location)
+export PATH="/opt/homebrew/bin:$PATH"
+
 NETWORK="testnet"
 DEPLOYER_ALIAS="deployer"
 ADMIN_ADDRESS_1="GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI"
