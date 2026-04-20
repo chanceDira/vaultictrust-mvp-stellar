@@ -8,7 +8,7 @@ const titleTemplate = "%s | Vaultic Trust";
 export const getMetadata = ({
   title,
   description,
-  imageRelativePath = "/thumbnail.jpg",
+  imageRelativePath = "/thumbnail.jpeg",
 }: {
   title: string;
   description: string;
@@ -46,9 +46,9 @@ export const getMetadata = ({
     icons: {
       icon: [
         {
-          url: "/favicon.png",
+          url: "/favicon.jpeg",
           sizes: "32x32",
-          type: "image/png",
+          type: "image/jpeg",
         },
       ],
     },
