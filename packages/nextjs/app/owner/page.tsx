@@ -157,8 +157,10 @@ export default function OwnerPage() {
                           </div>
                         )}
                         {(asset.state?.tag || asset.state) === "Active" && (
-                          <div className="alert alert-success py-2 text-[10px] font-bold uppercase tracking-widest border-success/20 bg-success/5 rounded-xl">
-                            Ready for Tokenization
+                          <div
+                            className={`alert ${asset.model?.tag === "WholeOwnership" ? "alert-info" : "alert-success"} py-2 text-[10px] font-bold uppercase tracking-widest border-current/20 bg-current/5 rounded-xl`}
+                          >
+                            {asset.model?.tag === "WholeOwnership" ? "Listed on Marketplace" : "Ready for Tokenization"}
                           </div>
                         )}
                         {(asset.state?.tag || asset.state) === "Tokenized" && (

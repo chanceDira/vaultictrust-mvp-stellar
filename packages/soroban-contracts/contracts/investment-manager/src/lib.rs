@@ -1,6 +1,8 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, token, Address, Env, Vec, symbol_short,
+    auth::{ContractContext, InvokerContractAuthEntry, SubContractInvocation},
+    contract, contractimpl, contracttype, token, Address, Env, IntoVal, Symbol, Vec, symbol_short,
+    vec,
 };
 
 // ---------------------------------------------------------------------------
@@ -162,6 +164,20 @@ impl VaulticInvestmentManager {
 
         // Notify registry of tokenization
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
+        
+        // Authorize this current contract for the call to the registry
+        env.authorize_as_current_contract(vec![
+            &env,
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: registry_addr.clone(),
+                    fn_name: Symbol::new(&env, "record_tokenization"),
+                    args: (asset_id, rwa_issuer.clone(), total_shares, price_per_share).into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+        ]);
+
         let registry_client = registry::Client::new(&env, &registry_addr);
         registry_client.record_tokenization(
             &asset_id,
@@ -281,6 +297,19 @@ impl VaulticInvestmentManager {
 
         // Notify registry of shares sold
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
+
+        env.authorize_as_current_contract(vec![
+            &env,
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: registry_addr.clone(),
+                    fn_name: Symbol::new(&env, "record_shares_sold"),
+                    args: (asset_id, share_amount).into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+        ]);
+
         let registry_client = registry::Client::new(&env, &registry_addr);
         registry_client.record_shares_sold(&asset_id, &share_amount);
 
@@ -288,6 +317,17 @@ impl VaulticInvestmentManager {
 
         // If fully subscribed, close the asset in registry
         if pool.is_fully_subscribed {
+            env.authorize_as_current_contract(vec![
+                &env,
+                InvokerContractAuthEntry::Contract(SubContractInvocation {
+                    context: ContractContext {
+                        contract: registry_addr.clone(),
+                        fn_name: Symbol::new(&env, "close_asset"),
+                        args: (asset_id, env.current_contract_address()).into_val(&env),
+                    },
+                    sub_invocations: vec![&env],
+                }),
+            ]);
             registry_client.close_asset(&asset_id, &env.current_contract_address());
         }
 
@@ -339,6 +379,25 @@ impl VaulticInvestmentManager {
         payment_client.transfer(&env.current_contract_address(), &asset.asset_owner, &net_to_seller);
 
         // Transfer ownership and close in registry
+        env.authorize_as_current_contract(vec![
+            &env,
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: registry_addr.clone(),
+                    fn_name: Symbol::new(&env, "transfer_asset_ownership"),
+                    args: (asset_id, buyer.clone()).into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: registry_addr.clone(),
+                    fn_name: Symbol::new(&env, "close_asset"),
+                    args: (asset_id, env.current_contract_address()).into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+        ]);
         registry_client.transfer_asset_ownership(&asset_id, &buyer);
         registry_client.close_asset(&asset_id, &env.current_contract_address());
 
@@ -435,6 +494,17 @@ impl VaulticInvestmentManager {
         }
 
         // Ask registry to relist
+        env.authorize_as_current_contract(vec![
+            &env,
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: registry_addr.clone(),
+                    fn_name: Symbol::new(&env, "relist_asset"),
+                    args: (asset_id, new_valuation, new_metadata_uri.clone()).into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+        ]);
         registry_client.relist_asset(&asset_id, &new_valuation, &new_metadata_uri);
 
         // Reset the local pool
