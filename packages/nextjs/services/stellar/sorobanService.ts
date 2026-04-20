@@ -302,7 +302,7 @@ export async function approveAsset(assetId: number, callerPublicKey: string) {
   return callContract({
     contractId: registry,
     method: "approve_asset",
-    args: [nativeToScVal(assetId, { type: "u32" })],
+    args: [new Address(callerPublicKey).toScVal(), nativeToScVal(assetId, { type: "u32" })],
     callerPublicKey,
   });
 }
@@ -327,6 +327,7 @@ export async function registerAsset(
     method: "register_asset",
     args: [
       new Address(params.assetOwner).toScVal(),
+      new Address(callerPublicKey).toScVal(),
       nativeToScVal(params.assetName, { type: "string" }),
       nativeToScVal(params.assetCategory, { type: "string" }),
       nativeToScVal(params.assetCode, { type: "string" }),
@@ -428,6 +429,7 @@ export async function tokenizeAsset(
     contractId: investmentManager,
     method: "tokenize_asset",
     args: [
+      new Address(callerPublicKey).toScVal(),
       nativeToScVal(params.assetId, { type: "u32" }),
       nativeToScVal(params.totalShares, { type: "i128" }),
       nativeToScVal(params.pricePerShare, { type: "i128" }),
@@ -489,7 +491,7 @@ export async function sweepFees(callerPublicKey: string) {
   return callContract({
     contractId: investmentManager,
     method: "sweep_fees",
-    args: [],
+    args: [new Address(callerPublicKey).toScVal()],
     callerPublicKey,
   });
 }
@@ -616,7 +618,11 @@ export async function setUserStatus(userAddress: string, status: number, callerP
   return callContract({
     contractId: userRegistry,
     method: "set_status",
-    args: [new Address(userAddress).toScVal(), nativeToScVal(statusSymbol, { type: "symbol" })],
+    args: [
+      new Address(callerPublicKey).toScVal(),
+      new Address(userAddress).toScVal(),
+      nativeToScVal(statusSymbol, { type: "symbol" }),
+    ],
     callerPublicKey,
   });
 }

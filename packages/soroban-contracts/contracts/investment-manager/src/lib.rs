@@ -55,7 +55,7 @@ pub struct AssetInvestmentPool {
 
 #[contracttype]
 pub enum DataKey {
-    Admin,
+    Admins,
     Registry,
     UserRegistry,
     PaymentToken,   // Testnet USDC contract address
@@ -86,20 +86,23 @@ impl VaulticInvestmentManager {
     /// payment_token is the Testnet USDC contract address.
     pub fn initialize(
         env: Env,
-        admin: Address,
+        admins: Vec<Address>,
         registry: Address,
         user_registry: Address,
         payment_token: Address,
         fee_treasury: Address,
         protocol_fee_bps: i128,
     ) {
-        if env.storage().instance().has(&DataKey::Admin) {
+        if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
+        }
+        if admins.is_empty() {
+            panic!("at least one admin required");
         }
         if protocol_fee_bps > 1_000 {
             panic!("fee exceeds max (10%)");
         }
-        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::Admins, &admins);
         env.storage().instance().set(&DataKey::Registry, &registry);
         env.storage().instance().set(&DataKey::UserRegistry, &user_registry);
         env.storage().instance().set(&DataKey::PaymentToken, &payment_token);
@@ -112,32 +115,45 @@ impl VaulticInvestmentManager {
     // Admin governance
     // -----------------------------------------------------------------------
 
-    pub fn set_protocol_fee(env: Env, new_fee_bps: i128) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
+    pub fn set_protocol_fee(env: Env, caller: Address, new_fee_bps: i128) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
         if new_fee_bps > 1_000 {
             panic!("fee exceeds max (10%)");
         }
         env.storage().instance().set(&DataKey::ProtocolFeeBps, &new_fee_bps);
     }
 
-    pub fn set_fee_treasury(env: Env, new_treasury: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
+    pub fn set_fee_treasury(env: Env, caller: Address, new_treasury: Address) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
         env.storage().instance().set(&DataKey::FeeTreasury, &new_treasury);
     }
 
-    /// Transfers administrative power to a new address. Admin only.
-    pub fn set_admin(env: Env, new_admin: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
-        env.storage().instance().set(&DataKey::Admin, &new_admin);
-        env.events().publish((symbol_short!("adm_xfr"),), new_admin);
+    /// Transfers administrative power to a new set of addresses. Admin only.
+    pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        if new_admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &new_admins);
+        env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    // -----------------------------------------------------------------------
-    // Tokenization: Activate Investment Pool (Active → Open for investment)
-    // -----------------------------------------------------------------------
+    /// Returns the current admins.
+    pub fn get_admins(env: Env) -> Vec<Address> {
+        env.storage().instance().get(&DataKey::Admins).expect("not initialized")
+    }
 
     /// Opens an investment pool for a FRACTIONAL asset that has been marked Active in the registry.
     /// The caller (admin) provides the rwa_issuer & rwa_asset_code which represent the
@@ -145,6 +161,7 @@ impl VaulticInvestmentManager {
     /// The InvestmentManager account must be the native asset's distribution account.
     pub fn tokenize_asset(
         env: Env,
+        caller: Address,
         asset_id: u32,
         total_shares: i128,
         price_per_share: i128,
@@ -152,8 +169,11 @@ impl VaulticInvestmentManager {
         rwa_issuer: Address,
         rwa_asset_code: soroban_sdk::String,
     ) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
 
         if total_shares <= 0 {
             panic!("invalid share supply");
@@ -444,9 +464,12 @@ impl VaulticInvestmentManager {
     }
 
     /// Sweeps accumulated protocol fees to the fee treasury. Admin only.
-    pub fn sweep_fees(env: Env) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
+    pub fn sweep_fees(env: Env, caller: Address) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
 
         let fees: i128 = env.storage().instance().get(&DataKey::AccumulatedFees).unwrap();
         if fees <= 0 {

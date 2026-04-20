@@ -10,12 +10,12 @@ Built with Next.js, Stellar SDK, Soroban (Rust), and TypeScript.
 
 The full ecosystem is currently deployed and operational on the Stellar Testnet.
 
-| Contract | Role | Contract ID (Soroban) |
-| :--- | :--- | :--- |
-| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CDGNWRTPYNRIPE5T7OXDDTR75UBTDGRJL4WFA77N5YHIXFUHVTJLDUQB` |
-| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CA55GXQHWV25WIK2672ORMAUNO6RKKRWMBDQDRBCVVJSHDS5PPJDYCY2` |
-| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CAUVFRAURDHU3RAUFIEZBTMFW2ZFNS5YWR4O3NF67PHF37J5IQ6OGCUO` |
-| **VaulticDividendManager** | Yield/Dividend Distribution | `CATOYWJPPFGPXZ5RS3ELPJLGUXW4JEDWPSWTTYAKHQDF6RN2BEWEF2OC` |
+| Contract | Role | Contract ID (Soroban) | Explorer |
+| :--- | :--- | :--- | :--- |
+| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM) |
+| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS) |
+| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6) |
+| **VaulticDividendManager** | Yield/Dividend Distribution | `CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX) |
 
 ---
 

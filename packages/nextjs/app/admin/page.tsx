@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   ArrowPathIcon,
   BanknotesIcon,
@@ -18,6 +19,7 @@ import {
 import { TokenizeModal } from "~~/components/modals/TokenizeModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
+import { ADMIN_ADDRESSES } from "~~/scaffold.config";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   approveAsset,
@@ -173,6 +175,39 @@ function AssetRow({
   );
 }
 
+// --- Sub-components for Admin UI ---
+
+function NotAuthorized() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-base-200/30 rounded-3xl border border-dashed border-base-content/10 mx-4">
+      <div className="w-20 h-20 bg-error/10 text-error rounded-full flex items-center justify-center mb-6">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-10 w-10"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 15v2m0 0v2m0-2h2m-2 0H10m-3-3h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
+        </svg>
+      </div>
+      <h1 className="text-3xl font-bold mb-2">Access Denied</h1>
+      <p className="text-base-content/60 max-w-md mb-8">
+        This portal is restricted to authorized administrators. Your current wallet address does not have the required
+        permissions.
+      </p>
+      <Link href="/" className="btn btn-primary rounded-full px-8 shadow-lg shadow-primary/20">
+        Return to Home
+      </Link>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main Admin Page
 // ---------------------------------------------------------------------------
@@ -180,6 +215,10 @@ function AssetRow({
 export default function AdminPage() {
   const { isConnected, publicKey } = useStellarWallet();
   const [activeTab, setActiveTab] = useState<UserTab>("assets");
+
+  // Guard Check
+  const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
+
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
@@ -217,6 +256,10 @@ export default function AdminPage() {
       loadAssets();
     }
   }, [isConnected, isDeployed, loadAssets]);
+
+  if (isConnected && !isAdmin) {
+    return <NotAuthorized />;
+  }
 
   const handleApprove = async (assetId: number) => {
     if (!publicKey) return;

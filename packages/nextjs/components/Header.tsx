@@ -8,10 +8,12 @@ import { SwitchTheme } from "~~/components/SwitchTheme";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { useOutsideClick } from "~~/hooks/scaffold-eth/useOutsideClick";
+import { ADMIN_ADDRESSES } from "~~/scaffold.config";
 
 type HeaderMenuLink = {
   label: string;
   href: string;
+  adminOnly?: boolean;
 };
 
 const menuLinks: HeaderMenuLink[] = [
@@ -19,16 +21,19 @@ const menuLinks: HeaderMenuLink[] = [
   { label: "Owner", href: "/owner" },
   { label: "Marketplace", href: "/marketplace" },
   { label: "Investor", href: "/investor" },
-  { label: "Admin", href: "/admin" },
+  { label: "Admin", href: "/admin", adminOnly: true },
   { label: "Litepaper", href: "/litepaper" },
 ];
 
 const HeaderMenuLinks = ({ onClose }: { onClose?: () => void }) => {
   const pathname = usePathname();
+  const { publicKey } = useStellarWallet();
+  const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
 
   return (
     <>
-      {menuLinks.map(({ label, href }) => {
+      {menuLinks.map(({ label, href, adminOnly }) => {
+        if (adminOnly && !isAdmin) return null;
         const isActive = pathname === href;
         return (
           <li key={href}>
