@@ -141,23 +141,23 @@ export default function InvestorPage() {
   const totalClaimableYield = yields.reduce((acc, curr) => acc + curr.claimable, 0n);
 
   return (
-    <div className="flex flex-col grow bg-base-200/20 min-h-screen">
+    <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-            <ChartBarIcon className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+            <ChartBarIcon className="h-6 w-6 text-primary" />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Investor Portfolio</h1>
+              <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter">Investment Portfolio</h1>
               {isConnected && !isKycLoading && (
                 <KycStatusBadge
                   status={typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag}
                 />
               )}
             </div>
-            <p className="text-xs text-base-content/50 uppercase tracking-widest font-semibold">
+            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
               Manage Holdings & Claim Yield
             </p>
           </div>
@@ -181,13 +181,13 @@ export default function InvestorPage() {
           <div className="space-y-8">
             {/* Top Bar Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+              <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-xl shadow-primary/5">
                 <div className="flex items-center gap-2 text-base-content/40 mb-1">
                   <CubeIcon className="h-4 w-4" />
                   <span className="text-[10px] uppercase tracking-widest font-bold">Total Assets Held</span>
                 </div>
-                <p className="text-3xl font-bold text-base-content">{holdings.length}</p>
-                <p className="text-xs text-primary font-semibold mt-1">Verified on Stellar</p>
+                <p className="text-4xl font-black italic text-base-content">{holdings.length}</p>
+                <p className="text-[9px] text-primary font-bold uppercase tracking-widest mt-1">Verified on Stellar</p>
               </div>
 
               <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm col-span-1 md:col-span-2 flex flex-col justify-between">
@@ -233,7 +233,7 @@ export default function InvestorPage() {
                     {holdings.map(holding => (
                       <div
                         key={holding.asset_code}
-                        className="rounded-2xl border border-base-300 bg-base-100 p-5 hover:border-primary/30 transition-all flex items-center justify-between shadow-sm"
+                        className="rounded-2xl border border-base-300 bg-base-100/60 backdrop-blur-sm p-6 hover:border-primary/50 transition-all flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-primary/5"
                       >
                         <div className="flex items-center gap-4">
                           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner">
@@ -315,7 +315,7 @@ export default function InvestorPage() {
                       ownership percentage.
                     </p>
                     <button
-                      className="btn btn-success btn-sm w-full gap-2 rounded-xl border-success/30"
+                      className="btn btn-primary btn-md w-full gap-2 rounded-2xl shadow-lg shadow-primary/20 stellar-glow font-black uppercase tracking-widest"
                       disabled={
                         yields.length === 0 ||
                         isClaiming ||
@@ -327,7 +327,7 @@ export default function InvestorPage() {
                       {isClaiming ? (
                         <span className="loading loading-spinner loading-xs" />
                       ) : (
-                        <BanknotesIcon className="h-4 w-4" />
+                        <BanknotesIcon className="h-5 w-5" />
                       )}
                       Claim All Yield
                     </button>

@@ -13,7 +13,7 @@ import { StellarWalletProvider } from "~~/components/stellar/StellarWalletProvid
 const VaulticApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
-      <div className={`flex flex-col min-h-screen`}>
+      <div className={`flex flex-col min-h-screen premium-gradient transition-colors duration-500`}>
         <GlobalKycBanner />
         <Header />
         <main className="relative flex flex-col flex-1">{children}</main>
@@ -45,7 +45,7 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
   return (
     <QueryClientProvider client={queryClient}>
       <StellarWalletProvider>
-        <ProgressBar height="3px" color="#22d3ee" />
+        <ProgressBar height="3px" color="#7c3aed" options={{ showSpinner: false }} />
         <VaulticApp>{children}</VaulticApp>
       </StellarWalletProvider>
     </QueryClientProvider>

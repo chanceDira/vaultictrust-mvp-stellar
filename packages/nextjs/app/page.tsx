@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import type { NextPage } from "next";
 import {
@@ -78,11 +79,12 @@ const Home: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative flex min-h-[calc(100vh-8rem)] sm:min-h-[calc(100vh-7rem)] flex-col justify-center bg-base-100 px-5 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24 overflow-hidden">
+      <section className="relative px-5 py-20 sm:px-8 sm:py-24 lg:px-12 lg:py-32 overflow-hidden">
         {/* Subtle background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute -bottom-32 -right-32 h-[600px] w-[600px] rounded-full bg-accent/5 blur-3xl" />
+          <div className="absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl opacity-50" />
+          <div className="absolute top-1/4 right-0 h-[600px] w-[600px] rounded-full bg-violet-600/5 blur-3xl" />
+          <div className="absolute -bottom-32 left-1/4 h-[600px] w-[600px] rounded-full bg-indigo-600/5 blur-3xl" />
         </div>
 
         <div className="mx-auto w-full max-w-4xl text-center relative">
@@ -101,16 +103,16 @@ const Home: NextPage = () => {
           <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-4 sm:mt-12 sm:flex-row sm:items-center sm:gap-5 md:gap-6">
             <Link
               href="/owner"
-              className="stellar-glow btn btn-primary btn-lg min-h-12 flex flex-1 items-center justify-center gap-2 rounded-xl px-6 font-semibold sm:min-w-[200px] sm:flex-initial sm:flex-none sm:px-8 md:min-w-[220px] md:px-10"
+              className="stellar-glow btn btn-primary btn-lg min-h-14 flex flex-1 items-center justify-center gap-2 rounded-2xl px-12 font-black uppercase tracking-widest sm:flex-initial sm:flex-none"
             >
               Get Early Access
               <ArrowRightIcon className="h-5 w-5 shrink-0" />
             </Link>
             <Link
               href="/litepaper"
-              className="btn btn-outline btn-lg min-h-12 flex flex-1 items-center justify-center rounded-xl border-2 border-base-content/20 px-6 text-base-content hover:bg-base-200 hover:border-base-content/30 sm:min-w-[200px] sm:flex-initial sm:flex-none sm:px-8 md:min-w-[220px] md:px-10"
+              className="btn btn-outline btn-lg min-h-14 flex flex-1 items-center justify-center rounded-2xl border-2 border-base-content/10 px-12 font-black uppercase tracking-widest hover:bg-base-200 sm:flex-initial sm:flex-none"
             >
-              Read the Litepaper
+              Litepaper
             </Link>
           </div>
           <p className="mt-10 text-sm font-medium tracking-wide text-base-content/60 sm:mt-12">
@@ -140,7 +142,7 @@ const Home: NextPage = () => {
             {ASSET_PREVIEWS.map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-xl border border-base-300/70 bg-base-100 p-4 shadow-sm transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 sm:p-5"
+                className="rounded-2xl border border-base-300 bg-base-100/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 sm:p-5"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-11 sm:w-11">
                   <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -151,7 +153,7 @@ const Home: NextPage = () => {
             ))}
           </div>
           {/* Sample asset card */}
-          <div className="mt-8 rounded-2xl border border-base-300/80 bg-base-100 p-5 shadow-sm sm:mt-10 sm:p-6 lg:p-8">
+          <div className="mt-8 rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 sm:mt-10 sm:p-8 lg:p-10">
             <p className="font-bold text-base-content sm:text-lg">VT-RWA: Kigali Green Tower</p>
             <p className="mt-2 text-sm leading-relaxed text-base-content/60">
               Supply: 1,000,000 VT-KGT · Standard: SEP-0041 (Stellar Asset Contract) · Oracle: Stellar Oracle · Custody:
@@ -191,7 +193,7 @@ const Home: NextPage = () => {
               <Link
                 key={title}
                 href={href}
-                className="group rounded-2xl border border-base-300/80 bg-base-100 p-6 text-left shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-md hover:-translate-y-1 sm:p-8"
+                className="group rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 text-left shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 sm:p-8"
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                   <Icon className="h-6 w-6" />

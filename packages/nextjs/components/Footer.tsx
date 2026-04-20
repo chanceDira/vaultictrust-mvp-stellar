@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { SwitchTheme } from "~~/components/SwitchTheme";
 
@@ -7,14 +6,13 @@ export const Footer = () => {
   return (
     <footer className="footer footer-center md:footer-horizontal p-6 md:px-8 md:py-5 bg-base-200 text-base-content border-t border-base-300 text-sm">
       <aside className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 md:place-self-start md:justify-self-start">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-base-100 border border-base-300/70 shadow-sm">
-            <Image alt="Vaultic Trust" fill src="/logo.png" sizes="36px" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-base-content leading-tight">Vaultic Trust</span>
-            <span className="text-xs text-base-content/60 leading-tight">Tokenize Africa&apos;s real economy</span>
-          </div>
+        <Link href="/" className="flex flex-col gap-0 shrink-0">
+          <span className="font-black text-xl leading-none text-base-content tracking-tighter uppercase">
+            Vaultic<span className="text-primary italic">Trust</span>
+          </span>
+          <span className="text-[9px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
+            Stellar RWA Gateway
+          </span>
         </Link>
         <p className="text-base-content/70 max-w-[280px] text-center sm:text-left text-xs sm:text-sm">
           Trust, transparency, and traceability.{" "}

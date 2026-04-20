@@ -79,11 +79,11 @@ export function TokenizeModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-base-100 border border-base-300 rounded-2xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
         {/* Header */}
-        <div className="flex justify-between items-start p-6 pb-4 border-b border-base-300">
+        <div className="flex justify-between items-start p-8 pb-6 border-b border-base-300">
           <div>
-            <h2 className="text-xl font-bold">Tokenize Asset</h2>
-            <p className="text-sm text-base-content/60 mt-0.5">
-              Open an investment pool for <span className="text-primary font-semibold">{asset.asset_name}</span>
+            <h2 className="text-3xl font-black uppercase tracking-tighter italic">Tokenize Asset</h2>
+            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold mt-1">
+              Initiate RWA Fractionalization
             </p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm ml-4 shrink-0" disabled={loading}>
@@ -95,7 +95,7 @@ export function TokenizeModal({
           {/* Locked: Asset info from registration */}
           <div className="rounded-xl bg-base-200/60 border border-base-300 p-4 space-y-3">
             <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-2">
-              Registered Asset Details (locked)
+              Registered Asset Details
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -127,12 +127,12 @@ export function TokenizeModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control w-full">
               <label className="label pb-1">
-                <span className="label-text font-semibold">
+                <span className="label-text font-black uppercase tracking-widest text-[10px]">
                   Total Shares <span className="text-error">*</span>
                 </span>
               </label>
               <input
-                className="input input-bordered w-full"
+                className="input input-bordered w-full rounded-xl"
                 type="number"
                 min="1"
                 placeholder="10000"
@@ -141,22 +141,24 @@ export function TokenizeModal({
                 disabled={loading}
               />
               <label className="label pt-1">
-                <span className="label-text-alt text-base-content/40">Units to issue</span>
+                <span className="label-text-alt text-base-content/40 uppercase font-bold text-[9px]">
+                  Units to issue
+                </span>
               </label>
             </div>
             <div className="form-control w-full">
               <label className="label pb-1">
-                <span className="label-text font-semibold">
+                <span className="label-text font-black uppercase tracking-widest text-[10px]">
                   Price per Share <span className="text-error">*</span>
                 </span>
-                <span className="label-text-alt text-base-content/40">USDC</span>
+                <span className="label-text-alt text-base-content/40 font-bold uppercase text-[9px]">USDC</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/50 font-semibold pointer-events-none text-sm">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/50 font-black pointer-events-none text-xs">
                   $
                 </span>
                 <input
-                  className="input input-bordered w-full pl-8"
+                  className="input input-bordered w-full pl-8 rounded-xl"
                   type="number"
                   min="0.0000001"
                   step="any"
@@ -167,7 +169,9 @@ export function TokenizeModal({
                 />
               </div>
               <label className="label pt-1">
-                <span className="label-text-alt text-base-content/40">Cost per unit</span>
+                <span className="label-text-alt text-base-content/40 uppercase font-bold text-[9px]">
+                  Cost per unit
+                </span>
               </label>
             </div>
           </div>
@@ -230,12 +234,16 @@ export function TokenizeModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 pt-0">
-          <button className="btn btn-ghost flex-1 rounded-xl" onClick={onClose} disabled={loading}>
+        <div className="flex gap-4 p-8 pt-4">
+          <button
+            className="btn btn-ghost flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]"
+            onClick={onClose}
+            disabled={loading}
+          >
             Cancel
           </button>
           <button
-            className="btn btn-primary flex-1 rounded-xl gap-2"
+            className="btn btn-primary flex-1 rounded-2xl gap-3 stellar-glow shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
             onClick={handleSubmit}
             disabled={loading || priceStroops <= 0n || totalSharesNum <= 0 || !rwaIssuer.trim()}
           >

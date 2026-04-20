@@ -52,16 +52,16 @@ export default function OwnerPage() {
   }, [loadOwnerAssets]);
 
   return (
-    <div className="flex flex-col grow bg-base-200/20 min-h-screen">
+    <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-            <BuildingOffice2Icon className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+            <BuildingOffice2Icon className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Owner Dashboard</h1>
-            <p className="text-xs text-base-content/50 uppercase tracking-widest font-semibold">
+            <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter">Owner Dashboard</h1>
+            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
               RWA Submission & Issuance
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function OwnerPage() {
               </div>
               <button
                 onClick={() => setIsRegisterModalOpen(true)}
-                className="btn btn-primary btn-md rounded-2xl gap-2 px-6 shadow-lg shadow-primary/20 w-full md:w-auto"
+                className="btn btn-primary btn-md rounded-2xl gap-2 px-8 shadow-lg shadow-primary/20 w-full md:w-auto stellar-glow font-black uppercase tracking-widest"
               >
                 <PlusIcon className="h-5 w-5" />
                 Register New Asset
@@ -122,7 +122,7 @@ export default function OwnerPage() {
                   {assets.map(asset => (
                     <div
                       key={asset.asset_id}
-                      className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary/30 transition-all group"
+                      className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 md:p-8 shadow-xl shadow-primary/5 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary/50 transition-all group"
                     >
                       <div className="flex items-start gap-4">
                         <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:bg-primary/10 transition-colors">
@@ -176,15 +176,16 @@ export default function OwnerPage() {
             </div>
 
             {/* Tips Section */}
-            <div className="rounded-3xl bg-base-300/30 p-8 border border-base-300/50 flex flex-col md:flex-row items-center gap-6">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/10">
-                <DocumentTextIcon className="h-8 w-8" />
+            <div className="rounded-[2.5rem] bg-primary/5 p-10 border border-primary/10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary/5">
+              <div className="h-20 w-20 rounded-3xl bg-base-100 flex items-center justify-center text-primary shrink-0 border border-primary/20 shadow-xl">
+                <DocumentTextIcon className="h-10 w-10" />
               </div>
               <div>
-                <h3 className="font-bold text-xl mb-1">Stellar Compliance First</h3>
-                <p className="text-sm text-base-content/60 max-w-xl">
-                  Vaultic uses Soroban smart contracts to ensure that every RWA submitted meets regulatory standards
-                  before it can be tokenized into Stellar native primitives. This protects both owners and investors.
+                <h3 className="font-black text-2xl mb-1 uppercase tracking-tight">Stellar Compliance First</h3>
+                <p className="text-sm text-base-content/60 max-w-xl leading-relaxed">
+                  Vaultic utilizes precision-engineered Soroban smart contracts to ensure every RWA meets global
+                  regulatory standards. Assets are audited before transitioning into Stellar native primitives, securing
+                  institutional-grade liquidity.
                 </p>
               </div>
             </div>

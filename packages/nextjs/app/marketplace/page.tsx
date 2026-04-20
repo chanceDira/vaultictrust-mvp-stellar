@@ -192,16 +192,16 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="flex flex-col grow bg-base-200/20">
+    <div className="flex flex-col grow">
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
-            <Squares2X2Icon className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+            <Squares2X2Icon className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-base-content uppercase tracking-tight">Marketplace</h1>
-            <p className="text-xs text-base-content/50 uppercase tracking-widest font-semibold">
+            <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter">Marketplace</h1>
+            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
               Real-World Asset Opportunities
             </p>
           </div>
@@ -304,7 +304,7 @@ export default function MarketplacePage() {
               return (
                 <div
                   key={asset.asset_id}
-                  className="rounded-3xl border border-base-300 bg-base-100 p-6 md:p-8 shadow-sm hover:border-primary/40 hover:shadow-md transition-all group"
+                  className="rounded-3xl border border-base-300 bg-base-100/50 backdrop-blur-md p-6 md:p-10 shadow-xl shadow-primary/5 hover:border-primary/50 transition-all group"
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="flex items-start gap-6">
@@ -368,7 +368,7 @@ export default function MarketplacePage() {
                           (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
                             "Verified"
                         }
-                        className={`btn btn-primary btn-lg rounded-2xl px-10 gap-3 shadow-lg shadow-primary/20 ${
+                        className={`btn btn-primary btn-lg rounded-2xl px-10 gap-3 shadow-lg shadow-primary/20 stellar-glow ${
                           isPurchasing && selectedAsset?.asset_id === asset.asset_id ? "loading" : ""
                         }`}
                       >

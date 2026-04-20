@@ -77,11 +77,13 @@ export const Header = () => {
               <HeaderMenuLinks onClose={closeMenu} />
             </ul>
           </details>
-          <Link href="/" className="hidden lg:flex items-center gap-2 mr-8 shrink-0">
+          <Link href="/" className="hidden lg:flex items-center gap-1 mr-8 shrink-0">
             <div className="flex flex-col">
-              <span className="font-bold leading-tight text-base-content uppercase tracking-wider">Vaultic Trust</span>
-              <span className="text-[10px] text-base-content/60 uppercase tracking-widest font-medium">
-                Africa&apos;s RWA <span className="text-primary">Stellar</span> Gateway
+              <span className="font-black text-xl leading-none text-base-content tracking-tighter uppercase">
+                Vaultic<span className="text-primary italic">Trust</span>
+              </span>
+              <span className="text-[9px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
+                Stellar RWA Gateway
               </span>
             </div>
           </Link>
