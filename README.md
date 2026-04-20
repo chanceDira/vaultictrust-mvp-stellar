@@ -12,10 +12,10 @@ The full ecosystem is currently deployed and operational on the Stellar Testnet.
 
 | Contract | Role | Contract ID (Soroban) | Explorer |
 | :--- | :--- | :--- | :--- |
-| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM) |
-| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS) |
-| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6) |
-| **VaulticDividendManager** | Yield/Dividend Distribution | `CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX) |
+| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB) |
+| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR) |
+| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG) |
+| **VaulticDividendManager** | Yield/Dividend Distribution | `CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF) |
 
 ---
 
