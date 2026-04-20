@@ -134,11 +134,13 @@
 }
 
 .premium-gradient {
-  background: radial-gradient(circle at top right, oklch(from var(--color-primary) l c h / 0.05), transparent 40%),
-              radial-gradient(circle at bottom left, oklch(from var(--color-accent) l c h / 0.05), transparent 40%);
+  background:
+    radial-gradient(circle at top right, oklch(from var(--color-primary) l c h / 0.05), transparent 40%),
+    radial-gradient(circle at bottom left, oklch(from var(--color-accent) l c h / 0.05), transparent 40%);
 }
 
-[data-theme='dark'] .premium-gradient {
-  background: radial-gradient(circle at top right, oklch(from #7c3aed l c h / 0.15), transparent 50%),
-              radial-gradient(circle at bottom left, oklch(from #4f46e5 l c h / 0.1), transparent 50%);
+[data-theme="dark"] .premium-gradient {
+  background:
+    radial-gradient(circle at top right, oklch(from #7c3aed l c h / 0.15), transparent 50%),
+    radial-gradient(circle at bottom left, oklch(from #4f46e5 l c h / 0.1), transparent 50%);
 }

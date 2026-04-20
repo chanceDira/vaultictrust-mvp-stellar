@@ -658,17 +658,31 @@ export async function setUserStatus(userAddress: string, status: number, callerP
   const { userRegistry } = getContractIds();
   if (!userRegistry) throw new Error("userRegistry contract not deployed");
 
-  // Map integer status back to Symbol name for Soroban
-  const KYC_STATUS_SYMBOLS = ["None", "Pending", "Verified", "Rejected", "Suspended"];
-  const statusSymbol = KYC_STATUS_SYMBOLS[status] || "None";
-
   return callContract({
     contractId: userRegistry,
     method: "set_status",
     args: [
       new Address(callerPublicKey).toScVal(),
       new Address(userAddress).toScVal(),
-      nativeToScVal(statusSymbol, { type: "symbol" }),
+      nativeToScVal(status, { type: "u32" }),
+    ],
+    callerPublicKey,
+  });
+}
+
+export async function batchSetUserStatus(userAddresses: string[], status: number, callerPublicKey: string) {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) throw new Error("userRegistry contract not deployed");
+
+  const addressScVals = userAddresses.map(addr => new Address(addr).toScVal());
+
+  return callContract({
+    contractId: userRegistry,
+    method: "batch_set_status",
+    args: [
+      new Address(callerPublicKey).toScVal(),
+      xdr.ScVal.scvVec(addressScVals),
+      nativeToScVal(status, { type: "u32" }),
     ],
     callerPublicKey,
   });
