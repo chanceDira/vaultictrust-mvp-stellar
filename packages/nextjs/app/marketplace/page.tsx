@@ -25,6 +25,7 @@ import {
   fetchUserRecord,
   getContractIds,
   purchaseShares,
+  purchaseWholeAsset,
 } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -122,32 +123,63 @@ export default function MarketplacePage() {
 
   const handleInvestClick = (asset: OnChainAsset) => {
     if (!publicKey) return;
-    if (asset.state.tag === "Active") {
+
+    // For fractional assets, they must be "Tokenized" before they can be invested in
+    if (asset.model.tag === "Fractional" && asset.state.tag === "Active") {
       notification.info("This asset is being tokenized. Please check back soon.");
       return;
     }
+
     setSelectedAsset(asset);
-    setIsTrustlineModalOpen(true);
+
+    // Fractional assets require a trustline for the RWA token.
+    // WholeOwnership assets are bought directly with USDC (no native RWA token distribution needed for buyer).
+    if (asset.model.tag === "Fractional") {
+      setIsTrustlineModalOpen(true);
+    } else {
+      // Direct purchase flow for Whole Ownership
+      handleInvestmentSuccess(asset);
+    }
   };
 
-  const handleInvestmentSuccess = async () => {
-    if (!selectedAsset || !publicKey) return;
+  const handleInvestmentSuccess = async (assetOverride?: OnChainAsset) => {
+    const asset = assetOverride || selectedAsset;
+    if (!asset || !publicKey) return;
+
     setIsTrustlineModalOpen(false);
     setIsPurchasing(true);
 
-    const notificationId = notification.loading(`Processing your purchase for ${selectedAsset.asset_name}...`);
+    const isWhole = asset.model.tag === "WholeOwnership";
+    const actionLabel = isWhole ? "processing your whole-asset purchase" : "processing your fractional investment";
+    const notificationId = notification.loading(`${actionLabel} for ${asset.asset_name}...`);
 
     try {
-      // For MVP we purchase 1 share
-      await purchaseShares(
-        {
-          investor: publicKey,
-          assetId: selectedAsset.asset_id,
-          shareAmount: 1n,
-        },
-        publicKey,
-      );
-      notification.success(`Successfully invested in ${selectedAsset.asset_name}!`);
+      if (isWhole) {
+        // Purchase whole asset
+        await purchaseWholeAsset(
+          {
+            buyer: publicKey,
+            assetId: asset.asset_id,
+          },
+          publicKey,
+        );
+      } else {
+        // For MVP fractional investment, we purchase 1 share
+        await purchaseShares(
+          {
+            investor: publicKey,
+            assetId: asset.asset_id,
+            shareAmount: 1n,
+          },
+          publicKey,
+        );
+      }
+
+      const successMsg = isWhole
+        ? `Successfully purchased ${asset.asset_name}!`
+        : `Successfully invested in ${asset.asset_name}!`;
+
+      notification.success(successMsg);
       await loadAssets(); // Refresh
     } catch (error: any) {
       console.error(error);
@@ -331,7 +363,7 @@ export default function MarketplacePage() {
                         onClick={() => handleInvestClick(asset)}
                         disabled={
                           !isConnected ||
-                          asset.state.tag === "Active" ||
+                          (asset.model.tag === "Fractional" && asset.state.tag === "Active") ||
                           isPurchasing ||
                           (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
                             "Verified"
@@ -340,7 +372,13 @@ export default function MarketplacePage() {
                           isPurchasing && selectedAsset?.asset_id === asset.asset_id ? "loading" : ""
                         }`}
                       >
-                        {isPurchasing && selectedAsset?.asset_id === asset.asset_id ? "Investing..." : "Invest Now"}
+                        {isPurchasing && selectedAsset?.asset_id === asset.asset_id
+                          ? asset.model.tag === "WholeOwnership"
+                            ? "Purchasing..."
+                            : "Investing..."
+                          : asset.model.tag === "WholeOwnership"
+                            ? "Buy Whole Asset"
+                            : "Invest Now"}
                         {!isPurchasing && <ArrowRightIcon className="h-5 w-5" />}
                       </button>
                     </div>
