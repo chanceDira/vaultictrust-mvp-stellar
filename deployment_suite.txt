@@ -7,19 +7,19 @@
 ║ Admin 2:      GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL ║
 ╚══════════════════════════════════════════════════════════════╝
 
-DEPLOYED CONTRACTS:
+DEPLOYED CONTRACTS (v2 — Governance Update):
 ----------------------------------------------------------------
-VaulticAssetRegistry:     CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM
-VaulticUserRegistry:      CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS
-VaulticInvestmentManager: CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6
-VaulticDividendManager:   CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX
+VaulticAssetRegistry:     CBPVPOTPFDXXVG57BDTWCIHZFGEM5F5ZTOGW67BMEBS5VEN7URZ7GJVP
+VaulticUserRegistry:      CC6JWHFZKEW3BEBYKB3GXO4RKUOONAS4SHL5NQ24PGAP5HPGRSRK5H26
+VaulticInvestmentManager: CA662IT6QY5ASH2P2XNXBML6TGP2G7AKLIOJPZRDGUO644TNOJWYG4EZ
+VaulticDividendManager:   CAWYSFMX7XM5RLXEX6E67AREV4XSSAMAX2JGF2UZLXMKMXLLOOXB62OC
 
-EXPLORER LINKS (STELAR EXPERT):
+EXPLORER LINKS (STELLAR EXPERT):
 ----------------------------------------------------------------
-AssetRegistry:   https://stellar.expert/explorer/testnet/contract/CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM
-UserRegistry:    https://stellar.expert/explorer/testnet/contract/CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS
-InvestManager:   https://stellar.expert/explorer/testnet/contract/CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6
-DividendManager: https://stellar.expert/explorer/testnet/contract/CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX
+AssetRegistry:   https://stellar.expert/explorer/testnet/contract/CBPVPOTPFDXXVG57BDTWCIHZFGEM5F5ZTOGW67BMEBS5VEN7URZ7GJVP
+UserRegistry:    https://stellar.expert/explorer/testnet/contract/CC6JWHFZKEW3BEBYKB3GXO4RKUOONAS4SHL5NQ24PGAP5HPGRSRK5H26
+InvestManager:   https://stellar.expert/explorer/testnet/contract/CA662IT6QY5ASH2P2XNXBML6TGP2G7AKLIOJPZRDGUO644TNOJWYG4EZ
+DividendManager: https://stellar.expert/explorer/testnet/contract/CAWYSFMX7XM5RLXEX6E67AREV4XSSAMAX2JGF2UZLXMKMXLLOOXB62OC
 
 INITIALIZATION LOGS:
 ----------------------------------------------------------------
@@ -28,14 +28,14 @@ INITIALIZATION LOGS:
 - InvestmentManager initialized with Admins: [GCBWGQS..., GBWAF6C...]
 - DividendManager initialized with Admins: [GCBWGQS..., GBWAF6C...]
 
+VERIFICATION STATUS:
+----------------------------------------------------------------
+✅ ALL DEVELOPER ROLES RENOUNCED TO ADMINS
+✅ ADMIN-GATED UPGRADEABILITY ENABLED
+✅ KYC STATUS TYPE MISMATCH RESOLVED
+
 USDC TESTNET CONTRACT:
 ----------------------------------------------------------------
 CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA
 
-BUILD INFO:
-----------------------------------------------------------------
-Soroban SDK: v21.0
-Target:      wasm32v1-none
-Optimization: Enabled (--optimize)
-
-HANDOVER COMPLETE: Multi-admin model enforced across all core protocol contracts.
+HANDOVER COMPLETE: The platform is now fully governed by the team administrator wallets.

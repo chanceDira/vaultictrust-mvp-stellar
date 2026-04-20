@@ -73,15 +73,15 @@ const LitepaperPage: NextPage = () => {
           <h2 className="mt-10 text-xl font-bold text-base-content">Roadmap</h2>
           <ul className="mt-3 list-disc list-inside space-y-2 text-base text-base-content/80">
             <li>
-              <strong>Phase 1 (Current)</strong> — Frontend migration to Stellar. Freighter wallet integration. UI &amp;
-              content fully Stellar-native.
+              <strong>Phase 1 </strong> — Frontend migration to Stellar. Freighter wallet integration. UI &amp; content
+              fully Stellar-native.
             </li>
             <li>
               <strong>Phase 2</strong> — Soroban smart contract deployment. Asset Registry + Investment Manager on
               Stellar Testnet.
             </li>
             <li>
-              <strong>Phase 3</strong> — Secondary liquidity on Stellar DEX. Multi-country rollout.
+              <strong>Phase 3 (Current)</strong> — Secondary liquidity on Stellar DEX. Multi-country rollout.
             </li>
           </ul>
           <p className="mt-4 text-base leading-relaxed text-base-content/85">

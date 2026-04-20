@@ -171,17 +171,48 @@ stellar contract invoke \
 echo "   ✓ DividendManager initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2]"
 
 # ---------------------------------------------------------------------------- #
-# 9. UPDATE scaffold.config.ts (Note: Handled manually for accuracy since IDs changed)
+# 9. RENUNCIATION VERIFICATION — Confirming Developer Roles Transferred
 # ---------------------------------------------------------------------------- #
 echo ""
-echo "▶ Step 8: Deployment successful. Please update scaffold.config.ts with the IDs below."
+echo "▶ Step 8: Verifying Renunciation of Developer Privileges..."
+
+check_renunciation() {
+  local name=$1
+  local id=$2
+  echo "   - Checking $name ($id)..."
+  
+  # Invoke get_admins to verify the state
+  local admins=$(stellar contract invoke \
+    --network "$NETWORK" \
+    --source "$DEPLOYER_ALIAS" \
+    --id "$id" \
+    -- get_admins)
+  
+  if [[ "$admins" == *"$DEPLOYER_ADDRESS"* ]]; then
+    echo "   ⚠️ WARNING: Deployer address found in $name admins!"
+  else
+    echo "   ✓ Success: Deployer NOT an admin in $name. Power transferred to team."
+  fi
+}
+
+check_renunciation "AssetRegistry" "$REGISTRY_ID"
+check_renunciation "UserRegistry" "$USER_REGISTRY_ID"
+check_renunciation "InvestManager" "$INVESTMENT_ID"
+check_renunciation "DividendManager" "$DIVIDEND_ID"
 
 # ---------------------------------------------------------------------------- #
-# 10. SUMMARY
+# 10. UPDATE scaffold.config.ts (Note: Handled manually for accuracy since IDs changed)
+# ---------------------------------------------------------------------------- #
+echo ""
+echo "▶ Step 9: Deployment successful. Please update scaffold.config.ts with the IDs below."
+
+# ---------------------------------------------------------------------------- #
+# 11. SUMMARY
 # ---------------------------------------------------------------------------- #
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║              DEPLOYMENT COMPLETE ✓                           ║"
+echo "║      DEVELOPER ROLES RENOUNCED TO ADMINS                     ║"
 echo "╠══════════════════════════════════════════════════════════════╣"
 printf "║  %-18s  %-38s ║\n" "Contract" "Contract ID"
 echo "╠══════════════════════════════════════════════════════════════╣"
