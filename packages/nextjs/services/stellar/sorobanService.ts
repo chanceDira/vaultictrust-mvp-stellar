@@ -492,13 +492,18 @@ export async function increaseAllowance(amount: bigint, callerPublicKey: string,
 
   if (!spender) throw new Error("Spender contract not targetable");
 
+  const server = getRpcServer();
+  const latestLedger = await server.getLatestLedger();
+  const expirationLedger = latestLedger.sequence + 1000;
+
   return callContract({
     contractId: TESTNET_USDC_CONTRACT,
-    method: "incr_allow",
+    method: "approve",
     args: [
       new Address(callerPublicKey).toScVal(),
       new Address(spender).toScVal(),
       nativeToScVal(amount, { type: "i128" }),
+      nativeToScVal(expirationLedger, { type: "u32" }),
     ],
     callerPublicKey,
   });
