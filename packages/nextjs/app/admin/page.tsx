@@ -20,12 +20,16 @@ import { TokenizeModal } from "~~/components/modals/TokenizeModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ADMIN_ADDRESSES } from "~~/scaffold.config";
+import { decryptFileAsAdmin } from "~~/services/stellar/cryptoService";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   approveAsset,
+  fetchAllUserAddresses,
   fetchAsset,
   fetchKycSubmissions,
   fetchTotalAssets,
+  fetchTotalFees,
+  fetchTotalUsers,
   fetchUserRecord,
   getContractIds,
   setUserStatus,
@@ -226,14 +230,20 @@ export default function AdminPage() {
   const [isLoadingKycApps, setIsLoadingKycApps] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [tokenizeTarget, setTokenizeTarget] = useState<OnChainAsset | null>(null);
-  const [isSweeping, setIsSweeping] = useState(false);
   const [filter, setFilter] = useState<AssetStateKey | "All">("All");
+  const [isSweeping, setIsSweeping] = useState(false);
+  const [platformFees, setPlatformFees] = useState<bigint>(0n);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [totalPlatformAssets, setTotalPlatformAssets] = useState<number>(0);
 
   // KYC States
   const [kycSearchAddr, setKycSearchAddr] = useState("");
   const [foundUser, setFoundUser] = useState<any>(null);
   const [isSearchingUser, setIsSearchingUser] = useState(false);
   const [isUpdatingKyc, setIsUpdatingKyc] = useState(false);
+  const [decryptedFileUrl, setDecryptedFileUrl] = useState<string | null>(null);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [adminOrgKey, setAdminOrgKey] = useState("");
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -257,8 +267,14 @@ export default function AdminPage() {
   const loadKycSubmissions = useCallback(async () => {
     setIsLoadingKycApps(true);
     try {
-      const apps = await fetchKycSubmissions();
-      setKycApplications(apps);
+      // 1. Get event-based submissions (fast, recent)
+      const eventApps = await fetchKycSubmissions();
+      // 2. Get registry-based submissions (robust, persistent)
+      const registryApps = await fetchAllUserAddresses();
+
+      // Merge and deduplicate
+      const merged = Array.from(new Set([...eventApps, ...registryApps]));
+      setKycApplications(merged);
     } catch (error) {
       console.error("Failed to load KYC submissions:", error);
     } finally {
@@ -266,17 +282,32 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadPlatformStats = useCallback(async () => {
+    try {
+      const fees = await fetchTotalFees();
+      const users = await fetchTotalUsers();
+      const assetsCount = await fetchTotalAssets();
+      setPlatformFees(fees);
+      setTotalUsers(users);
+      setTotalPlatformAssets(assetsCount);
+    } catch (error) {
+      console.error("Failed to load platform stats:", error);
+    }
+  }, []);
+
   useEffect(() => {
     loadAssets();
     loadKycSubmissions();
-  }, [loadAssets, loadKycSubmissions]);
+    loadPlatformStats();
+  }, [loadAssets, loadKycSubmissions, loadPlatformStats]);
 
   useEffect(() => {
     if (isConnected && isDeployed) {
       loadAssets();
       loadKycSubmissions();
+      loadPlatformStats();
     }
-  }, [isConnected, isDeployed, loadAssets, loadKycSubmissions]);
+  }, [isConnected, isDeployed, loadAssets, loadKycSubmissions, loadPlatformStats]);
 
   if (isConnected && !isAdmin) {
     return <NotAuthorized />;
@@ -347,6 +378,35 @@ export default function AdminPage() {
     }
   };
 
+  const handleDecryptIdentity = async () => {
+    if (!foundUser || !foundUser.metadata_uri || !adminOrgKey) {
+      notification.error("Metadata URI and Admin Org Key are required.");
+      return;
+    }
+    setIsDecrypting(true);
+    const notifId = notification.loading("Decrypting document via Vaultic Org Key...");
+    try {
+      // 1. Fetch encrypted JSON from IPFS
+      const cid = foundUser.metadata_uri.replace("ipfs://", "");
+      const response = await fetch(`https://gateway.pinata.cloud/ipfs/${cid}`);
+      const encryptedData = await response.json();
+
+      // 2. Decrypt
+      const decryptedBuffer = await decryptFileAsAdmin(encryptedData, adminOrgKey);
+
+      // 3. Create blob URL
+      const blob = new Blob([decryptedBuffer], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      setDecryptedFileUrl(url);
+      notification.success("Document decrypted successfully!");
+    } catch (err: any) {
+      notification.error(`Decryption failed: ${err.message || "Invalid Org Key"}`);
+    } finally {
+      setIsDecrypting(false);
+      notification.remove(notifId);
+    }
+  };
+
   const filteredAssets = filter === "All" ? assets : assets.filter(a => a.state.tag === filter);
 
   const counts = {
@@ -409,7 +469,45 @@ export default function AdminPage() {
 
         {isConnected && isDeployed && (
           <>
-            {/* Stats Row */}
+            {/* Platform Oversight Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="stats shadow-2xl bg-base-100 border border-base-300">
+                <div className="stat">
+                  <div className="stat-figure text-primary">
+                    <UserGroupIcon className="w-8 h-8" />
+                  </div>
+                  <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Total Platform Users</div>
+                  <div className="stat-value text-primary">{totalUsers}</div>
+                  <div className="stat-desc text-xs mt-1">Verified on UserRegistry</div>
+                </div>
+              </div>
+
+              <div className="stats shadow-2xl bg-base-100 border border-base-300">
+                <div className="stat">
+                  <div className="stat-figure text-secondary">
+                    <BanknotesIcon className="w-8 h-8" />
+                  </div>
+                  <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Accumulated Fees</div>
+                  <div className="stat-value text-secondary">
+                    {(Number(platformFees) / 10 ** 7).toFixed(2)} <span className="text-sm font-normal">USDC</span>
+                  </div>
+                  <div className="stat-desc text-xs mt-1">Ready for Treasury Sweep</div>
+                </div>
+              </div>
+
+              <div className="stats shadow-2xl bg-base-100 border border-base-300">
+                <div className="stat">
+                  <div className="stat-figure text-accent">
+                    <CubeTransparentIcon className="w-8 h-8" />
+                  </div>
+                  <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Protocol Assets</div>
+                  <div className="stat-value text-accent">{totalPlatformAssets}</div>
+                  <div className="stat-desc text-xs mt-1">RWAs in Registry</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Asset State Filter Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
               {(Object.keys(STATE_CONFIG) as AssetStateKey[]).map(state => {
                 const cfg = STATE_CONFIG[state];
@@ -599,18 +697,63 @@ export default function AdminPage() {
                           </div>
 
                           {foundUser.metadata_uri && (
-                            <div className="mt-4">
-                              <p className="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-1">
-                                Identity Metadata (IPFS)
+                            <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">
+                                Identity Processing (Zero-Knowledge)
                               </p>
-                              <a
-                                href={foundUser.metadata_uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-xs text-primary underline break-all"
-                              >
-                                {foundUser.metadata_uri}
-                              </a>
+                              <div className="flex flex-col gap-3">
+                                <div>
+                                  <p className="text-[10px] text-base-content/40 uppercase mb-1">
+                                    Encrypted Payload CID
+                                  </p>
+                                  <code className="text-[10px] bg-base-300 px-2 py-1 rounded truncate block">
+                                    {foundUser.metadata_uri}
+                                  </code>
+                                </div>
+
+                                {!decryptedFileUrl ? (
+                                  <div className="flex flex-col gap-2">
+                                    <input
+                                      type="password"
+                                      placeholder="Paste Vaultic Org Private Key to Decrypt"
+                                      className="input input-bordered input-xs w-full text-[10px]"
+                                      value={adminOrgKey}
+                                      onChange={e => setAdminOrgKey(e.target.value)}
+                                    />
+                                    <button
+                                      className="btn btn-primary btn-xs w-full"
+                                      onClick={handleDecryptIdentity}
+                                      disabled={isDecrypting || !adminOrgKey}
+                                    >
+                                      {isDecrypting ? (
+                                        <span className="loading loading-spinner loading-xs" />
+                                      ) : (
+                                        "Decrypt & View PII"
+                                      )}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="mt-2 text-center">
+                                    <div className="relative group">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={decryptedFileUrl}
+                                        alt="Decrypted ID"
+                                        className="max-h-64 rounded-lg mx-auto shadow-xl border-2 border-primary/30"
+                                      />
+                                      <button
+                                        className="btn btn-circle btn-xs absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => setDecryptedFileUrl(null)}
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                    <p className="text-[10px] text-success mt-2 font-bold uppercase tracking-[0.2em]">
+                                      Decrypted Successfully
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
 

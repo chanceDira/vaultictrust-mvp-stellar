@@ -39,6 +39,8 @@ pub struct UserRecord {
 pub enum DataKey {
     Admins,
     User(Address),
+    UserList,
+    TotalUsers,
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +62,8 @@ impl VaulticUserRegistry {
             panic!("at least one admin required");
         }
         env.storage().instance().set(&DataKey::Admins, &admins);
+        env.storage().instance().set(&DataKey::TotalUsers, &0u32);
+        env.storage().persistent().set(&DataKey::UserList, &Vec::<Address>::new(&env));
     }
 
     /// Submits a KYC application. Sets status to PENDING.
@@ -79,6 +83,17 @@ impl VaulticUserRegistry {
         // Prevention: don't overwrite a Verified status without admin intervention
         if record.status == KycStatus::Verified {
             panic!("user already verified");
+        }
+
+        // Tracking for Admin Dashboard oversight
+        if record.updated_at == 0 {
+            let mut total: u32 = env.storage().instance().get(&DataKey::TotalUsers).unwrap_or(0);
+            total += 1;
+            env.storage().instance().set(&DataKey::TotalUsers, &total);
+
+            let mut list: Vec<Address> = env.storage().persistent().get(&DataKey::UserList).unwrap_or(Vec::new(&env));
+            list.push_back(user.clone());
+            env.storage().persistent().set(&DataKey::UserList, &list);
         }
 
         record.status = KycStatus::Pending;
@@ -184,6 +199,22 @@ impl VaulticUserRegistry {
             panic!("not an admin");
         }
         env.deployer().update_current_contract_wasm(new_wasm_hash);
+    }
+
+    /// Returns the total number of registered users.
+    pub fn get_total_users(env: Env) -> u32 {
+        env.storage().instance().get(&DataKey::TotalUsers).unwrap_or(0)
+    }
+
+    /// Returns a paginated list of all registered users.
+    pub fn get_all_users(env: Env, offset: u32, limit: u32) -> Vec<Address> {
+        let list: Vec<Address> = env.storage().persistent().get(&DataKey::UserList).unwrap_or(Vec::new(&env));
+        let mut result = Vec::new(&env);
+        let end = core::cmp::min(offset + limit, list.len());
+        for i in offset..end {
+            result.push_back(list.get(i).unwrap());
+        }
+        result
     }
 }
 

@@ -36,8 +36,8 @@ export async function setupTrustline(publicKey: string, assetCode: string, issue
     .setTimeout(30)
     .build();
 
-  // Sign with Freighter
-  const signedResult = await signTransaction(transaction.toXDR());
+  // Sign with Freighter - explicitly pass networkPassphrase to avoid "Main Net" warnings
+  const signedResult = await signTransaction(transaction.toXDR(), { networkPassphrase });
   const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
   return server.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
 }
@@ -75,7 +75,8 @@ export async function purchaseRWAAsset(
     .setTimeout(30)
     .build();
 
-  const signedResult = await signTransaction(transaction.toXDR());
+  // Sign with Freighter - explicitly pass networkPassphrase to avoid "Main Net" warnings
+  const signedResult = await signTransaction(transaction.toXDR(), { networkPassphrase });
   const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
   return server.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
 }
