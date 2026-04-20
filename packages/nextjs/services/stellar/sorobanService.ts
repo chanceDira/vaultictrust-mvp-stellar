@@ -439,6 +439,18 @@ export async function tokenizeAsset(
   });
 }
 
+export async function purchaseWholeAsset(params: { buyer: string; assetId: number }, callerPublicKey: string) {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("investmentManager contract not deployed");
+
+  return callContract({
+    contractId: investmentManager,
+    method: "purchase_whole_asset",
+    args: [new Address(params.buyer).toScVal(), nativeToScVal(params.assetId, { type: "u32" })],
+    callerPublicKey,
+  });
+}
+
 export async function purchaseShares(
   params: { investor: string; assetId: number; shareAmount: bigint },
   callerPublicKey: string,

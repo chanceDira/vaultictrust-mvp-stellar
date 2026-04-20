@@ -21,6 +21,7 @@ export function RegisterModal({
   // Human-readable USDC amount (e.g. "50000" means $50,000 USDC)
   const [valuationUsdc, setValuationUsdc] = useState("");
   const [description, setDescription] = useState("");
+  const [model, setModel] = useState<"Fractional" | "WholeOwnership">("Fractional");
   const [loading, setLoading] = useState(false);
 
   // Convert real USDC → stroops for the contract (1 USDC = 10_000_000 stroops)
@@ -76,7 +77,7 @@ export function RegisterModal({
           assetCode: code.toUpperCase(),
           metadataUri: metadataResult.uri,
           valuation: valuationStroops,
-          model: "Fractional",
+          model: model,
         },
         publicKey,
       );
@@ -210,6 +211,50 @@ export function RegisterModal({
               onChange={e => setDescription(e.target.value)}
               disabled={loading}
             />
+          </div>
+
+          {/* Ownership Model */}
+          <div className="form-control w-full">
+            <label className="label pb-1">
+              <span className="label-text font-semibold">Ownership Model</span>
+            </label>
+            <div className="flex gap-4">
+              <div
+                className={`flex-1 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  model === "Fractional"
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-base-300 hover:border-base-content/20"
+                }`}
+                onClick={() => !loading && setModel("Fractional")}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-3 h-3 rounded-full ${model === "Fractional" ? "bg-primary" : "bg-base-300"}`} />
+                  <span className="font-bold text-sm">Fractional Shares</span>
+                </div>
+                <p className="text-[10px] text-base-content/50 leading-tight">
+                  Asset is split into shares for multiple investors to pool funds.
+                </p>
+              </div>
+
+              <div
+                className={`flex-1 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  model === "WholeOwnership"
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-base-300 hover:border-base-content/20"
+                }`}
+                onClick={() => !loading && setModel("WholeOwnership")}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div
+                    className={`w-3 h-3 rounded-full ${model === "WholeOwnership" ? "bg-primary" : "bg-base-300"}`}
+                  />
+                  <span className="font-bold text-sm">Whole Asset</span>
+                </div>
+                <p className="text-[10px] text-base-content/50 leading-tight">
+                  The entire asset is purchased by a single investor at full valuation.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Info banner */}
