@@ -13,7 +13,8 @@ set -euo pipefail
 
 NETWORK="testnet"
 DEPLOYER_ALIAS="deployer"
-ADMIN_ADDRESS="GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI"
+ADMIN_ADDRESS_1="GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI"
+ADMIN_ADDRESS_2="GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL"
 CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REGISTRY_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_asset_registry.wasm"
 INVESTMENT_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_investment_manager.wasm"
@@ -29,7 +30,6 @@ echo ""
 echo "╔══════════════════════════════════════════════════╗"
 echo "║   Vaultic Trust — Soroban Testnet Deployment     ║"
 echo "╚══════════════════════════════════════════════════╝"
-echo ""
 
 # ---------------------------------------------------------------------------- #
 # 1. BUILD (Staged to satisfy contractimport dependencies)
@@ -102,7 +102,8 @@ echo "   ✓ VaulticUserRegistry deployed: $USER_REGISTRY_ID"
 DEPLOYER_ADDRESS=$(stellar keys address "$DEPLOYER_ALIAS")
 echo ""
 echo "   Deployer address (paying gas): $DEPLOYER_ADDRESS"
-echo "   Platform Admin address:        $ADMIN_ADDRESS"
+echo "   Admin 1 address:               $ADMIN_ADDRESS_1"
+echo "   Admin 2 address:               $ADMIN_ADDRESS_2"
 
 # ---------------------------------------------------------------------------- #
 # 6. INITIALIZE — ASSET REGISTRY
@@ -114,10 +115,10 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$REGISTRY_ID" \
   -- initialize \
-  --admin "$ADMIN_ADDRESS" \
+  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]" \
   --tokenizer "$INVESTMENT_ID"
 
-echo "   ✓ Registry initialized. Admin=$ADMIN_ADDRESS, Tokenizer=$INVESTMENT_ID"
+echo "   ✓ Registry initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2], Tokenizer=$INVESTMENT_ID"
 
 # ---------------------------------------------------------------------------- #
 # 6a. INITIALIZE — USER REGISTRY
@@ -129,9 +130,9 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$USER_REGISTRY_ID" \
   -- initialize \
-  --admin "$ADMIN_ADDRESS"
+  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]"
 
-echo "   ✓ UserRegistry initialized. Admin=$ADMIN_ADDRESS"
+echo "   ✓ UserRegistry initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2]"
 
 # ---------------------------------------------------------------------------- #
 # 7. INITIALIZE — INVESTMENT MANAGER
@@ -143,14 +144,14 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$INVESTMENT_ID" \
   -- initialize \
-  --admin "$ADMIN_ADDRESS" \
+  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]" \
   --registry "$REGISTRY_ID" \
   --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC" \
-  --fee_treasury "$ADMIN_ADDRESS" \
+  --fee_treasury "$ADMIN_ADDRESS_1" \
   --protocol_fee_bps "50"
 
-echo "   ✓ InvestmentManager initialized. Admin=$ADMIN_ADDRESS, USDC=$TESTNET_USDC, Fee=0.5%"
+echo "   ✓ InvestmentManager initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2], USDC=$TESTNET_USDC, Fee=0.5%"
 
 # ---------------------------------------------------------------------------- #
 # 8. INITIALIZE — DIVIDEND MANAGER
@@ -162,26 +163,18 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$DIVIDEND_ID" \
   -- initialize \
-  --admin "$ADMIN_ADDRESS" \
+  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]" \
   --investment_manager "$INVESTMENT_ID" \
   --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC"
 
-echo "   ✓ DividendManager initialized. Admin=$ADMIN_ADDRESS"
+echo "   ✓ DividendManager initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2]"
 
 # ---------------------------------------------------------------------------- #
-# 9. UPDATE scaffold.config.ts
+# 9. UPDATE scaffold.config.ts (Note: Handled manually for accuracy since IDs changed)
 # ---------------------------------------------------------------------------- #
 echo ""
-echo "▶ Step 8: Updating scaffold.config.ts with deployed contract IDs..."
-sed -i.bak \
-  -e "s\|VaulticAssetRegistry: null, // TODO: run deploy-testnet.sh\|VaulticAssetRegistry: \"$REGISTRY_ID\",\|g" \
-  -e "s\|VaulticUserRegistry: null, // TODO: run deploy-testnet.sh\|VaulticUserRegistry: \"$USER_REGISTRY_ID\",\|g" \
-  -e "s\|VaulticInvestmentManager: null, // TODO: run deploy-testnet.sh\|VaulticInvestmentManager: \"$INVESTMENT_ID\",\|g" \
-  -e "s\|VaulticDividendManager: null, // TODO: run deploy-testnet.sh\|VaulticDividendManager: \"$DIVIDEND_ID\",\|g" \
-  "$CONFIG_TS"
-
-echo "   ✓ scaffold.config.ts updated."
+echo "▶ Step 8: Deployment successful. Please update scaffold.config.ts with the IDs below."
 
 # ---------------------------------------------------------------------------- #
 # 10. SUMMARY
@@ -200,8 +193,14 @@ echo "╠═══════════════════════�
 printf "║  %-18s  %-38s ║\n" "Testnet USDC" "$TESTNET_USDC"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
+echo "Explorer Links (Testnet):"
+echo "  AssetRegistry:   https://stellar.expert/explorer/testnet/contract/$REGISTRY_ID"
+echo "  UserRegistry:    https://stellar.expert/explorer/testnet/contract/$USER_REGISTRY_ID"
+echo "  InvestManager:   https://stellar.expert/explorer/testnet/contract/$INVESTMENT_ID"
+echo "  DividendManager: https://stellar.expert/explorer/testnet/contract/$DIVIDEND_ID"
+echo ""
 echo "Next steps:"
-echo "  1. Verify contracts on: https://stellar.expert/explorer/testnet"
-echo "  2. Fund your admin wallet via Friendbot: https://friendbot.stellar.org"
+echo "  1. Update scaffold.config.ts with these IDs."
+echo "  2. Fund your admin wallets via Friendbot: https://friendbot.stellar.org"
 echo "  3. Start the Next.js frontend: cd ../nextjs && yarn dev"
 echo ""

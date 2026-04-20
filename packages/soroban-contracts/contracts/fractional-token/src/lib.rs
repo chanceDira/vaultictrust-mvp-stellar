@@ -11,12 +11,13 @@ use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, Ve
 
 #[contracttype]
 pub enum DataKey {
-    Admin,
+    Admins,
     Minter,           // InvestmentManager address
     AssetId,
     AssetName,
     Balance(Address), // Tracked holdings (mirrors native asset)
     TotalSupply,
+    IsFrozen(Address),
 }
 
 #[contract]
@@ -28,7 +29,7 @@ impl VaulticFractionalToken {
     /// Mints full supply to `initial_holder` (InvestmentManager) as a starting point.
     pub fn initialize(
         env: Env,
-        admin: Address,
+        admins: Vec<Address>,
         minter: Address,
         asset_id: u32,
         asset_name: String,
@@ -38,11 +39,14 @@ impl VaulticFractionalToken {
         if env.storage().instance().has(&DataKey::AssetId) {
             panic!("already initialized");
         }
+        if admins.is_empty() {
+            panic!("at least one admin required");
+        }
         if total_supply <= 0 {
             panic!("invalid supply");
         }
 
-        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::Admins, &admins);
         env.storage().instance().set(&DataKey::Minter, &minter);
         env.storage().instance().set(&DataKey::AssetId, &asset_id);
         env.storage().instance().set(&DataKey::AssetName, &asset_name);
@@ -121,11 +125,38 @@ impl VaulticFractionalToken {
         total_reclaimed
     }
 
-    /// Updates the minter (called when InvestmentManager is upgraded). Admin only.
-    pub fn set_minter(env: Env, new_minter: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-        admin.require_auth();
-        env.storage().instance().set(&DataKey::Minter, &new_minter);
+    pub fn freeze_account(env: Env, caller: Address, account: Address) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        env.storage().persistent().set(&DataKey::IsFrozen(account), &true);
+    }
+
+    pub fn unfreeze_account(env: Env, caller: Address, account: Address) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        env.storage().persistent().set(&DataKey::IsFrozen(account), &false);
+    }
+
+    pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        if new_admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &new_admins);
+    }
+
+    pub fn get_admins(env: Env) -> Vec<Address> {
+        env.storage().instance().get(&DataKey::Admins).unwrap()
     }
 
     // -- Read functions --

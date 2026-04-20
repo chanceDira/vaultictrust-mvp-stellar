@@ -94,7 +94,7 @@ export function RegisterModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-lg shadow-2xl overflow-y-auto max-h-[95vh]">
+      <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
         {/* Header */}
         <div className="flex justify-between items-start p-6 pb-4 border-b border-base-300">
           <div>

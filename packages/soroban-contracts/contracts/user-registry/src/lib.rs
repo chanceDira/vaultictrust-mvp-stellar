@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, Env, String, symbol_short, BytesN,
+    contract, contractimpl, contracttype, Address, Env, String, Vec, symbol_short, BytesN,
 };
 
 // ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ pub struct UserRecord {
 
 #[contracttype]
 pub enum DataKey {
-    Admin,
+    Admins,
     User(Address),
 }
 
@@ -51,12 +51,15 @@ pub struct VaulticUserRegistry;
 #[contractimpl]
 impl VaulticUserRegistry {
     
-    /// Initializes the registry with an admin address.
-    pub fn initialize(env: Env, admin: Address) {
-        if env.storage().instance().has(&DataKey::Admin) {
+    /// Initializes the registry with a set of admin addresses.
+    pub fn initialize(env: Env, admins: Vec<Address>) {
+        if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
         }
-        env.storage().instance().set(&DataKey::Admin, &admin);
+        if admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &admins);
     }
 
     /// Submits a KYC application. Sets status to PENDING.
@@ -88,9 +91,12 @@ impl VaulticUserRegistry {
     }
 
     /// Updates a user's KYC status. Admin only.
-    pub fn set_status(env: Env, user: Address, status: KycStatus) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
+    pub fn set_status(env: Env, caller: Address, user: Address, status: KycStatus) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
 
         let mut record: UserRecord = env.storage().persistent()
             .get(&DataKey::User(user.clone()))
@@ -104,9 +110,12 @@ impl VaulticUserRegistry {
     }
 
     /// Batch update statuses for efficiency. Admin only.
-    pub fn batch_set_status(env: Env, users: soroban_sdk::Vec<Address>, status: KycStatus) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
+    pub fn batch_set_status(env: Env, caller: Address, users: soroban_sdk::Vec<Address>, status: KycStatus) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
 
         for user in users.iter() {
             let mut record: UserRecord = env.storage().persistent()
@@ -148,17 +157,23 @@ impl VaulticUserRegistry {
         record.status == KycStatus::Verified
     }
 
-    /// Returns the current admin.
-    pub fn get_admin(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Admin).expect("not initialized")
+    /// Returns the current admins.
+    pub fn get_admins(env: Env) -> Vec<Address> {
+        env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 
-    /// Transfers administrative power to a new address. Admin only.
-    pub fn set_admin(env: Env, new_admin: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
-        env.storage().instance().set(&DataKey::Admin, &new_admin);
-        env.events().publish((symbol_short!("adm_xfr"), new_admin), env.ledger().timestamp());
+    /// Transfers administrative power to a new set of addresses. Admin only.
+    pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        if new_admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &new_admins);
+        env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 }
 

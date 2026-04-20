@@ -47,12 +47,20 @@ export type DeployedSorobanContracts = {
   VaulticDividendManager: string | null;
 };
 
+// ---------------------------------------------------------------------------
+// Administrative Controls
+// ---------------------------------------------------------------------------
+export const ADMIN_ADDRESSES = [
+  "GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI",
+  "GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL", // Secondary admin for testing
+];
+
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {
   testnet: {
-    VaulticAssetRegistry: "CAQB346P4Y56LGBGY6LSVE5SQS3REFTTGGI2TDCTDSLE43YOXS74ZYPX",
-    VaulticUserRegistry: "CC32FQDWQDF2XSDQYAPSA7XNBLCUTIKVNAKSQA72Y4DBJPOSUMYVHOB4",
-    VaulticInvestmentManager: "CBGHAQKWFJKWYRBB747E3GBNRUMNLOAIZHRAJ2HCSR5HY3TN7ZJHYSWP",
-    VaulticDividendManager: "CAK5HXI6XNC4HSWSQ6GLIXITEQ6AV2D5DQB6XDJIMJ7KILR2UJWBC55O",
+    VaulticAssetRegistry: "CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM",
+    VaulticUserRegistry: "CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS",
+    VaulticInvestmentManager: "CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6",
+    VaulticDividendManager: "CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX",
   },
   mainnet: {
     VaulticAssetRegistry: null, // Not yet deployed

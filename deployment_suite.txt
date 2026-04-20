@@ -1,24 +1,32 @@
 ╔══════════════════════════════════════════════════════════════╗
 ║              VAULTIC TRUST — STELLAR DEPLOYMENT              ║
 ╠══════════════════════════════════════════════════════════════╣
-║ Session Date: 2026-04-19                                     ║
+║ Session Date: 2026-04-20                                     ║
 ║ Network:      Stellar Testnet                                ║
-║ Admin:        GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI ║
+║ Admin 1:      GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI ║
+║ Admin 2:      GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL ║
 ╚══════════════════════════════════════════════════════════════╝
 
-DEPOLYED CONTRACTS:
+DEPLOYED CONTRACTS:
 ----------------------------------------------------------------
-VaulticAssetRegistry:     CDGNWRTPYNRIPE5T7OXDDTR75UBTDGRJL4WFA77N5YHIXFUHVTJLDUQB
-VaulticUserRegistry:      CA55GXQHWV25WIK2672ORMAUNO6RKKRWMBDQDRBCVVJSHDS5PPJDYCY2
-VaulticInvestmentManager: CAUVFRAURDHU3RAUFIEZBTMFW2ZFNS5YWR4O3NF67PHF37J5IQ6OGCUO
-VaulticDividendManager:   CATOYWJPPFGPXZ5RS3ELPJLGUXW4JEDWPSWTTYAKHQDF6RN2BEWEF2OC
+VaulticAssetRegistry:     CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM
+VaulticUserRegistry:      CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS
+VaulticInvestmentManager: CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6
+VaulticDividendManager:   CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX
+
+EXPLORER LINKS (STELAR EXPERT):
+----------------------------------------------------------------
+AssetRegistry:   https://stellar.expert/explorer/testnet/contract/CD6R5C34IE7FH6J7QRJMPDK73CLEQWCNTTFEC4MMPTDCGNT5QVU2G2GM
+UserRegistry:    https://stellar.expert/explorer/testnet/contract/CBMJPKWG5L7PLNBYEUAC5GI77VXBP77BNE4YDXCRYIAXA22SNCIM3ELS
+InvestManager:   https://stellar.expert/explorer/testnet/contract/CBFTVCXEVFNIQLTEAHJEZ4JTVPYWXMANGJGCIY2KOBXPHNEDKU6L6MK6
+DividendManager: https://stellar.expert/explorer/testnet/contract/CBK2O3A2QITOW7T3H45ROXLVYM6XB4GRKDX2D65SHGRM2L4Z5DHFDJRX
 
 INITIALIZATION LOGS:
 ----------------------------------------------------------------
-- AssetRegistry initialized with Admin: GCBWGQS...7HWHI
-- UserRegistry initialized with Admin: GCBWGQS...7HWHI
-- InvestmentManager initialized with Admin: GCBWGQS...7HWHI
-- DividendManager initialized with Admin: GCBWGQS...7HWHI
+- AssetRegistry initialized with Admins: [GCBWGQS..., GBWAF6C...]
+- UserRegistry initialized with Admins: [GCBWGQS..., GBWAF6C...]
+- InvestmentManager initialized with Admins: [GCBWGQS..., GBWAF6C...]
+- DividendManager initialized with Admins: [GCBWGQS..., GBWAF6C...]
 
 USDC TESTNET CONTRACT:
 ----------------------------------------------------------------
@@ -26,8 +34,8 @@ CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA
 
 BUILD INFO:
 ----------------------------------------------------------------
-Soroban SDK: Pre-release
+Soroban SDK: v21.0
 Target:      wasm32v1-none
 Optimization: Enabled (--optimize)
 
-HANDOVER COMPLETE: GCBWGQS...7HWHI is now the root platform admin.
+HANDOVER COMPLETE: Multi-admin model enforced across all core protocol contracts.

@@ -59,7 +59,7 @@ pub struct AssetRecord {
 
 #[contracttype]
 pub enum DataKey {
-    Admin,
+    Admins,
     Tokenizer,
     AssetCounter,
     Asset(u32),
@@ -80,11 +80,14 @@ impl VaulticAssetRegistry {
     // -----------------------------------------------------------------------
 
     /// Initializes the registry. Must be called exactly once.
-    pub fn initialize(env: Env, admin: Address, tokenizer: Address) {
-        if env.storage().instance().has(&DataKey::Admin) {
+    pub fn initialize(env: Env, admins: Vec<Address>, tokenizer: Address) {
+        if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
         }
-        env.storage().instance().set(&DataKey::Admin, &admin);
+        if admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &admins);
         env.storage().instance().set(&DataKey::Tokenizer, &tokenizer);
         env.storage().instance().set(&DataKey::AssetCounter, &1u32);
     }
@@ -94,24 +97,34 @@ impl VaulticAssetRegistry {
     // -----------------------------------------------------------------------
 
     /// Updates the tokenizer address. Admin only.
-    pub fn set_tokenizer(env: Env, new_tokenizer: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
+    pub fn set_tokenizer(env: Env, caller: Address, new_tokenizer: Address) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
         env.storage().instance().set(&DataKey::Tokenizer, &new_tokenizer);
         env.events().publish((symbol_short!("tok_upd"),), new_tokenizer);
     }
 
-    /// Transfers administrative power to a new address. Admin only.
-    pub fn set_admin(env: Env, new_admin: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
-        env.storage().instance().set(&DataKey::Admin, &new_admin);
-        env.events().publish((symbol_short!("adm_xfr"),), new_admin);
+    /// Transfers administrative power to a new set of addresses. Admin only.
+    pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        if new_admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &new_admins);
+        env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    /// Returns the current administrator address.
-    pub fn get_admin(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Admin).expect("not initialized")
+    /// Returns the current admins.
+    pub fn get_admins(env: Env) -> Vec<Address> {
+        env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 
     /// Returns the current tokenizer address.
@@ -132,6 +145,7 @@ impl VaulticAssetRegistry {
     pub fn register_asset(
         env: Env,
         asset_owner: Address,
+        caller: Address,
         asset_name: String,
         asset_category: String,
         asset_code: String,
@@ -139,8 +153,11 @@ impl VaulticAssetRegistry {
         valuation: i128,
         model: OwnershipModel,
     ) -> u32 {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
 
         if valuation <= 0 {
             panic!("invalid valuation");
@@ -194,9 +211,12 @@ impl VaulticAssetRegistry {
     // -----------------------------------------------------------------------
 
     /// Approves a PENDING asset, making it ACTIVE for investment. Admin only.
-    pub fn approve_asset(env: Env, asset_id: u32) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
+    pub fn approve_asset(env: Env, caller: Address, asset_id: u32) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
 
         let mut record: AssetRecord = env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found");
 
@@ -206,7 +226,7 @@ impl VaulticAssetRegistry {
 
         record.state = AssetState::Active;
         env.storage().persistent().set(&DataKey::Asset(asset_id), &record);
-        env.events().publish((symbol_short!("aprv_ast"), asset_id), admin);
+        env.events().publish((symbol_short!("aprv_ast"), asset_id), caller);
     }
 
     // -----------------------------------------------------------------------
@@ -275,10 +295,18 @@ impl VaulticAssetRegistry {
     /// Closes an asset (marks as CLOSED). Callable by admin or tokenizer.
     pub fn close_asset(env: Env, asset_id: u32, caller: Address) {
         caller.require_auth();
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
         let tokenizer: Address = env.storage().instance().get(&DataKey::Tokenizer).expect("not initialized");
 
-        if caller != admin && caller != tokenizer {
+        let mut is_admin = false;
+        for admin in admins.iter() {
+            if admin == caller {
+                is_admin = true;
+                break;
+            }
+        }
+
+        if !is_admin && caller != tokenizer {
             panic!("unauthorized");
         }
 

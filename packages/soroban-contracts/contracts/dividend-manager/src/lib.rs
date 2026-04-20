@@ -38,7 +38,7 @@ pub struct YieldRound {
 
 #[contracttype]
 pub enum DataKey {
-    Admin,
+    Admins,
     InvestmentManager,
     UserRegistry,
     PaymentToken,
@@ -59,15 +59,18 @@ impl VaulticDividendManager {
     
     pub fn initialize(
         env: Env,
-        admin: Address,
+        admins: Vec<Address>,
         investment_manager: Address,
         user_registry: Address,
         payment_token: Address,
     ) {
-        if env.storage().instance().has(&DataKey::Admin) {
+        if env.storage().instance().has(&DataKey::Admins) {
             panic!("already initialized");
         }
-        env.storage().instance().set(&DataKey::Admin, &admin);
+        if admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &admins);
         env.storage().instance().set(&DataKey::InvestmentManager, &investment_manager);
         env.storage().instance().set(&DataKey::UserRegistry, &user_registry);
         env.storage().instance().set(&DataKey::PaymentToken, &payment_token);
@@ -198,10 +201,20 @@ impl VaulticDividendManager {
         total
     }
 
-    pub fn set_admin(env: Env, new_admin: Address) {
-        let admin: Address = env.storage().instance().get(&DataKey::Admin).expect("not initialized");
-        admin.require_auth();
-        env.storage().instance().set(&DataKey::Admin, &new_admin);
-        env.events().publish((symbol_short!("adm_xfr"),), new_admin);
+    pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        if new_admins.is_empty() {
+            panic!("at least one admin required");
+        }
+        env.storage().instance().set(&DataKey::Admins, &new_admins);
+        env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
+    }
+
+    pub fn get_admins(env: Env) -> Vec<Address> {
+        env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 }
