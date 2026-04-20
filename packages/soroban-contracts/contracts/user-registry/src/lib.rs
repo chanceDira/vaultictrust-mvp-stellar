@@ -197,7 +197,8 @@ mod test {
         let contract_id = env.register_contract(None, VaulticUserRegistry);
         let client = VaulticUserRegistryClient::new(&env, &contract_id);
 
-        client.initialize(&admin);
+        // Initialize with a Vec as required by current signature
+        client.initialize(&Vec::from_array(&env, [admin.clone()]));
 
         // Initial check
         assert_eq!(client.is_verified(&user), false);
@@ -210,12 +211,12 @@ mod test {
         assert_eq!(record.commitment, commitment);
         assert_eq!(client.is_verified(&user), false);
 
-        // Approve
-        client.set_status(&user, &KycStatus::Verified);
+        // Approve (Passing admin as caller)
+        client.set_status(&admin, &user, &KycStatus::Verified);
         assert_eq!(client.is_verified(&user), true);
 
-        // Suspend
-        client.set_status(&user, &KycStatus::Suspended);
+        // Suspend (Passing admin as caller)
+        client.set_status(&admin, &user, &KycStatus::Suspended);
         assert_eq!(client.is_verified(&user), false);
     }
 }
