@@ -2,20 +2,34 @@ import { Keypair } from "@stellar/stellar-sdk";
 import nacl from "tweetnacl";
 
 /**
- * ed2curve logic: Converts Ed25519 keys (Stellar default) to Curve25519 (X25519)
- * for use with nacl.box encryption.
+ * Converts an Ed25519 public key (Y coordinate, little-endian) to an X25519 (Curve25519) key
+ * using the birational map: u = (1 + y) / (1 - y) mod p
+ * This is the standard ed25519-to-curve25519 conversion for DH.
  */
-function ed2curve_secret_convert(edSeed: Uint8Array): Uint8Array {
-  // Ed25519 seed -> Ed25519 secret scalar -> X25519 secret scalar
-  // The secret scalar is SHA512(seed).slice(0, 32) clamped.
-  // We use tweetnacl's internal keyPair generation to get this.
-  const keyPair = nacl.sign.keyPair.fromSeed(edSeed);
-  // The secretKey in Ed25519 is [scalar(32) + pub(32)]
-  return keyPair.secretKey.slice(0, 32);
-}
-
 function ed2curve_public_convert(edPublic: Uint8Array): Uint8Array {
   return edToCurve(edPublic);
+}
+
+/**
+ * Converts an Ed25519 seed (32 bytes) to a Curve25519 secret scalar.
+ *
+ * CRITICAL: This must match how the public key was derived on encrypt.
+ * The correct X25519 scalar is:
+ *   clamp(SHA-512(ed25519_seed)[0..31])
+ * which is what libsodium's crypto_sign_ed25519_sk_to_curve25519() computes.
+ *
+ * tweetnacl's nacl.sign.keyPair.fromSeed(seed).secretKey returns [seed | publicKey],
+ * so .slice(0,32) is just the raw seed — NOT the correct X25519 scalar.
+ * Using the raw seed causes nacl.box.open() to return null (authentication failure).
+ */
+async function ed2curve_secret_convert_async(edSeed: Uint8Array): Promise<Uint8Array> {
+  const hashBuffer = await crypto.subtle.digest("SHA-512", edSeed);
+  const scalar = new Uint8Array(hashBuffer.slice(0, 32));
+  // RFC 8032 / IETF X25519 clamping
+  scalar[0] &= 248; // Clear bits 0, 1, 2
+  scalar[31] &= 127; // Clear bit 255 (top of byte 31)
+  scalar[31] |= 64; // Set bit 254
+  return scalar;
 }
 
 export interface EncryptedData {
@@ -37,16 +51,9 @@ export async function encryptFileForAdmin(file: File, adminPublicKeyStr: string)
 
   const userEphemeral = nacl.box.keyPair();
 
-  // Convert Ed25519 Admin Public Key to Curve25519
-  // Since we don't have ed2curve-js, we use a trick:
-  // nacl.box in tweetnacl can sometimes take Ed25519 keys if they are the X-coordinate.
-  // BUT the correct way is full point mapping.
-  // For the MVP, we will use a proven minified ed2curve implementation.
+  // Convert Ed25519 Admin Public Key to Curve25519 using the standard Montgomery map
   const adminKeypair = Keypair.fromPublicKey(adminPublicKeyStr);
   const adminRawPubKey = adminKeypair.rawPublicKey();
-
-  // NOTE: For the decryption fix, we must use the converted keys.
-  // I will implement the conversion math here.
   const convertedAdminPub = ed2curve_public_convert(adminRawPubKey);
 
   const nonce = nacl.randomBytes(nacl.box.nonceLength);
@@ -62,10 +69,11 @@ export async function encryptFileForAdmin(file: File, adminPublicKeyStr: string)
 
 export async function decryptFileAsAdmin(data: EncryptedData, adminSecretKeyStr: string): Promise<ArrayBuffer> {
   const adminKeypair = Keypair.fromSecret(adminSecretKeyStr);
-  // For Ed25519 to X25519: the secret scalar is the same (after SHA512 of seed and clamping).
-  // tweetnacl's box.keyPair.fromSecretKey handles this if we provide the 32-byte seed.
   const adminSeed = adminKeypair.rawSecretKey();
-  const adminX25519 = nacl.box.keyPair.fromSecretKey(ed2curve_secret_convert(adminSeed));
+
+  // Derive the correct X25519 scalar from the Ed25519 seed via SHA-512 + clamping
+  const x25519Scalar = await ed2curve_secret_convert_async(adminSeed);
+  const adminX25519 = nacl.box.keyPair.fromSecretKey(x25519Scalar);
 
   const combined = base64ToBuffer(data.encryptedKey);
   const nonce = combined.slice(0, nacl.box.nonceLength);
@@ -75,7 +83,9 @@ export async function decryptFileAsAdmin(data: EncryptedData, adminSecretKeyStr:
   const decryptedAesKeyRaw = nacl.box.open(boxData, nonce, senderPub, adminX25519.secretKey);
 
   if (!decryptedAesKeyRaw) {
-    throw new Error("Failed to decrypt secure metadata. Invalid Admin Key?");
+    throw new Error(
+      "Decryption failed: The provided Admin Org Key does not match the key used to encrypt this document. Verify you are using the correct Vaultic Org Secret Key.",
+    );
   }
 
   const aesKey = await globalThis.crypto.subtle.importKey("raw", decryptedAesKeyRaw, { name: "AES-GCM" }, false, [
@@ -120,16 +130,13 @@ function combine(...buffers: Uint8Array[]): Uint8Array {
   return combined;
 }
 
-
-
-// --- Internal Math Helpers for Ed25519 to Curve25519 ---
+// --- Internal Math Helpers for Ed25519 to Curve25519 (public key) ---
+// Standard Montgomery map: u = (1 + y) / (1 - y) mod p
+// Ed25519 public keys use compressed little-endian Y coordinate encoding.
 function edToCurve(edPublic: Uint8Array): Uint8Array {
-  const y = edPublic;
-  // Since we are in a tight spot, we will use the following approach:
-  // Stellar provides a public key that IS the Y coordinate (libstellar behavior).
-  // Actually, we can use the following snippet which is a port of the C ed2curve.
   const bigP = BigInt("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed");
-  const bigY = bytesToBigInt(y) & ((1n << 255n) - 1n);
+  // Mask the sign bit before treating as a Y coordinate
+  const bigY = bytesToBigInt(edPublic) & ((1n << 255n) - 1n);
   const one = 1n;
   const num = (one + bigY) % bigP;
   const den = (one - bigY + bigP) % bigP;
@@ -140,7 +147,7 @@ function edToCurve(edPublic: Uint8Array): Uint8Array {
 function bytesToBigInt(bytes: Uint8Array): bigint {
   let res = 0n;
   for (let i = 0; i < bytes.length; i++) {
-    res += BigInt(bytes[i]) << BigInt(i * 8);
+    res += BigInt(bytes[i]) << BigInt(i * 8); // little-endian
   }
   return res;
 }
@@ -148,7 +155,7 @@ function bytesToBigInt(bytes: Uint8Array): bigint {
 function bigIntToBytes(n: bigint): Uint8Array {
   const res = new Uint8Array(32);
   for (let i = 0; i < 32; i++) {
-    res[i] = Number((n >> BigInt(i * 8)) & 0xffn);
+    res[i] = Number((n >> BigInt(i * 8)) & 0xffn); // little-endian
   }
   return res;
 }

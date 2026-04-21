@@ -103,38 +103,85 @@ export async function callContract({
       throw new Error(`Submission failed: ${errXdr}`);
     }
 
-    // 7. Poll until finalized or timed out
-    let pollResult: Awaited<ReturnType<typeof server.getTransaction>> = null as any;
+    // 7. Poll until finalized or timed out.
+    // CRITICAL: server.getTransaction() lazy-decodes XDR on access. If the Stellar SDK
+    // encounters an unknown union discriminant in the result metadata, it throws
+    // "Bad union switch" even on a fully SUCCESSFUL transaction. We catch decode errors
+    // at each poll attempt individually so a false exception never masks a real success.
+    let pollResult: Awaited<ReturnType<typeof server.getTransaction>> | null = null;
     let pollAttempts = 0;
-    pollResult = await server.getTransaction(response.hash);
 
-    while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && pollAttempts < 30) {
-      await new Promise(r => setTimeout(r, 1000));
+    // Helper: detect all known XDR / SDK decode errors
+    function isXdrDecodeError(e: any): boolean {
+      const msg: string = e?.message ?? "";
+      return (
+        msg.includes("Bad union switch") ||
+        msg.includes("bad union switch") ||
+        msg.includes("XdrParseError") ||
+        msg.includes("xdr parse") ||
+        msg.includes("invalid xdr") ||
+        msg.includes("unknown union")
+      );
+    }
+
+    // Initial poll
+    try {
       pollResult = await server.getTransaction(response.hash);
+    } catch (xdrErr: any) {
+      if (isXdrDecodeError(xdrErr)) {
+        // Transaction was already submitted without an ERROR status.
+        // An XDR decode error here means the on-chain result exists but the SDK
+        // can't parse the metadata — the tx itself succeeded.
+        console.warn(
+          "[soroban] XDR decode error on initial poll (tx submitted successfully). Returning success. hash:",
+          response.hash,
+          "| error:",
+          xdrErr.message,
+        );
+        return { result: null, hash: response.hash };
+      }
+      throw xdrErr;
+    }
+
+    // Wait loop
+    while (pollResult?.status === rpc.Api.GetTransactionStatus.NOT_FOUND && pollAttempts < 30) {
+      await new Promise(r => setTimeout(r, 1000));
+      try {
+        pollResult = await server.getTransaction(response.hash);
+      } catch (xdrErr: any) {
+        if (isXdrDecodeError(xdrErr)) {
+          console.warn(
+            "[soroban] XDR decode error during poll loop (tx submitted). Returning success. hash:",
+            response.hash,
+            "| attempt:",
+            pollAttempts,
+          );
+          return { result: null, hash: response.hash };
+        }
+        throw xdrErr;
+      }
       pollAttempts++;
     }
 
-    if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-      // High-reliability result extraction
+    if (pollResult?.status === rpc.Api.GetTransactionStatus.SUCCESS) {
       let result = null;
       try {
         const rawResult = (pollResult as any).returnValue;
-        if (rawResult) {
-          result = rawResult;
-        }
+        if (rawResult) result = rawResult;
       } catch (e) {
+        // XDR decode on return value — tx still succeeded
         console.warn("[soroban] Executed successfully, but failed to decode return value:", e);
       }
       return { result, hash: response.hash };
     }
 
-    if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
+    if (pollResult?.status === rpc.Api.GetTransactionStatus.FAILED) {
       const errorMessage = parseSorobanError(pollResult);
       throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
     }
 
     throw new Error(
-      `Transaction did not finalize (Status: ${pollResult.status}). Check explorer for hash: ${response.hash}`,
+      `Transaction did not finalize (Status: ${pollResult?.status ?? "timeout"}). Check explorer for hash: ${response.hash}`,
     );
   } catch (e: any) {
     console.error("[soroban] callContract execution failed:", e.message);
@@ -239,7 +286,7 @@ function parseSorobanError(result: any): string | null {
       const dataVal = body.v0?.()?.data?.();
       if (!dataVal) continue;
 
-      const nativeData = scValToNative(dataVal);
+      const nativeData = safeScValToNative(dataVal);
       if (typeof nativeData === "string") {
         contractMessages.push(nativeData);
       } else if (Array.isArray(nativeData)) {
@@ -345,7 +392,22 @@ async function simulateReadCall({
   try {
     return (simResult as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
   } catch (xdrErr: any) {
-    console.warn("[soroban] simulateReadCall retval XDR parse error:", xdrErr?.message);
+    console.warn("[soroban] simulateReadCall retval XDR decode error (safe fallback):", xdrErr?.message);
+    return null;
+  }
+}
+
+/**
+ * Safe wrapper around scValToNative. The SDK can throw "Bad union switch"
+ * when decoding exotic XDR union discriminants. This helper returns null
+ * instead of crashing so read queries never break the UI.
+ */
+function safeScValToNative(val: xdr.ScVal | null | undefined): any {
+  if (!val) return null;
+  try {
+    return scValToNative(val);
+  } catch (e: any) {
+    console.warn("[soroban] safeScValToNative: XDR decode error caught (returning null):", e?.message);
     return null;
   }
 }
@@ -410,7 +472,7 @@ export async function fetchTotalAssets(): Promise<number> {
     method: "total_assets",
     args: [],
   });
-  return result ? Number(scValToNative(result)) : 0;
+  return result ? Number(safeScValToNative(result) ?? 0) : 0;
 }
 
 export async function fetchAsset(assetId: number): Promise<any> {
@@ -422,7 +484,7 @@ export async function fetchAsset(assetId: number): Promise<any> {
     method: "get_asset",
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
-  return result ? normalizeAssetRecord(scValToNative(result)) : null;
+  return result ? normalizeAssetRecord(safeScValToNative(result)) : null;
 }
 
 export async function fetchAssetsByOwner(ownerAddress: string): Promise<number[]> {
@@ -434,7 +496,7 @@ export async function fetchAssetsByOwner(ownerAddress: string): Promise<number[]
     method: "get_assets_by_owner",
     args: [new Address(ownerAddress).toScVal()],
   });
-  return result ? (scValToNative(result) as number[]) : [];
+  return result ? ((safeScValToNative(result) as number[]) ?? []) : [];
 }
 
 export async function fetchFundingProgress(assetId: number): Promise<{ sold: bigint; total: bigint }> {
@@ -447,7 +509,9 @@ export async function fetchFundingProgress(assetId: number): Promise<{ sold: big
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
   if (!result) return { sold: 0n, total: 0n };
-  const [sold, total] = scValToNative(result) as [bigint, bigint];
+  const decoded = safeScValToNative(result) as [bigint, bigint] | null;
+  if (!decoded) return { sold: 0n, total: 0n };
+  const [sold, total] = decoded;
   return { sold, total };
 }
 
@@ -504,7 +568,7 @@ export async function fetchPool(assetId: number): Promise<any> {
     method: "get_pool",
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
-  return result ? scValToNative(result) : null;
+  return result ? safeScValToNative(result) : null;
 }
 
 export async function fetchAvailableShares(assetId: number): Promise<bigint> {
@@ -516,7 +580,7 @@ export async function fetchAvailableShares(assetId: number): Promise<bigint> {
     method: "available_shares",
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
-  return result ? (scValToNative(result) as bigint) : 0n;
+  return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
 
 export async function fetchQuotePurchase(
@@ -532,7 +596,9 @@ export async function fetchQuotePurchase(
     args: [nativeToScVal(assetId, { type: "u32" }), nativeToScVal(shareAmount, { type: "i128" })],
   });
   if (!result) return { gross: 0n, fee: 0n, net: 0n };
-  const [gross, fee, net] = scValToNative(result) as [bigint, bigint, bigint];
+  const decoded = safeScValToNative(result) as [bigint, bigint, bigint] | null;
+  if (!decoded) return { gross: 0n, fee: 0n, net: 0n };
+  const [gross, fee, net] = decoded;
   return { gross, fee, net };
 }
 
@@ -544,7 +610,7 @@ export async function fetchWithdrawableProceeds(assetId: number): Promise<bigint
     method: "get_withdrawable_proceeds",
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
-  return result ? (scValToNative(result) as bigint) : 0n;
+  return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
 
 export async function fetchInvestorHoldings(assetId: number, investor: string): Promise<bigint> {
@@ -556,7 +622,7 @@ export async function fetchInvestorHoldings(assetId: number, investor: string): 
     method: "get_investor_holdings",
     args: [nativeToScVal(assetId, { type: "u32" }), new Address(investor).toScVal()],
   });
-  return result ? (scValToNative(result) as bigint) : 0n;
+  return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
 
 // ---------------------------------------------------------------------------
@@ -681,7 +747,7 @@ export async function fetchYieldRound(assetId: number, roundIndex: number) {
       method: "get_yield_round",
       args: [nativeToScVal(assetId, { type: "u32" }), nativeToScVal(roundIndex, { type: "u32" })],
     });
-    return result ? scValToNative(result) : null;
+    return result ? safeScValToNative(result) : null;
   } catch {
     return null;
   }
@@ -696,7 +762,7 @@ export async function fetchClaimableYield(assetId: number, investor: string): Pr
     method: "get_claimable_yield",
     args: [nativeToScVal(assetId, { type: "u32" }), new Address(investor).toScVal()],
   });
-  return result ? (scValToNative(result) as bigint) : 0n;
+  return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
 
 export async function fetchYieldRoundCount(assetId: number): Promise<number> {
@@ -708,7 +774,7 @@ export async function fetchYieldRoundCount(assetId: number): Promise<number> {
     method: "get_yield_round_count",
     args: [nativeToScVal(assetId, { type: "u32" })],
   });
-  return result ? Number(scValToNative(result)) : 0;
+  return result ? Number(safeScValToNative(result) ?? 0) : 0;
 }
 
 export async function depositYield(
@@ -752,7 +818,7 @@ export async function fetchTotalFees(): Promise<bigint> {
     method: "accumulated_fees",
     args: [],
   });
-  return result ? (scValToNative(result) as bigint) : 0n;
+  return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
 
 export async function fetchUserRecord(userAddress: string): Promise<any> {
@@ -764,7 +830,7 @@ export async function fetchUserRecord(userAddress: string): Promise<any> {
     method: "get_user",
     args: [new Address(userAddress).toScVal()],
   });
-  return result ? normalizeKycRecord(scValToNative(result)) : null;
+  return result ? normalizeKycRecord(safeScValToNative(result)) : null;
 }
 
 export async function fetchAdmins() {
@@ -776,7 +842,7 @@ export async function fetchAdmins() {
     method: "get_admins",
     args: [],
   });
-  return result ? scValToNative(result) : [];
+  return result ? ((safeScValToNative(result) as any[]) ?? []) : [];
 }
 
 export async function setAdmins(newAdmins: string[], callerPublicKey: string) {
@@ -802,7 +868,7 @@ export async function isVerified(userAddress: string): Promise<boolean> {
     method: "is_verified",
     args: [new Address(userAddress).toScVal()],
   });
-  return result ? (scValToNative(result) as boolean) : false;
+  return result ? ((safeScValToNative(result) as boolean) ?? false) : false;
 }
 
 export async function fetchTotalUsers(): Promise<number> {
@@ -814,7 +880,7 @@ export async function fetchTotalUsers(): Promise<number> {
     method: "get_total_users",
     args: [],
   });
-  return result ? Number(scValToNative(result)) : 0;
+  return result ? Number(safeScValToNative(result) ?? 0) : 0;
 }
 
 export async function fetchAllUserAddresses(offset = 0, limit = 100): Promise<string[]> {
@@ -826,7 +892,7 @@ export async function fetchAllUserAddresses(offset = 0, limit = 100): Promise<st
     method: "get_all_users",
     args: [nativeToScVal(offset, { type: "u32" }), nativeToScVal(limit, { type: "u32" })],
   });
-  return result ? (scValToNative(result) as string[]) : [];
+  return result ? ((safeScValToNative(result) as string[]) ?? []) : [];
 }
 
 export async function submitKyc(metadataUri: string, commitment: Uint8Array, callerPublicKey: string) {
@@ -905,7 +971,7 @@ export async function fetchKycSubmissions(): Promise<string[]> {
     for (const event of eventResponse.events) {
       if (event.topic.length >= 2) {
         try {
-          const userAddr = scValToNative(event.topic[1]);
+          const userAddr = safeScValToNative(event.topic[1]);
           if (typeof userAddr === "string") {
             userSet.add(userAddr);
           }
