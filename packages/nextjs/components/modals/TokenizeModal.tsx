@@ -39,6 +39,8 @@ export function TokenizeModal({
   const registrationValuationUsdc = asset.valuation ? Number(asset.valuation) / 1e7 : 0;
 
   const handleSubmit = async () => {
+    if (loading) return; // Prevent double trigger
+
     if (!rwaIssuer.trim()) {
       notification.error("RWA Issuer address is required");
       return;
@@ -51,6 +53,7 @@ export function TokenizeModal({
       notification.error("Total shares must be greater than 0");
       return;
     }
+
     setLoading(true);
     const id = notification.loading(`Tokenizing ${asset.asset_name}...`);
     try {
@@ -81,8 +84,8 @@ export function TokenizeModal({
       onSuccess();
     } catch (e: any) {
       notification.error(`Tokenization failed: ${e.message || "Unknown error"}`);
+      setLoading(false); // Only allow retry on actual failure
     } finally {
-      setLoading(false);
       notification.remove(id);
     }
   };

@@ -50,88 +50,85 @@ export async function callContract({
 
   // Increase reliability with a higher fee (1000 stroops)
   const RELIABLE_FEE = "1000";
-  const MAX_RETRIES = 1;
-  let attempts = 0;
 
-  while (attempts <= MAX_RETRIES) {
-    try {
-      const account = await server.getAccount(callerPublicKey);
-      const tx = new TransactionBuilder(account, {
-        fee: RELIABLE_FEE,
-        networkPassphrase,
-      })
-        .addOperation(contract.call(method, ...args))
-        .setTimeout(60) // 60s for signing
-        .build();
+  // CRITICAL: We removed the retry loop to prevent double-execution bugs.
+  // Transaction lifecycle is now one-shot: simulate -> sign -> submit -> poll.
+  try {
+    // 1. Fetch fresh account for sequence number
+    const account = await server.getAccount(callerPublicKey);
 
-      const simResult = await server.simulateTransaction(tx);
-      if (rpc.Api.isSimulationError(simResult)) {
-        const errorMsg = parseSorobanError(simResult);
-        throw new Error(errorMsg || `Simulation failed: ${simResult.error}`);
-      }
+    // 2. Build template transaction
+    const tx = new TransactionBuilder(account, {
+      fee: RELIABLE_FEE,
+      networkPassphrase,
+    })
+      .addOperation(contract.call(method, ...args))
+      .setTimeout(60) // 60s for signing window
+      .build();
 
-      const preparedTx = rpc.assembleTransaction(tx, simResult).build();
-
-      const { signTransaction } = await import("@stellar/freighter-api");
-      const signedResult = await signTransaction(preparedTx.toXDR(), {
-        networkPassphrase,
-      });
-      const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
-
-      const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
-      const response = await server.sendTransaction(submittedTx);
-
-      if (response.status === "ERROR") {
-        const errXdr = response.errorResult?.toXDR("base64") ?? "unknown error";
-        // If txBAD_SEQ (encoded as ////9), retry once with fresh sequence
-        if (errXdr.includes("////9") && attempts < MAX_RETRIES) {
-          console.warn("[soroban] txBAD_SEQ detected, retrying...");
-          attempts++;
-          await new Promise(r => setTimeout(r, 1000));
-          continue;
-        }
-        throw new Error(`Transaction failed: ${errXdr}`);
-      }
-
-      let pollResult: Awaited<ReturnType<typeof server.getTransaction>> = null as any;
-      let pollAttempts = 0;
-      pollResult = await server.getTransaction(response.hash);
-      while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && pollAttempts < 30) {
-        await new Promise(r => setTimeout(r, 1000));
-        pollResult = await server.getTransaction(response.hash);
-        pollAttempts++;
-      }
-
-      if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-        // High-reliability result extraction: prevent "Bad union switch" from crashing the UI
-        let result = null;
-        try {
-          // Some SDK versions or specific result types (Symbols/Enums) cause decoding crashes
-          // We cast to any and wrap in try-catch to ensure the success notification still fires
-          const rawResult = (pollResult as any).returnValue;
-          if (rawResult) {
-            result = rawResult;
-          }
-        } catch (e) {
-          console.warn("[soroban] Successfully executed on-chain, but failed to decode return value:", e);
-        }
-        return { result, hash: response.hash };
-      }
-
-      if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
-        const errorMessage = parseSorobanError(pollResult);
-        throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
-      }
-
-      throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
-    } catch (e: any) {
-      if (attempts >= MAX_RETRIES) throw e;
-      console.warn(`[soroban] Attempt ${attempts + 1} failed, retrying...`, e.message);
-      attempts++;
-      await new Promise(r => setTimeout(r, 1500));
+    // 3. Simulate to get footprints and resource requirements
+    const simResult = await server.simulateTransaction(tx);
+    if (rpc.Api.isSimulationError(simResult)) {
+      const errorMsg = parseSorobanError(simResult);
+      throw new Error(errorMsg || `Simulation failed: ${simResult.error}`);
     }
+
+    // 4. Assemble and prepare for signing
+    const preparedTx = rpc.assembleTransaction(tx, simResult).build();
+
+    // 5. User signs via Freighter
+    const { signTransaction } = await import("@stellar/freighter-api");
+    const signedResult = await signTransaction(preparedTx.toXDR(), {
+      networkPassphrase,
+    });
+    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+
+    // 6. Final submission to the network
+    const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
+    const response = await server.sendTransaction(submittedTx);
+
+    if (response.status === "ERROR") {
+      const errXdr = response.errorResult?.toXDR("base64") ?? "unknown error";
+      throw new Error(`Submission failed: ${errXdr}`);
+    }
+
+    // 7. Poll until finalized or timed out
+    let pollResult: Awaited<ReturnType<typeof server.getTransaction>> = null as any;
+    let pollAttempts = 0;
+    pollResult = await server.getTransaction(response.hash);
+
+    while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && pollAttempts < 30) {
+      await new Promise(r => setTimeout(r, 1000));
+      pollResult = await server.getTransaction(response.hash);
+      pollAttempts++;
+    }
+
+    if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
+      // High-reliability result extraction
+      let result = null;
+      try {
+        const rawResult = (pollResult as any).returnValue;
+        if (rawResult) {
+          result = rawResult;
+        }
+      } catch (e) {
+        console.warn("[soroban] Executed successfully, but failed to decode return value:", e);
+      }
+      return { result, hash: response.hash };
+    }
+
+    if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
+      const errorMessage = parseSorobanError(pollResult);
+      throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
+    }
+
+    throw new Error(
+      `Transaction did not finalize (Status: ${pollResult.status}). Check explorer for hash: ${response.hash}`,
+    );
+  } catch (e: any) {
+    console.error("[soroban] callContract execution failed:", e.message);
+    throw e;
   }
-  throw new Error("Transaction execution failed after retries.");
 }
 
 export async function setupUsdcTrustline(callerPublicKey: string) {
@@ -218,74 +215,90 @@ function parseSorobanError(result: any): string | null {
   if (!result) return null;
 
   const errorStr = result.error?.toString() || "";
-
   const events = result.diagnosticEvents || result.result?.diagnosticEvents || [];
   const contractMessages: string[] = [];
 
+  // Extremely defensive diagnostic event parsing to stop "Bad union switch" crashes
   for (const event of events) {
     try {
-      const body = event?.event?.body?.();
-      const data = body?.v0?.()?.data?.() ?? event?.event?.v0?.()?.data?.();
-      if (!data) continue;
+      if (!event || !event.event) continue;
 
-      const nativeData = scValToNative(data);
+      // Accessing body() and v0() can trigger lazy XDR decoding crashes
+      let dataVal: any = null;
+      try {
+        const body = (event.event as any).body?.();
+        dataVal = body?.v0?.()?.data?.() ?? (event.event as any).v0?.()?.data?.();
+      } catch {
+        // Silently catch and ignore individual bad events (likely corrupted/unexpected XDR union)
+        continue;
+      }
+
+      if (!dataVal) continue;
+
+      const nativeData = scValToNative(dataVal);
       if (typeof nativeData === "string") {
         contractMessages.push(nativeData);
       } else if (Array.isArray(nativeData)) {
         for (const item of nativeData) {
-          if (typeof item === "string" && item.length > 1) contractMessages.push(item);
+          if (typeof item === "string" && item.length > 1) {
+            contractMessages.push(item);
+          }
         }
       }
-    } catch {}
+    } catch {
+      // General catch for this specific event to prevent crash propagation
+    }
   }
 
-  const joined = contractMessages.join(" | ");
-  if (joined) {
-    console.warn("[soroban] Contract diagnostic:", joined);
+  const dynamicMessage = contractMessages.join(" | ");
+
+  // Prioritize real contract panic messages (dynamic reverts)
+  if (dynamicMessage) {
+    console.warn("[soroban] Contract panic message detected:", dynamicMessage);
+    // If the dynamic message is a recognized short-code, map it to a cleaner description
+    const lowerDynamic = dynamicMessage.toLowerCase();
+    for (const [key, value] of Object.entries(ERROR_MAP)) {
+      if (lowerDynamic.includes(key.toLowerCase())) return value;
+    }
+    return dynamicMessage;
   }
 
-  const ERROR_MAP: Record<string, string> = {
-    "already initialized": "The protocol is already initialized.",
-    "not an admin": "Unauthorized: Caller is not a protocol administrator.",
-    "not found": "The requested record was not found on-chain.",
-    "no investment pool": "No investment pool exists for this asset. It must be tokenized first.",
-    "investor not KYC verified": "Your identity must be verified (KYC) before investing.",
-    "investor cap exceeded": "Purchase exceeds the maximum shares allowed per investor.",
-    "insufficient shares available": "Not enough shares remaining for this purchase.",
-    "offering fully subscribed": "This offering is fully subscribed — no shares remain.",
-    "zero purchase amount": "Share amount must be greater than zero.",
-    "buyer not KYC verified": "Your identity must be verified (KYC) before purchasing.",
-    "invalid valuation": "The provided asset valuation is invalid (must be positive).",
-    "already registered": "This asset has already been submitted to the registry.",
-    "user already verified": "This user is already KYC verified.",
-    "no proceeds to withdraw": "There are no proceeds available to withdraw.",
-    "no fees to sweep": "No protocol fees available to sweep.",
-    "not asset owner": "Only the asset owner can perform this action.",
-    "invalid share supply": "Share supply must be greater than zero.",
-    "Error(Contract, #13)":
-      "Trustline Required: Your wallet must establish and authorize a trustline for the asset before this action.",
-    "Error(Contract, #10)": "Insufficient Balance: You do not have enough funds to complete this transaction.",
-    "Error(Contract, #1)": "Internal Protocol Error: please verify the asset state and try again.",
-    tx_bad_seq: "Transaction sequence error: Your wallet state is out of sync. Please refresh and try again.",
-    tx_insufficient_fee: "Insufficient XLM for transaction fees. Please fund your Stellar account.",
-    op_no_trust: "No Trustline: You must add a trustline for this asset in your wallet first.",
-    op_low_reserve: "Low Reserve: Your Stellar account needs more XLM to establish this trustline.",
-  };
-
-  for (const [key, msg] of Object.entries(ERROR_MAP)) {
-    if (joined.includes(key) || errorStr.includes(key)) return msg;
+  // Fallback to static mapping for common Soroban host errors or non-event errors
+  const lowerError = errorStr.toLowerCase();
+  for (const [key, value] of Object.entries(ERROR_MAP)) {
+    if (lowerError.includes(key.toLowerCase())) return value;
   }
 
-  if (joined) return joined;
-
-  if (errorStr.includes("InvalidAction")) return "Action not permitted by contract logic.";
-  if (errorStr.includes("HostError")) {
-    console.warn("[soroban] Raw HostError:", errorStr);
-    return `Contract execution failed: ${errorStr.slice(0, 200)}`;
-  }
+  if (errorStr.includes("InvalidAction")) return "Unauthorized or invalid contract state.";
+  if (errorStr.includes("HostStorageError")) return "Storage error: Contract data exceeded its TTL.";
 
   return errorStr || null;
 }
+
+const ERROR_MAP: Record<string, string> = {
+  "already initialized": "The protocol is already initialized.",
+  "not an admin": "Unauthorized: This action requires a Vaultic Administrator wallet.",
+  "not authorized": "Unauthorized: You do not have permission for this action.",
+  "not found": "The requested record was not found on the Stellar ledger.",
+  "no investment pool": "This asset must be tokenized before you can invest.",
+  "investor not kyc verified": "KYC Verification required: Please complete your profile first.",
+  "investor cap exceeded": "You have reached the maximum share limit for this asset.",
+  "insufficient shares available": "Not enough shares remaining for this purchase.",
+  "offering fully subscribed": "This offering is closed: 100% of shares have been sold.",
+  "zero purchase amount": "Please enter a valid investment amount.",
+  "invalid valuation": "Registration failed: Asset valuation must be a positive number.",
+  "invalid transition": "This action is not allowed for the asset's current state.",
+  "already registered": "This asset has already been submitted for registration.",
+  "not asset owner": "Only the registered asset owner can perform this action.",
+  "model mismatch": "This asset was registered as Whole Ownership and cannot be fractionalized.",
+  "invalid input": "One or more inputs provided to the contract are invalid.",
+  tx_bad_seq: "Wallet Sequence Error: Please refresh and try again.",
+  tx_insufficient_balance: "Insufficient XLM: You need more Stellar native tokens for network fees.",
+  tx_no_trust: "Missing Trustline: You must establish a trustline for this asset before buying.",
+  "Error(Contract, #13)": "Trustline Required: Your wallet must establish and authorize a trustline for the asset.",
+  "Error(Contract, #10)": "Insufficient Balance: You do not have enough funds to complete this transaction.",
+  "Error(Contract, #1)": "Internal Protocol Error: please verify the asset state and try again.",
+};
 
 async function simulateReadCall({
   contractId,
