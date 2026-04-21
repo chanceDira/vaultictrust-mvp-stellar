@@ -7,6 +7,8 @@ import {
   ArrowTopRightOnSquareIcon,
   BanknotesIcon,
   BuildingOffice2Icon,
+  CheckCircleIcon,
+  ClockIcon,
   DocumentTextIcon,
   PlusIcon,
   SparklesIcon,
@@ -16,16 +18,39 @@ import { DistributeYieldModal } from "~~/components/modals/DistributeYieldModal"
 import { RegisterModal } from "~~/components/modals/RegisterModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { fetchAsset, fetchAssetsByOwner, getContractIds } from "~~/services/stellar/sorobanService";
+import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
+import {
+  fetchAsset,
+  fetchAssetsByOwner,
+  fetchWithdrawableProceeds,
+  getContractIds,
+  withdrawProceeds,
+} from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
+import { notification } from "~~/utils/scaffold-eth";
+
+interface EnrichedOwnerAsset extends OnChainAsset {
+  withdrawable: bigint;
+  fundingProgress: number;
+}
+
+const STATE_STYLE: Record<string, { label: string; badge: string }> = {
+  Pending: { label: "Pending Review", badge: "badge-warning" },
+  Active: { label: "Listed", badge: "badge-success" },
+  Tokenized: { label: "Tokenized", badge: "badge-primary" },
+  Closed: { label: "Closed", badge: "badge-error" },
+  Relisted: { label: "Relisted", badge: "badge-info" },
+};
 
 export default function OwnerPage() {
   const { isConnected, publicKey } = useStellarWallet();
-  const [assets, setAssets] = useState<OnChainAsset[]>([]);
+  const [assets, setAssets] = useState<EnrichedOwnerAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isYieldModalOpen, setIsYieldModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<OnChainAsset | null>(null);
+  const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
 
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
@@ -35,10 +60,25 @@ export default function OwnerPage() {
     setIsLoading(true);
     try {
       const ids = await fetchAssetsByOwner(publicKey);
-      const items: OnChainAsset[] = [];
+      const items: EnrichedOwnerAsset[] = [];
       for (const id of ids) {
         const asset = await fetchAsset(id);
-        if (asset) items.push(asset as OnChainAsset);
+        if (!asset) continue;
+
+        let withdrawable = 0n;
+        let fundingProgress = 0;
+        try {
+          if (asset.state.tag === "Tokenized" || asset.state.tag === "Relisted") {
+            withdrawable = await fetchWithdrawableProceeds(asset.asset_id);
+          }
+          if (asset.total_shares > 0n) {
+            fundingProgress = Math.round((Number(asset.sold_shares) / Number(asset.total_shares)) * 100);
+          }
+        } catch {
+          // non-critical enrichment failure — continue
+        }
+
+        items.push({ ...(asset as OnChainAsset), withdrawable, fundingProgress });
       }
       setAssets(items.reverse());
     } catch (e: any) {
@@ -52,169 +92,327 @@ export default function OwnerPage() {
     loadOwnerAssets();
   }, [loadOwnerAssets]);
 
+  const handleWithdraw = async (asset: EnrichedOwnerAsset) => {
+    if (!publicKey) return;
+    setWithdrawingId(asset.asset_id);
+    const notifId = notification.loading(`Withdrawing proceeds for ${asset.asset_name}...`);
+    try {
+      const { hash } = await withdrawProceeds(asset.asset_id, publicKey);
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">Proceeds withdrawn!</p>
+          <a
+            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
+      await loadOwnerAssets();
+    } catch (err: any) {
+      notification.error(`Withdrawal failed: ${err.message || "Unknown error"}`);
+    } finally {
+      setWithdrawingId(null);
+      notification.remove(notifId);
+    }
+  };
+
+  // Aggregate stats
+  // Approximate total raised: sold_shares × price_per_share from each asset
+  const totalRaised = assets.reduce((acc, a) => {
+    const sold = Number(a.sold_shares ?? 0n);
+    const price = Number(a.price_per_share ?? 0n) / 1e7;
+    return acc + sold * price;
+  }, 0);
+  const pendingCount = assets.filter(a => a.state.tag === "Pending").length;
+  const tokenizedCount = assets.filter(a => a.state.tag === "Tokenized" || a.state.tag === "Relisted").length;
+
+  const stateTag = (asset: EnrichedOwnerAsset) => asset.state?.tag ?? (asset.state as unknown as string);
+
   return (
-    <div className="flex flex-col grow pb-20">
-      <section className="bg-base-200/50 border-b border-base-300 relative overflow-hidden">
-        <div className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
-              <BuildingOffice2Icon className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter">Owner Dashboard</h1>
-              <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
-                RWA Submission & Issuance
-              </p>
-            </div>
+    <div className="flex flex-col grow pb-20 min-h-screen">
+      {/* Header */}
+      <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+            <BuildingOffice2Icon className="h-6 w-6 text-primary" />
           </div>
-          <p className="text-base-content/70 mb-8 max-w-2xl">
-            Manage your real-world assets on the Stellar Network. Submit new assets for compliance review and monitor
-            the progress of your tokenized offerings.
-          </p>
+          <div>
+            <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter italic">Owner Dashboard</h1>
+            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
+              RWA Submission &amp; Issuance Control
+            </p>
+          </div>
+        </div>
+        <p className="text-base-content/70 mb-8 max-w-2xl leading-relaxed">
+          Manage your real-world assets on the Stellar Network. Submit new assets for compliance review, monitor
+          tokenization rounds, and withdraw your USDC proceeds.
+        </p>
 
-          {!isConnected ? (
-            <div className="rounded-3xl border border-dashed border-base-300 p-12 text-center bg-base-100 shadow-sm">
-              <WalletIcon className="h-16 w-16 text-base-content/20 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-base-content mb-2">Connect Your Wallet</h2>
-              <p className="text-base-content/60 mb-8 max-w-sm mx-auto">
-                Sign in with Freighter to manage your African RWA listings and monitor tokenization.
-              </p>
-              <StellarConnectButton />
+        {!isConnected ? (
+          <div className="rounded-3xl border border-dashed border-base-300 p-12 text-center bg-base-100 shadow-sm">
+            <WalletIcon className="h-16 w-16 text-base-content/20 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-base-content mb-2">Connect Your Wallet</h2>
+            <p className="text-base-content/60 mb-8 max-w-sm mx-auto">
+              Sign in with Freighter to manage your African RWA listings and monitor tokenization.
+            </p>
+            <StellarConnectButton />
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Actions row */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="flex items-center gap-3 bg-base-100 px-4 py-2.5 rounded-2xl border border-base-300 shadow-sm">
+                <div className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px] shadow-success" />
+                <span className="text-xs font-mono font-bold text-base-content/60">
+                  {shortenStellarAddress(publicKey ?? "", 10)}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="btn btn-primary btn-md rounded-2xl gap-2 px-8 shadow-lg shadow-primary/20 w-full md:w-auto stellar-glow font-black uppercase tracking-widest"
+              >
+                <PlusIcon className="h-5 w-5" />
+                Register New Asset
+              </button>
             </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="flex items-center gap-3 bg-base-100 px-4 py-2.5 rounded-2xl border border-base-300">
-                  <div className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px] shadow-success" />
-                  <span className="text-xs font-mono font-bold text-base-content/60">{publicKey}</span>
+
+            {/* Stats */}
+            {assets.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-2 text-base-content/40 mb-2">
+                    <BuildingOffice2Icon className="h-4 w-4" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets</span>
+                  </div>
+                  <p className="text-5xl font-black italic text-base-content leading-none">{assets.length}</p>
+                  <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">Registered</p>
                 </div>
-                <button
-                  onClick={() => setIsRegisterModalOpen(true)}
-                  className="btn btn-primary btn-md rounded-2xl gap-2 px-8 shadow-lg shadow-primary/20 w-full md:w-auto stellar-glow font-black uppercase tracking-widest"
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  Register New Asset
-                </button>
-              </div>
 
-              <div className="space-y-6">
-                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
-                  <SparklesIcon className="h-4 w-4" /> Your Registrations
-                </h2>
-
-                {isLoading ? (
-                  <div className="flex justify-center py-16">
-                    <span className="loading loading-spinner loading-lg text-primary" />
+                <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <div className="flex items-center gap-2 text-base-content/40 mb-2">
+                    <BanknotesIcon className="h-4 w-4" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Raised</span>
                   </div>
-                ) : assets.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-base-300 p-16 text-center bg-base-100/50 italic text-base-content/40">
-                    You haven&apos;t registered any assets yet.
-                    <button
-                      onClick={() => setIsRegisterModalOpen(true)}
-                      className="text-primary hover:underline ml-1 not-italic font-bold"
-                    >
-                      Start here.
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {assets.map(asset => (
-                      <div
-                        key={asset.asset_id}
-                        className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 md:p-8 shadow-xl shadow-primary/5 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary/50 transition-all group"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:bg-primary/10 transition-colors">
-                            <BuildingOffice2Icon className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-lg text-base-content">{asset.asset_name}</p>
-                            <div className="flex items-center gap-3 mt-0.5">
-                              <span className="text-xs font-mono text-base-content/40 uppercase tracking-wider">
-                                {asset.asset_code} · Valuation: {(Number(asset.valuation) / 1e7).toLocaleString()} USDC
-                              </span>
-                            </div>
-                            <div className="flex gap-3 mt-3">
-                              <span
-                                className={`badge badge-sm font-bold uppercase tracking-widest ${
-                                  (asset.state?.tag || asset.state) === "Pending"
-                                    ? "badge-warning"
-                                    : (asset.state?.tag || asset.state) === "Active"
-                                      ? "badge-success"
-                                      : "badge-primary"
-                                }`}
-                              >
-                                {asset.state?.tag || asset.state}
-                              </span>
-                              <a
-                                href={`https://stellar.expert/explorer/testnet/asset/${asset.asset_code}-${asset.issuer}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] text-primary hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
-                              >
-                                Explorer <ArrowTopRightOnSquareIcon className="h-2 w-2" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 shrink-0">
-                          {(asset.state?.tag || asset.state) === "Pending" && (
-                            <div className="alert alert-warning py-2 text-[10px] font-bold uppercase tracking-widest border-warning/20 bg-warning/5 rounded-xl">
-                              Waiting for Admin Approval
-                            </div>
-                          )}
-                          {(asset.state?.tag || asset.state) === "Active" && (
-                            <div
-                              className={`alert ${asset.model?.tag === "WholeOwnership" ? "alert-info" : "alert-success"} py-2 text-[10px] font-bold uppercase tracking-widest border-current/20 bg-current/5 rounded-xl`}
-                            >
-                              {asset.model?.tag === "WholeOwnership"
-                                ? "Listed on Marketplace"
-                                : "Ready for Tokenization"}
-                            </div>
-                          )}
-                          {(asset.state?.tag || asset.state) === "Tokenized" && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setSelectedAsset(asset);
-                                  setIsYieldModalOpen(true);
-                                }}
-                                className="btn btn-primary btn-sm gap-2 rounded-xl"
-                              >
-                                <BanknotesIcon className="h-4 w-4" />
-                                Distribute Yield
-                              </button>
-                              <Link
-                                href={`/asset/${asset.asset_id}`}
-                                className="btn btn-primary btn-outline btn-sm gap-2 rounded-xl"
-                              >
-                                View Page <ArrowRightIcon className="h-3 w-3" />
-                              </Link>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-[2.5rem] bg-primary/5 p-10 border border-primary/10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary/5">
-                <div className="h-20 w-20 rounded-3xl bg-base-100 flex items-center justify-center text-primary shrink-0 border border-primary/20 shadow-xl">
-                  <DocumentTextIcon className="h-10 w-10" />
-                </div>
-                <div>
-                  <h3 className="font-black text-2xl mb-1 uppercase tracking-tight">Stellar Compliance First</h3>
-                  <p className="text-sm text-base-content/60 max-w-xl leading-relaxed">
-                    Vaultic utilizes precision-engineered Soroban smart contracts to ensure every RWA meets global
-                    regulatory standards. Assets are audited before transitioning into Stellar native primitives,
-                    securing institutional-grade liquidity.
+                  <p className="text-4xl font-black text-success italic leading-none">
+                    {totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                    <span className="text-xs font-bold opacity-60 not-italic tracking-widest">USDC</span>
+                  </p>
+                  <p className="text-[9px] text-base-content/40 font-black uppercase tracking-widest mt-2">
+                    Across all rounds
                   </p>
                 </div>
+
+                <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <div className="flex items-center gap-2 text-base-content/40 mb-2">
+                    <SparklesIcon className="h-4 w-4" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Tokenized</span>
+                  </div>
+                  <div className="flex items-end gap-3">
+                    <p className="text-5xl font-black italic text-base-content leading-none">{tokenizedCount}</p>
+                    {pendingCount > 0 && (
+                      <span className="badge badge-warning badge-sm font-bold mb-1">{pendingCount} Pending</span>
+                    )}
+                  </div>
+                  <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">Active Rounds</p>
+                </div>
+              </div>
+            )}
+
+            {/* Asset list */}
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
+                <SparklesIcon className="h-4 w-4" /> Your Registrations
+              </h2>
+
+              {isLoading ? (
+                <div className="flex justify-center py-16">
+                  <span className="loading loading-spinner loading-lg text-primary" />
+                </div>
+              ) : assets.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-base-300 p-16 text-center bg-base-100/50 italic text-base-content/40">
+                  You haven&apos;t registered any assets yet.
+                  <button
+                    onClick={() => setIsRegisterModalOpen(true)}
+                    className="text-primary hover:underline ml-1 not-italic font-bold"
+                  >
+                    Start here.
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {assets.map(asset => {
+                    const tag = stateTag(asset);
+                    const style = STATE_STYLE[tag] ?? { label: tag, badge: "badge-ghost" };
+                    const isTokenized = tag === "Tokenized" || tag === "Relisted";
+                    const isWithdrawing = withdrawingId === asset.asset_id;
+                    const withdrawableUsdc = Number(asset.withdrawable) / 1e7;
+
+                    return (
+                      <div
+                        key={asset.asset_id}
+                        className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 md:p-8 shadow-xl shadow-primary/5 hover:border-primary/40 transition-all group"
+                      >
+                        {/* Header */}
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                          <div className="flex items-start gap-4">
+                            <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:bg-primary/10 transition-colors shrink-0">
+                              <BuildingOffice2Icon className="h-6 w-6" />
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <p className="font-bold text-lg text-base-content">{asset.asset_name}</p>
+                                <span className={`badge badge-sm font-bold uppercase tracking-tighter ${style.badge}`}>
+                                  {style.label}
+                                </span>
+                                <span className="font-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                  {asset.asset_code}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-base-content/40">
+                                <span>{asset.asset_category}</span>
+                                <span>
+                                  Valuation:{" "}
+                                  <span className="text-base-content/70 font-semibold">
+                                    ${(Number(asset.valuation) / 1e7).toLocaleString()} USDC
+                                  </span>
+                                </span>
+                                <a
+                                  href={`https://stellar.expert/explorer/testnet/asset/${asset.asset_code}-${asset.issuer}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline flex items-center gap-1 opacity-70 hover:opacity-100"
+                                >
+                                  Explorer <ArrowTopRightOnSquareIcon className="h-2.5 w-2.5" />
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {tag === "Pending" && (
+                              <div className="flex items-center gap-1.5 text-warning text-xs font-bold uppercase tracking-widest bg-warning/10 px-3 py-1.5 rounded-xl border border-warning/20">
+                                <ClockIcon className="h-3.5 w-3.5" /> Awaiting Admin Review
+                              </div>
+                            )}
+                            {tag === "Active" && (
+                              <div className="flex items-center gap-1.5 text-success text-xs font-bold uppercase tracking-widest bg-success/10 px-3 py-1.5 rounded-xl border border-success/20">
+                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                                {asset.model?.tag === "WholeOwnership"
+                                  ? "Listed on Marketplace"
+                                  : "Ready for Tokenization"}
+                              </div>
+                            )}
+                            {isTokenized && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setSelectedAsset(asset);
+                                    setIsYieldModalOpen(true);
+                                  }}
+                                  className="btn btn-primary btn-sm gap-2 rounded-xl"
+                                >
+                                  <BanknotesIcon className="h-4 w-4" />
+                                  Distribute Yield
+                                </button>
+                                <Link
+                                  href={`/asset/${asset.asset_id}`}
+                                  className="btn btn-primary btn-outline btn-sm gap-2 rounded-xl"
+                                >
+                                  View Page <ArrowRightIcon className="h-3 w-3" />
+                                </Link>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Funding progress + proceeds for tokenized assets */}
+                        {isTokenized && (
+                          <div className="mt-6 pt-6 border-t border-base-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Progress bar */}
+                            <div>
+                              <div className="flex justify-between items-end mb-2">
+                                <span className="text-xs font-bold text-base-content/40 uppercase tracking-widest">
+                                  Funding Progress
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-mono text-base-content/70">
+                                    {asset.sold_shares?.toString() ?? "0"} / {asset.total_shares?.toString() ?? "0"}{" "}
+                                    sold
+                                  </span>
+                                  <span className="text-sm font-bold text-primary">{asset.fundingProgress}%</span>
+                                </div>
+                              </div>
+                              <div className="h-3 w-full bg-base-200 rounded-full overflow-hidden shadow-inner border border-base-300/50 p-0.5">
+                                <div
+                                  className="h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-lg"
+                                  style={{ width: `${asset.fundingProgress}%` }}
+                                />
+                              </div>
+                              <p className="text-[10px] text-base-content/40 mt-1.5">
+                                Price per share:{" "}
+                                <span className="font-semibold text-base-content/60">
+                                  ${(Number(asset.price_per_share ?? 0n) / 1e7).toFixed(2)} USDC
+                                </span>
+                              </p>
+                            </div>
+
+                            {/* Withdrawable proceeds */}
+                            <div className="bg-base-200/50 rounded-2xl border border-base-300 p-4 flex flex-col justify-between">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">
+                                  Withdrawable Proceeds
+                                </p>
+                                <p className="text-2xl font-black text-success italic">
+                                  {withdrawableUsdc.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}{" "}
+                                  <span className="text-xs font-bold opacity-60 not-italic">USDC</span>
+                                </p>
+                              </div>
+                              <button
+                                className="btn btn-success btn-sm mt-3 gap-2 rounded-xl w-full"
+                                disabled={withdrawableUsdc <= 0 || isWithdrawing}
+                                onClick={() => handleWithdraw(asset)}
+                              >
+                                {isWithdrawing ? (
+                                  <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                  <BanknotesIcon className="h-4 w-4" />
+                                )}
+                                Withdraw USDC
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer info card */}
+            <div className="rounded-[2.5rem] bg-primary/5 p-10 border border-primary/10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary/5">
+              <div className="h-20 w-20 rounded-3xl bg-base-100 flex items-center justify-center text-primary shrink-0 border border-primary/20 shadow-xl">
+                <DocumentTextIcon className="h-10 w-10" />
+              </div>
+              <div>
+                <h3 className="font-black text-2xl mb-1 uppercase tracking-tight">Stellar Compliance First</h3>
+                <p className="text-sm text-base-content/60 max-w-xl leading-relaxed">
+                  Vaultic utilizes precision-engineered Soroban smart contracts to ensure every RWA meets global
+                  regulatory standards. Assets are audited before transitioning into Stellar native primitives, securing
+                  institutional-grade liquidity.
+                </p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       {isRegisterModalOpen && publicKey && (
