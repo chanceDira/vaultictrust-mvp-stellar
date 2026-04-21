@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowPathIcon,
@@ -58,6 +58,7 @@ export default function InvestorPage() {
   const [yields, setYields] = useState<YieldInfo[]>([]);
   const [isYieldLoading, setIsYieldLoading] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const lockClaiming = useRef(false);
   const [kycRecord, setKycRecord] = useState<any>(null);
   const [isKycLoading, setIsKycLoading] = useState(false);
 
@@ -184,8 +185,11 @@ export default function InvestorPage() {
     loadYields();
   }, [loadYields]);
 
-  const handleClaimYield = async (assetId: number, assetCode: string) => {
-    if (!publicKey) return;
+  const handleClaimYield = async (e: React.MouseEvent, assetId: number, assetCode: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!publicKey || isClaiming || lockClaiming.current) return;
+    lockClaiming.current = true;
     setIsClaiming(true);
     const notifId = notification.loading(`Claiming yield for ${assetCode}...`);
     try {
@@ -208,6 +212,7 @@ export default function InvestorPage() {
       notification.error(`Claim failed: ${e.message}`);
     } finally {
       setIsClaiming(false);
+      lockClaiming.current = false;
       notification.remove(notifId);
     }
   };
@@ -417,7 +422,7 @@ export default function InvestorPage() {
                           <div className="text-right">
                             <p className="font-bold text-sm">{(Number(y.claimable) / 1e7).toFixed(2)} USDC</p>
                             <button
-                              onClick={() => handleClaimYield(y.assetId, y.assetCode)}
+                              onClick={e => handleClaimYield(e, y.assetId, y.assetCode)}
                               disabled={
                                 isClaiming ||
                                 (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
@@ -446,7 +451,7 @@ export default function InvestorPage() {
                         (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
                           "Verified"
                       }
-                      onClick={() => yields.length > 0 && handleClaimYield(yields[0].assetId, "All Assets")}
+                      onClick={e => yields.length > 0 && handleClaimYield(e, yields[0].assetId, "All Assets")}
                     >
                       {isClaiming ? (
                         <span className="loading loading-spinner loading-xs" />

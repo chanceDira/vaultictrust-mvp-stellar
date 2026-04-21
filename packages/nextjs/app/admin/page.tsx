@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -69,7 +69,7 @@ function AssetRow({
   isApproving,
 }: Readonly<{
   asset: OnChainAsset;
-  onApprove: (id: number) => void;
+  onApprove: (e: React.MouseEvent, id: number) => void;
   onTokenize: (asset: OnChainAsset) => void;
   isApproving: boolean;
 }>) {
@@ -146,7 +146,7 @@ function AssetRow({
           {state === "Pending" && (
             <button
               className="btn btn-success btn-sm gap-1.5"
-              onClick={() => onApprove(asset.asset_id)}
+              onClick={e => onApprove(e, asset.asset_id)}
               disabled={isApproving}
             >
               {isApproving ? (
@@ -210,10 +210,9 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [kycApplications, setKycApplications] = useState<string[]>([]);
   const [isLoadingKycApps, setIsLoadingKycApps] = useState(false);
-  const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [approvingId] = useState<number | null>(null);
   const [tokenizeTarget, setTokenizeTarget] = useState<OnChainAsset | null>(null);
   const [filter, setFilter] = useState<AssetStateKey | "All">("All");
-  const [isSweeping, setIsSweeping] = useState(false);
   const [platformFees, setPlatformFees] = useState<bigint>(0n);
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [totalPlatformAssets, setTotalPlatformAssets] = useState<number>(0);
@@ -222,6 +221,7 @@ export default function AdminPage() {
   const [foundUser, setFoundUser] = useState<any>(null);
   const [isSearchingUser, setIsSearchingUser] = useState(false);
   const [isUpdatingKyc, setIsUpdatingKyc] = useState(false);
+  const lockUpdatingKyc = useRef(false);
   const [decryptedFileUrl, setDecryptedFileUrl] = useState<string | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [adminOrgKey, setAdminOrgKey] = useState("");
@@ -233,6 +233,12 @@ export default function AdminPage() {
   const [onChainAdmins, setOnChainAdmins] = useState<string[]>([]);
   const [newAdminAddr, setNewAdminAddr] = useState("");
   const [isUpdatingAdmins, setIsUpdatingAdmins] = useState(false);
+
+  const [isApprovingAsset, setIsApprovingAsset] = useState(false);
+  const lockApprovingAsset = useRef(false);
+  const [isSweeping, setIsSweeping] = useState(false);
+  const lockSweeping = useRef(false);
+
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -304,9 +310,12 @@ export default function AdminPage() {
     return <NotAuthorized />;
   }
 
-  const handleApprove = async (assetId: number) => {
-    if (!publicKey) return;
-    setApprovingId(assetId);
+  const handleApprove = async (e: React.MouseEvent, assetId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!publicKey || isApprovingAsset || lockApprovingAsset.current) return;
+    lockApprovingAsset.current = true;
+    setIsApprovingAsset(true);
     const notifId = notification.loading("Approving asset on-chain...");
     try {
       const { hash } = await approveAsset(assetId, publicKey);
@@ -327,13 +336,17 @@ export default function AdminPage() {
     } catch (err: any) {
       notification.error(`Approval failed: ${err.message || "Unknown error"}`);
     } finally {
-      setApprovingId(null);
+      setIsApprovingAsset(false);
+      lockApprovingAsset.current = false;
       notification.remove(notifId);
     }
   };
 
-  const handleSweepFees = async () => {
-    if (!publicKey) return;
+  const handleSweepFees = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!publicKey || isSweeping || lockSweeping.current) return;
+    lockSweeping.current = true;
     setIsSweeping(true);
     const notifId = notification.loading("Sweeping protocol fees to treasury...");
     try {
@@ -355,6 +368,7 @@ export default function AdminPage() {
       notification.error(`Sweep failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsSweeping(false);
+      lockSweeping.current = false;
       notification.remove(notifId);
     }
   };
@@ -376,7 +390,9 @@ export default function AdminPage() {
     }
   };
 
-  const handleRemoveAdmin = async (addr: string) => {
+  const handleRemoveAdmin = async (e: React.MouseEvent, addr: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!publicKey) return;
     setIsUpdatingAdmins(true);
     const notifId = notification.loading("Revoking admin...");
@@ -413,8 +429,11 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateKyc = async (status: number) => {
-    if (!publicKey || !foundUser) return;
+  const handleUpdateKyc = async (e: React.MouseEvent, status: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!publicKey || !foundUser || isUpdatingKyc || lockUpdatingKyc.current) return;
+    lockUpdatingKyc.current = true;
     setIsUpdatingKyc(true);
     const notifId = notification.loading("Updating KYC status on-chain...");
     try {
@@ -437,6 +456,7 @@ export default function AdminPage() {
       notification.error(`Update failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsUpdatingKyc(false);
+      lockUpdatingKyc.current = false;
       notification.remove(notifId);
     }
   };
@@ -644,7 +664,11 @@ export default function AdminPage() {
                     Refresh
                   </button>
 
-                  <button className="btn btn-warning btn-sm gap-2" onClick={handleSweepFees} disabled={isSweeping}>
+                  <button
+                    className="btn btn-warning btn-sm gap-2"
+                    onClick={e => handleSweepFees(e)}
+                    disabled={isSweeping}
+                  >
                     {isSweeping ? (
                       <span className="loading loading-spinner loading-xs" />
                     ) : (
@@ -876,7 +900,7 @@ export default function AdminPage() {
                         <div className="flex flex-col gap-2 shrink-0 sm:w-48">
                           <button
                             className="btn btn-success btn-sm w-full"
-                            onClick={() => handleUpdateKyc(2)}
+                            onClick={e => handleUpdateKyc(e, 2)}
                             disabled={
                               isUpdatingKyc ||
                               foundUser.status === 2 ||
@@ -888,7 +912,7 @@ export default function AdminPage() {
                           </button>
                           <button
                             className="btn btn-warning btn-sm w-full"
-                            onClick={() => handleUpdateKyc(4)}
+                            onClick={e => handleUpdateKyc(e, 4)}
                             disabled={
                               isUpdatingKyc ||
                               foundUser.status === 4 ||
@@ -900,7 +924,7 @@ export default function AdminPage() {
                           </button>
                           <button
                             className="btn btn-error btn-outline btn-sm w-full"
-                            onClick={() => handleUpdateKyc(3)}
+                            onClick={e => handleUpdateKyc(e, 3)}
                             disabled={
                               isUpdatingKyc ||
                               foundUser.status === 3 ||
@@ -1030,7 +1054,7 @@ export default function AdminPage() {
                                 </div>
                                 {onChainAdmins.length > 1 && (
                                   <button
-                                    onClick={() => handleRemoveAdmin(admin)}
+                                    onClick={e => handleRemoveAdmin(e, admin)}
                                     disabled={isUpdatingAdmins}
                                     className="text-[10px] text-error font-black uppercase opacity-0 group-hover:opacity-100 transition-all hover:underline"
                                   >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -51,6 +51,7 @@ export default function OwnerPage() {
   const [isYieldModalOpen, setIsYieldModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<OnChainAsset | null>(null);
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+  const lockWithdrawing = useRef(false);
 
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
@@ -92,8 +93,11 @@ export default function OwnerPage() {
     loadOwnerAssets();
   }, [loadOwnerAssets]);
 
-  const handleWithdraw = async (asset: EnrichedOwnerAsset) => {
-    if (!publicKey) return;
+  const handleWithdraw = async (e: React.MouseEvent, asset: EnrichedOwnerAsset) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!publicKey || withdrawingId !== null || lockWithdrawing.current) return;
+    lockWithdrawing.current = true;
     setWithdrawingId(asset.asset_id);
     const notifId = notification.loading(`Withdrawing proceeds for ${asset.asset_name}...`);
     try {
@@ -116,6 +120,7 @@ export default function OwnerPage() {
       notification.error(`Withdrawal failed: ${err.message || "Unknown error"}`);
     } finally {
       setWithdrawingId(null);
+      lockWithdrawing.current = false;
       notification.remove(notifId);
     }
   };
@@ -378,7 +383,7 @@ export default function OwnerPage() {
                               <button
                                 className="btn btn-success btn-sm mt-3 gap-2 rounded-xl w-full"
                                 disabled={withdrawableUsdc <= 0 || isWithdrawing}
-                                onClick={() => handleWithdraw(asset)}
+                                onClick={e => handleWithdraw(e, asset)}
                               >
                                 {isWithdrawing ? (
                                   <span className="loading loading-spinner loading-xs" />
