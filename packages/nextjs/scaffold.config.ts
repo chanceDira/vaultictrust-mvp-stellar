@@ -53,6 +53,7 @@ export type DeployedSorobanContracts = {
 export const ADMIN_ADDRESSES = [
   "GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI",
   "GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL", // Secondary admin for testing
+  "GD74RCHSIVH7TJYCBP3ZQKALGL7VUSF3SWXBVLCLLKWGRMFPSMDT56AK", // Platform owner
 ];
 
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {

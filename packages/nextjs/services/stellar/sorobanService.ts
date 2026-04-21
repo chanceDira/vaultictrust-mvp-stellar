@@ -739,6 +739,32 @@ export async function fetchUserRecord(userAddress: string): Promise<any> {
   return result ? normalizeKycRecord(scValToNative(result)) : null;
 }
 
+export async function fetchAdmins() {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) return [];
+
+  const result = await simulateReadCall({
+    contractId: userRegistry,
+    method: "get_admins",
+    args: [],
+  });
+  return result ? scValToNative(result) : [];
+}
+
+export async function setAdmins(newAdmins: string[], callerPublicKey: string) {
+  const { userRegistry } = getContractIds();
+  if (!userRegistry) throw new Error("userRegistry contract not deployed");
+
+  const adminAddresses = newAdmins.map(addr => new Address(addr).toScVal());
+
+  return callContract({
+    contractId: userRegistry,
+    method: "set_admins",
+    args: [new Address(callerPublicKey).toScVal(), xdr.ScVal.scvVec(adminAddresses)],
+    callerPublicKey,
+  });
+}
+
 export async function isVerified(userAddress: string): Promise<boolean> {
   const { userRegistry } = getContractIds();
   if (!userRegistry) return false;
