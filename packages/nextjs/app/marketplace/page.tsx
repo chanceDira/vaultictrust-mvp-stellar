@@ -41,6 +41,13 @@ export default function MarketplacePage() {
     balance: string;
   } | null>(null);
 
+  const stats = {
+    totalAssets: assets.length,
+    tvl: assets
+      .reduce((acc, curr) => acc + Number(curr.valuation || 0n) / 1e7, 0)
+      .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+  };
+
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -174,7 +181,7 @@ export default function MarketplacePage() {
   return (
     <div className="flex flex-col grow">
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
-        <MarketplaceHeader />
+        <MarketplaceHeader stats={stats} />
 
         {!isConnected ? (
           <ConnectWalletBanner />

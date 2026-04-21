@@ -5,23 +5,49 @@ import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton
 import { setupUsdcTrustline } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
 
-export const MarketplaceHeader = () => (
+export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tvl: string } }) => (
   <>
-    <div className="flex items-center gap-4 mb-4">
-      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
-        <Squares2X2Icon className="h-6 w-6 text-primary" />
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
+          <Squares2X2Icon className="h-7 w-7 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter italic">Marketplace</h1>
+          <p className="text-[10px] text-base-content/40 uppercase tracking-[0.3em] font-bold">
+            Real-World Asset Registry
+          </p>
+        </div>
       </div>
-      <div>
-        <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter">Marketplace</h1>
-        <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
-          Real-World Asset Opportunities
-        </p>
+
+      <div className="flex gap-4 overflow-x-auto pb-2 md:pb-0">
+        <div className="rounded-2xl border border-base-300 bg-base-100/50 p-4 min-w-[140px]">
+          <p className="text-[9px] uppercase tracking-widest text-base-content/40 font-bold mb-1">Active RWAs</p>
+          <p className="text-xl font-black text-base-content">
+            {stats?.totalAssets ?? "—"} <span className="text-[10px] font-normal opacity-50 not-italic">Items</span>
+          </p>
+        </div>
+        <div className="rounded-2xl border border-base-300 bg-base-100/50 p-4 min-w-[140px]">
+          <p className="text-[9px] uppercase tracking-widest text-base-content/40 font-bold mb-1">Ecosystem Value</p>
+          <p className="text-xl font-black text-primary">
+            {stats?.tvl ?? "—"} <span className="text-[10px] font-normal opacity-50 not-italic">USDC</span>
+          </p>
+        </div>
       </div>
     </div>
-    <p className="text-base-content/70 mb-8 max-w-2xl leading-relaxed">
-      Unlock high-yield African assets through Stellar. Participate in shared ownership of commercial real estate,
-      sustainable infrastructure, and industrial ventures.
-    </p>
+    <div className="max-w-2xl mb-12">
+      <p className="text-lg text-base-content/70 leading-relaxed font-medium">
+        Unlock liquidity in Africa&apos;s real economy. Invest in institutional-grade real estate, verified mining
+        operations, and sustainable infrastructure on the Stellar network.
+      </p>
+      <div className="flex gap-3 mt-4">
+        <span className="badge badge-outline border-base-300 text-[10px] uppercase font-bold p-3">Verified Assets</span>
+        <span className="badge badge-outline border-base-300 text-[10px] uppercase font-bold p-3">
+          Secured by Soroban
+        </span>
+        <span className="badge badge-outline border-base-300 text-[10px] uppercase font-bold p-3">RWA-Compliant</span>
+      </div>
+    </div>
   </>
 );
 

@@ -148,20 +148,41 @@ export function RegisterModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control w-full">
               <label className="label pb-1">
-                <span className="label-text font-semibold">
+                <span className="label-text font-black uppercase tracking-widest text-[10px]">
                   Ticker Code <span className="text-error">*</span>
                 </span>
+                {code && (
+                  <span
+                    className={`label-text-alt uppercase font-bold tracking-widest text-[9px] ${
+                      code.startsWith("VT") && code.length > 2 ? "text-success" : "text-error"
+                    }`}
+                  >
+                    {code.startsWith("VT") && code.length > 2 ? "Valid Prefix" : "Must start with VT"}
+                  </span>
+                )}
               </label>
-              <input
-                className="input input-bordered font-mono uppercase w-full"
-                placeholder="e.g. VTLGF"
-                maxLength={12}
-                value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())}
-                disabled={loading}
-              />
+              <div className="relative">
+                <input
+                  className={`input input-bordered font-mono uppercase w-full rounded-xl ${
+                    code && (!code.startsWith("VT") || code.length <= 2) ? "input-error" : code ? "input-success" : ""
+                  }`}
+                  placeholder="e.g. VTGOLD"
+                  maxLength={12}
+                  value={code}
+                  onChange={e => {
+                    let val = e.target.value.toUpperCase().replace(/[^A-Z0-0]/g, "");
+                    if (val && !val.startsWith("VT")) {
+                      val = "VT" + val;
+                    }
+                    setCode(val);
+                  }}
+                  disabled={loading}
+                />
+              </div>
               <label className="label pt-1">
-                <span className="label-text-alt text-base-content/40">Short identifier (max 12 chars)</span>
+                <span className="label-text-alt text-base-content/40 uppercase font-bold text-[9px]">
+                  Vaultic Ticker (Pre-fixed with VT)
+                </span>
               </label>
             </div>
             <div className="form-control w-full">
