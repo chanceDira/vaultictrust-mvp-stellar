@@ -24,6 +24,8 @@ export function TokenizeModal({
   const [rwaIssuer, setRwaIssuer] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const isIssuerValid = rwaIssuer.startsWith("G") && rwaIssuer.length === 56;
+
   const usdcToStroops = (usdc: string): bigint => {
     const parsed = parseFloat(usdc);
     if (isNaN(parsed) || parsed <= 0) return 0n;
@@ -220,9 +222,20 @@ export function TokenizeModal({
               <span className="label-text font-semibold">
                 RWA Native Asset Issuer <span className="text-error">*</span>
               </span>
+              {rwaIssuer && (
+                <span
+                  className={`label-text-alt uppercase font-bold tracking-widest text-[9px] ${
+                    isIssuerValid ? "text-success" : "text-error"
+                  }`}
+                >
+                  {isIssuerValid ? "Valid G... Address" : "Invalid Address"}
+                </span>
+              )}
             </label>
             <input
-              className="input input-bordered w-full font-mono text-sm"
+              className={`input input-bordered w-full font-mono text-sm rounded-xl ${
+                rwaIssuer && !isIssuerValid ? "input-error" : rwaIssuer && isIssuerValid ? "input-success" : ""
+              }`}
               placeholder="G... (Stellar address)"
               value={rwaIssuer}
               onChange={e => setRwaIssuer(e.target.value)}
@@ -248,7 +261,7 @@ export function TokenizeModal({
           <button
             className="btn btn-primary flex-1 rounded-2xl gap-3 stellar-glow shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
             onClick={handleSubmit}
-            disabled={loading || priceStroops <= 0n || totalSharesNum <= 0 || !rwaIssuer.trim()}
+            disabled={loading || priceStroops <= 0n || totalSharesNum <= 0 || !isIssuerValid}
           >
             {loading ? <span className="loading loading-spinner loading-sm" /> : "Tokenize Now"}
           </button>

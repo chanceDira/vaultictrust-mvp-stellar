@@ -1,16 +1,18 @@
 import { getNetworkPassphrase, getSorobanRpcUrl } from "./horizonClient";
 import {
   Address,
+  Asset,
   BASE_FEE,
   Contract,
   Keypair,
+  Operation,
   TransactionBuilder,
   nativeToScVal,
   rpc,
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
-import { TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
+import { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
 
 let _rpcServer: rpc.Server | null = null;
 
@@ -108,6 +110,64 @@ export async function callContract({
   throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
 }
 
+export async function setupUsdcTrustline(callerPublicKey: string) {
+  const { getHorizonServer } = await import("./horizonClient");
+  const horizon = getHorizonServer();
+  const networkPassphrase = getNetworkPassphrase();
+
+  const account = await horizon.loadAccount(callerPublicKey);
+  const usdcAsset = new Asset(TESTNET_USDC_ASSET.code, TESTNET_USDC_ASSET.issuer);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase,
+  })
+    .addOperation(
+      Operation.changeTrust({
+        asset: usdcAsset,
+      }),
+    )
+    .setTimeout(30)
+    .build();
+
+  const { signTransaction } = await import("@stellar/freighter-api");
+  const signedResult = await signTransaction(tx.toXDR(), {
+    networkPassphrase,
+  });
+
+  const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+  return horizon.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
+}
+
+export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{
+  hasTrustline: boolean;
+  isAuthorized: boolean;
+  balance: string;
+}> {
+  try {
+    const { getHorizonServer } = await import("./horizonClient");
+    const horizon = getHorizonServer();
+    const account = await horizon.loadAccount(publicKey);
+
+    const usdc = account.balances.find(
+      (b: any) => b.asset_code === TESTNET_USDC_ASSET.code && b.asset_issuer === TESTNET_USDC_ASSET.issuer,
+    );
+
+    if (!usdc) {
+      return { hasTrustline: false, isAuthorized: false, balance: "0" };
+    }
+
+    return {
+      hasTrustline: true,
+      isAuthorized: (usdc as any).is_authorized !== false,
+      balance: (usdc as any).balance || "0",
+    };
+  } catch (e) {
+    console.error("[soroban] Error fetching trustline status:", e);
+    return { hasTrustline: false, isAuthorized: false, balance: "0" };
+  }
+}
+
 function parseSorobanError(result: any): string | null {
   if (!result) return null;
 
@@ -157,6 +217,9 @@ function parseSorobanError(result: any): string | null {
     "not asset owner": "Only the asset owner can perform this action.",
     "invalid share supply": "Share supply must be greater than zero.",
     "invalid price": "Price per share must be greater than zero.",
+    "Error(Contract, #13)":
+      "USDC Authorization Required: Your wallet must establish and authorize a trustline for the testnet USDC asset.",
+    "Error(Contract, #10)": "Insufficient USDC Balance: You do not have enough funds to complete this investment.",
   };
 
   for (const [key, msg] of Object.entries(ERROR_MAP)) {
