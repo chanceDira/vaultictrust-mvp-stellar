@@ -31,9 +31,9 @@ const PrivacyPage: NextPage = () => {
         <h2 className="mt-10 text-xl font-bold text-base-content">1. Decentralized &amp; On-Chain Nature</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
           Vaultic Trust is a decentralized application (dApp). Asset ownership, tokenization status, and investment data
-          are recorded on public blockchains (e.g. Avalanche C-Chain). Once a transaction is confirmed, the data it
-          writes is public and persistent. We do not control the blockchain or third-party wallets; we provide an
-          interface to interact with smart contracts.
+          are recorded on public blockchains (**Stellar Network**). Once a transaction is confirmed, the data it writes
+          is public and persistent. We do not control the blockchain or third-party wallets; we provide an interface to
+          interact with Soroban smart contracts and native Stellar assets.
         </p>
 
         <h2 className="mt-10 text-xl font-bold text-base-content">2. Information We Do Not Collect</h2>
@@ -45,11 +45,11 @@ const PrivacyPage: NextPage = () => {
 
         <h2 className="mt-10 text-xl font-bold text-base-content">3. Wallet &amp; Chain Data</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
-          When you connect a wallet (e.g. via MetaMask or WalletConnect), your wallet address and the chain you use are
-          available to the frontend to send transactions and read on-chain state. Transaction signing happens in your
-          wallet; we do not see or store your private keys. Public blockchain data (addresses, balances, transactions)
-          is read from the chain or public RPC/indexing services and may be temporarily processed in the browser to
-          display the UI. We do not log or store your wallet address on our backend for routine operation.
+          When you connect a wallet (e.g. via **Freighter**), your wallet address and the chain you use are available to
+          the frontend to send transactions and read on-chain state. Transaction signing happens in your wallet; we do
+          not see or store your private keys. Public blockchain data (addresses, balances, transactions) is read from
+          the chain or public Horizon/RPC services and may be temporarily processed in the browser to display the UI. We
+          do not log or store your wallet address on our backend for routine operation.
         </p>
 
         <h2 className="mt-10 text-xl font-bold text-base-content">4. Third-Party Services</h2>

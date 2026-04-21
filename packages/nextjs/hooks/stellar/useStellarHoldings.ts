@@ -60,8 +60,8 @@ export function useStellarHoldings(publicKey: string | null) {
 
     fetchBalances();
 
-    // Set up polling for balance updates
-    const interval = setInterval(fetchBalances, 10000);
+    // Set up polling for balance updates (increased to 120s to reduce jitter)
+    const interval = setInterval(fetchBalances, 120000);
     return () => clearInterval(interval);
   }, [publicKey]);
 

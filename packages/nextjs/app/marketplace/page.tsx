@@ -55,14 +55,20 @@ export default function MarketplacePage() {
     setIsLoading(true);
     try {
       const total = await fetchTotalAssets();
-      const items: OnChainAsset[] = [];
-      for (let i = 1; i <= total; i++) {
-        const asset = await fetchAsset(i);
-        if (asset && (asset.state.tag === "Active" || asset.state.tag === "Tokenized")) {
-          items.push(asset as OnChainAsset);
-        }
-      }
-      setAssets(items.reverse());
+      const indices = Array.from({ length: total }, (_, i) => i + 1);
+
+      const results = await Promise.all(
+        indices.map(async i => {
+          const asset = await fetchAsset(i);
+          if (asset && (asset.state.tag === "Active" || asset.state.tag === "Tokenized")) {
+            return asset as OnChainAsset;
+          }
+          return null;
+        }),
+      );
+
+      const activeAssets = results.filter((asset): asset is OnChainAsset => asset !== null);
+      setAssets(activeAssets.reverse());
     } catch (e: any) {
       console.error("Failed to load assets:", e);
     } finally {

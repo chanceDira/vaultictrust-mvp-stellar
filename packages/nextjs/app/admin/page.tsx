@@ -240,12 +240,17 @@ export default function AdminPage() {
     setIsLoading(true);
     try {
       const total = await fetchTotalAssets();
-      const items: OnChainAsset[] = [];
-      for (let i = 1; i <= total; i++) {
-        const asset = await fetchAsset(i);
-        if (asset) items.push(asset);
-      }
-      setAssets([...items].reverse());
+      const indices = Array.from({ length: total }, (_, i) => i + 1);
+
+      const results = await Promise.all(
+        indices.map(async i => {
+          const asset = await fetchAsset(i);
+          return asset;
+        }),
+      );
+
+      const items = results.filter((asset): asset is OnChainAsset => asset !== null);
+      setAssets(items.reverse());
     } finally {
       setIsLoading(false);
     }
@@ -496,7 +501,6 @@ export default function AdminPage() {
     <div className="flex flex-col grow min-h-screen">
       <section className="px-4 py-8 max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"></div>
           <div>
             <h1 className="text-2xl font-bold uppercase tracking-tight">Admin Dashboard</h1>
             <p className="text-xs text-base-content/50 uppercase tracking-widest">
@@ -557,7 +561,7 @@ export default function AdminPage() {
                     <BanknotesIcon className="w-8 h-8" />
                   </div>
                   <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Accumulated Fees</div>
-                  <div className="stat-value text-accent text-secondary">
+                  <div className="stat-value text-accent font-bold">
                     {(Number(platformFees) / 10 ** 7).toFixed(2)}{" "}
                     <span className="text-sm text-accent font-normal">USDC</span>
                   </div>

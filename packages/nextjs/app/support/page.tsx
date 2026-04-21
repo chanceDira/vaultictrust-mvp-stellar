@@ -21,24 +21,24 @@ const SUPPORT_LINKS = [
 
 const FAQ = [
   {
-    q: "Why do I see three wallet popups when buying shares?",
-    a: "Buying shares uses a payment token (e.g. USDC) that requires the smart contract to have your approval before it can transfer tokens. For security and compatibility with tokens like USDC, we do three steps: (1) reset your current allowance to zero, (2) approve the exact purchase amount, (3) execute the purchase. Each step is one wallet confirmation. This is expected and documented in our Terms of Service.",
+    q: "Why do I need to approve a 'Trustline' before buying?",
+    a: "On the Stellar Network, an account must explicitly 'trust' an asset before it can hold its tokens. This acts as a native compliance layer. When you first invest in a Vaultic asset, you'll be asked to establish a Trustline in your wallet. This is a one-time setup per asset that protects you from receiving unwanted or malicious tokens.",
   },
   {
-    q: 'My transaction failed with "transfer amount exceeds allowance". What do I do?',
-    a: "This usually means the approval step did not complete on-chain before the purchase ran. Make sure you approve all three popups in order and wait for each to confirm. If you previously rejected one of the approvals, try the full flow again (all three steps).",
+    q: 'My transaction failed with "No Trustline". What do I do?',
+    a: "This means the trustline transaction was rejected or hasn't finished being recorded on the ledger. Ensure you approve the first wallet popup to establish the trustline, then proceed to the purchase confirmation. If you're using Freighter, double-check that you have enough XLM (at least 2-3 XLM) to cover the network reserve for new trustlines.",
   },
   {
     q: "Which network does Vaultic Trust use?",
-    a: "We run on Avalanche C-Chain. For testnet we use Avalanche Fuji. Make sure your wallet is connected to the correct network; the app will show it in the header.",
+    a: "We are built on the Stellar Network. For testnet, we use the Stellar Testnet. Always ensure your wallet (e.g. Freighter) is set to the correct network as shown in the top header of the platform.",
   },
   {
     q: "Do I need to create an account?",
-    a: "No. You only need a compatible Web3 wallet (e.g. MetaMask) and the payment token (e.g. USDC on Fuji for testnet). Connect your wallet to use the Platform.",
+    a: "No registration is required. You only need a Stellar-compatible wallet like Freighter and some Stellar USDC for investments. All your holdings are tied directly to your Stellar public key.",
   },
   {
-    q: "Where can I read about transaction flows and in-app messages?",
-    a: "Our Terms of Service explain how transactions work, the three wallet confirmations for buying shares, and all in-app communications (loading, success, and error messages).",
+    q: "Where can I read about transaction flows and trustlines?",
+    a: "Our Terms of Service explain the Stellar asset model, including trustlines and one-step purchases, along with all in-app status messages.",
   },
 ];
 
