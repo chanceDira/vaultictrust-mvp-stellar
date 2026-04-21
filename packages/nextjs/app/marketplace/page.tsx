@@ -18,7 +18,6 @@ import {
   fetchTotalAssets,
   fetchUserRecord,
   getContractIds,
-  increaseAllowance,
   purchaseWholeAsset,
 } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
@@ -116,8 +115,6 @@ export default function MarketplacePage() {
     const notificationId = notification.loading(`${actionLabel} for ${asset.asset_name}...`);
 
     try {
-      await increaseAllowance(asset.valuation, publicKey);
-
       const { hash } = await purchaseWholeAsset(
         {
           buyer: publicKey,

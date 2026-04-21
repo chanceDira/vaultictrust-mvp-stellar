@@ -114,34 +114,62 @@ function parseSorobanError(result: any): string | null {
   const errorStr = result.error?.toString() || "";
 
   const events = result.diagnosticEvents || result.result?.diagnosticEvents || [];
-  let detailedError = "";
+  const contractMessages: string[] = [];
 
   for (const event of events) {
-    if (event.event?.type()?.name === "diagnostic") {
-      const data = event.event.v0().data();
-      try {
-        const nativeData = scValToNative(data);
-        if (Array.isArray(nativeData)) {
-          if (nativeData.includes("UnreachableCodeReached"))
-            detailedError = "Contract logic error (Trap). Check requirements.";
-          if (nativeData.includes("already initialized")) detailedError = "The protocol is already initialized.";
-          if (nativeData.includes("not an admin"))
-            detailedError = "Unauthorized: Caller is not a protocol administrator.";
-          if (nativeData.includes("not found")) detailedError = "The requested record was not found on-chain.";
-          if (nativeData.includes("invalid valuation"))
-            detailedError = "The provided asset valuation is invalid (must be positive).";
-          if (nativeData.includes("already registered"))
-            detailedError = "This asset has already been submitted to the registry.";
-          if (nativeData.includes("user already verified")) detailedError = "This user is already KYC verified.";
+    try {
+      const body = event?.event?.body?.();
+      const data = body?.v0?.()?.data?.() ?? event?.event?.v0?.()?.data?.();
+      if (!data) continue;
+
+      const nativeData = scValToNative(data);
+      if (typeof nativeData === "string") {
+        contractMessages.push(nativeData);
+      } else if (Array.isArray(nativeData)) {
+        for (const item of nativeData) {
+          if (typeof item === "string" && item.length > 1) contractMessages.push(item);
         }
-      } catch {}
-    }
+      }
+    } catch {}
   }
 
-  if (detailedError) return detailedError;
+  const joined = contractMessages.join(" | ");
+  if (joined) {
+    console.warn("[soroban] Contract diagnostic:", joined);
+  }
+
+  const ERROR_MAP: Record<string, string> = {
+    "already initialized": "The protocol is already initialized.",
+    "not an admin": "Unauthorized: Caller is not a protocol administrator.",
+    "not found": "The requested record was not found on-chain.",
+    "no investment pool": "No investment pool exists for this asset. It must be tokenized first.",
+    "investor not KYC verified": "Your identity must be verified (KYC) before investing.",
+    "investor cap exceeded": "Purchase exceeds the maximum shares allowed per investor.",
+    "insufficient shares available": "Not enough shares remaining for this purchase.",
+    "offering fully subscribed": "This offering is fully subscribed — no shares remain.",
+    "zero purchase amount": "Share amount must be greater than zero.",
+    "buyer not KYC verified": "Your identity must be verified (KYC) before purchasing.",
+    "invalid valuation": "The provided asset valuation is invalid (must be positive).",
+    "already registered": "This asset has already been submitted to the registry.",
+    "user already verified": "This user is already KYC verified.",
+    "no proceeds to withdraw": "There are no proceeds available to withdraw.",
+    "no fees to sweep": "No protocol fees available to sweep.",
+    "not asset owner": "Only the asset owner can perform this action.",
+    "invalid share supply": "Share supply must be greater than zero.",
+    "invalid price": "Price per share must be greater than zero.",
+  };
+
+  for (const [key, msg] of Object.entries(ERROR_MAP)) {
+    if (joined.includes(key) || errorStr.includes(key)) return msg;
+  }
+
+  if (joined) return joined;
 
   if (errorStr.includes("InvalidAction")) return "Action not permitted by contract logic.";
-  if (errorStr.includes("HostError")) return "Network execution error. Check your inputs or permissions.";
+  if (errorStr.includes("HostError")) {
+    console.warn("[soroban] Raw HostError:", errorStr);
+    return `Contract execution failed: ${errorStr.slice(0, 200)}`;
+  }
 
   return errorStr || null;
 }

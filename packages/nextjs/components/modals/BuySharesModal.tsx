@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { BanknotesIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { PROTOCOL_METADATA } from "~~/scaffold.config";
-import { fetchQuotePurchase, increaseAllowance, purchaseShares } from "~~/services/stellar/sorobanService";
+import { fetchQuotePurchase, purchaseShares } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -49,10 +49,6 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
     setIsPurchasing(true);
     const id = notification.loading(`Processing investment in ${asset.asset_name}...`);
     try {
-      if (quote) {
-        await increaseAllowance(quote.gross, publicKey);
-      }
-
       const { hash } = await purchaseShares(
         {
           investor: publicKey,
