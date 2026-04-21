@@ -103,7 +103,15 @@ export async function callContract({
       }
 
       if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-        const result = (pollResult as any).returnValue ?? null;
+        // Hardened result extraction to avoid "Bad union switch" errors in some SDK versions
+        let result = null;
+        try {
+          // Attempt to access returnValue if available, otherwise fallback to null
+          // Some SDK versions might throw during lazy decoding of returnValue
+          result = (pollResult as any).returnValue || null;
+        } catch (e) {
+          console.warn("[soroban] Failed to decode returnValue, but transaction succeeded:", e);
+        }
         return { result, hash: response.hash };
       }
 

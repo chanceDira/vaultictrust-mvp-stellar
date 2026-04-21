@@ -72,23 +72,31 @@ export const AssetCard = ({
             </div>
 
             {isTokenized ? (
-              <div className="mt-4 flex items-center gap-4">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-base-content/40 font-bold">Price / Share</p>
-                  <p className="text-lg font-bold text-primary">
-                    {(Number(asset.price_per_share) / 1e7).toFixed(2)} USDC
+              <div className="mt-5 grid grid-cols-2 gap-px bg-base-300 border border-base-300 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-base-100 p-3 flex flex-col justify-center">
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-base-content/40 font-black mb-0.5">
+                    Price per Unit
+                  </p>
+                  <p className="text-lg font-black text-primary italic leading-none">
+                    {(Number(asset.price_per_share) / 1e7).toFixed(2)}{" "}
+                    <span className="text-[10px] font-bold opacity-60 not-italic">USDC</span>
                   </p>
                 </div>
-                <div className="h-8 w-px bg-base-300" />
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-base-content/40 font-bold">Supply</p>
-                  <p className="text-lg font-bold text-base-content">{asset.total_shares.toString()}</p>
+                <div className="bg-base-100 p-3 flex flex-col justify-center">
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-base-content/40 font-black mb-0.5">
+                    Total Supply
+                  </p>
+                  <p className="text-lg font-black text-base-content italic leading-none">
+                    {asset.total_shares.toString()}{" "}
+                    <span className="text-[10px] font-bold opacity-60 not-italic">SHARES</span>
+                  </p>
                 </div>
               </div>
             ) : (
-              <div className="mt-4">
-                <p className="text-sm font-bold text-success/70 italic uppercase tracking-widest">
-                  Registry Approved · Tokenization in progress
+              <div className="mt-5 p-3 rounded-xl bg-success/5 border border-success/20 flex items-center gap-2">
+                <SparklesIcon className="h-4 w-4 text-success" />
+                <p className="text-[10px] font-black text-success uppercase tracking-[0.15em]">
+                  Verified Asset · Initializing on Stellar
                 </p>
               </div>
             )}
