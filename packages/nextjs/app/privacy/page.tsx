@@ -13,13 +13,11 @@ const PrivacyPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
       <article className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="relative w-10 h-10 shrink-0">
-            <Image alt="Vaultic Trust" fill src="/logo.png" />
-          </div>
+        <div className="flex items-center gap-3 mb-6">
+          <Image src="/logo.jpeg" alt="Vaultic Logo" width={48} height={48} className="rounded-xl shadow-lg" />
           <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary/90">Vaultic Trust</p>
             <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">Privacy Policy</h1>
-            <p className="text-sm font-medium uppercase tracking-wider text-primary/90">Vaultic Trust</p>
           </div>
         </div>
 

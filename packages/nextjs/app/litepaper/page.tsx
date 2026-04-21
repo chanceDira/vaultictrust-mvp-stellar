@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { NextPage } from "next";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
@@ -12,8 +13,13 @@ const LitepaperPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
       <article className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary/90 mb-2">Vaultic Trust</p>
-        <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">Litepaper</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <Image src="/logo.jpeg" alt="Vaultic Logo" width={48} height={48} className="rounded-xl shadow-lg" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary/90">Vaultic Trust</p>
+            <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">Litepaper</h1>
+          </div>
+        </div>
         <p className="mt-1 text-sm text-base-content/50">v3.0 — Stellar Network Edition</p>
 
         <div className="prose prose-neutral mt-8 max-w-none">
