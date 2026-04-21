@@ -13,6 +13,7 @@ import {
   CubeTransparentIcon,
   ExclamationTriangleIcon,
   IdentificationIcon,
+  ShieldCheckIcon,
   UserGroupIcon,
   WalletIcon,
   XCircleIcon,
@@ -25,6 +26,7 @@ import { decryptFileAsAdmin } from "~~/services/stellar/cryptoService";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   approveAsset,
+  fetchAdmins,
   fetchAllUserAddresses,
   fetchAsset,
   fetchKycSubmissions,
@@ -33,6 +35,7 @@ import {
   fetchTotalUsers,
   fetchUserRecord,
   getContractIds,
+  setAdmins,
   setUserStatus,
   sweepFees,
 } from "~~/services/stellar/sorobanService";
@@ -227,6 +230,9 @@ export default function AdminPage() {
     country?: string;
     submittedAt?: string;
   } | null>(null);
+  const [onChainAdmins, setOnChainAdmins] = useState<string[]>([]);
+  const [newAdminAddr, setNewAdminAddr] = useState("");
+  const [isUpdatingAdmins, setIsUpdatingAdmins] = useState(false);
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -261,23 +267,25 @@ export default function AdminPage() {
   }, []);
 
   const loadPlatformStats = useCallback(async () => {
+    if (!isDeployed) return;
+    setIsLoading(true);
     try {
-      const fees = await fetchTotalFees();
-      const users = await fetchTotalUsers();
-      const assetsCount = await fetchTotalAssets();
+      const [fees, users, assetsCount, admins] = await Promise.all([
+        fetchTotalFees(),
+        fetchTotalUsers(),
+        fetchTotalAssets(),
+        fetchAdmins(),
+      ]);
       setPlatformFees(fees);
       setTotalUsers(users);
       setTotalPlatformAssets(assetsCount);
+      setOnChainAdmins(admins);
     } catch (error) {
       console.error("Failed to load platform stats:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    loadAssets();
-    loadKycSubmissions();
-    loadPlatformStats();
-  }, [loadAssets, loadKycSubmissions, loadPlatformStats]);
+  }, [isDeployed]);
 
   useEffect(() => {
     if (isConnected && isDeployed) {
@@ -342,6 +350,42 @@ export default function AdminPage() {
       notification.error(`Sweep failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsSweeping(false);
+      notification.remove(notifId);
+    }
+  };
+
+  const handleAddAdmin = async () => {
+    if (!publicKey || !newAdminAddr) return;
+    setIsUpdatingAdmins(true);
+    const notifId = notification.loading("Authorizing new admin...");
+    try {
+      await setAdmins([...onChainAdmins, newAdminAddr], publicKey);
+      notification.success("Admin added successfully!");
+      await loadPlatformStats();
+      setNewAdminAddr("");
+    } catch (err: any) {
+      notification.error(`Failed: ${err.message}`);
+    } finally {
+      setIsUpdatingAdmins(false);
+      notification.remove(notifId);
+    }
+  };
+
+  const handleRemoveAdmin = async (addr: string) => {
+    if (!publicKey) return;
+    setIsUpdatingAdmins(true);
+    const notifId = notification.loading("Revoking admin...");
+    try {
+      await setAdmins(
+        onChainAdmins.filter(a => a !== addr),
+        publicKey,
+      );
+      notification.success("Admin revoked!");
+      await loadPlatformStats();
+    } catch (err: any) {
+      notification.error(`Failed: ${err.message}`);
+    } finally {
+      setIsUpdatingAdmins(false);
       notification.remove(notifId);
     }
   };
@@ -420,7 +464,6 @@ export default function AdminPage() {
         }
       }
 
-      // Support both old format (bare encryptedData) and new format ({ applicant, encryptedDocument })
       const encryptedData = ipfsPayload?.encryptedDocument ?? ipfsPayload;
       if (ipfsPayload?.applicant) {
         setKycApplicantMeta(ipfsPayload.applicant);
@@ -577,6 +620,16 @@ export default function AdminPage() {
               >
                 Compliance &amp; Users
               </button>
+              <button
+                className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
+                  activeTab === "governance"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-base-content/40 hover:text-base-content/60"
+                }`}
+                onClick={() => setActiveTab("governance")}
+              >
+                Governance
+              </button>
             </div>
 
             {activeTab === "assets" ? (
@@ -644,7 +697,7 @@ export default function AdminPage() {
                   </div>
                 )}
               </>
-            ) : (
+            ) : activeTab === "compliance" ? (
               <div className="space-y-6">
                 <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-8 shadow-2xl shadow-primary/5">
                   <div className="flex items-center gap-4 mb-4">
@@ -930,6 +983,103 @@ export default function AdminPage() {
                         using these flags.
                       </p>
                     </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div className="space-y-6">
+                  <div className="rounded-[2.5rem] bg-base-100/40 p-8 border border-base-300 shadow-2xl backdrop-blur-xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <ShieldCheckIcon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-black italic uppercase tracking-tight">On-Chain Governance</h3>
+                        <p className="text-[10px] text-base-content/40 uppercase tracking-widest font-bold">
+                          Permissioned Address Registry
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="bg-base-200/50 rounded-2xl p-4 border border-base-300">
+                        <p className="text-[10px] uppercase font-black tracking-widest text-base-content/40 mb-3">
+                          Authorized Administrative Nodes
+                        </p>
+                        <div className="space-y-2">
+                          {onChainAdmins.length === 0 ? (
+                            <div className="py-8 text-center italic text-base-content/30 border border-dashed border-base-300 rounded-xl">
+                              Loading administrators...
+                            </div>
+                          ) : (
+                            onChainAdmins.map(admin => (
+                              <div
+                                key={admin}
+                                className="flex items-center justify-between bg-base-100 px-3 py-1.5 rounded-xl border border-base-300 group"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                                  <span className="text-xs font-mono font-bold opacity-70">
+                                    {shortenStellarAddress(admin, 12)}
+                                  </span>
+                                </div>
+                                {onChainAdmins.length > 1 && (
+                                  <button
+                                    onClick={() => handleRemoveAdmin(admin)}
+                                    disabled={isUpdatingAdmins}
+                                    className="text-[10px] text-error font-black uppercase opacity-0 group-hover:opacity-100 transition-all hover:underline"
+                                  >
+                                    Revoke
+                                  </button>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add new admin address..."
+                          className="input input-ghost bg-base-200/50 rounded-xl grow text-sm font-mono focus:bg-base-200 border-base-300"
+                          value={newAdminAddr}
+                          onChange={e => setNewAdminAddr(e.target.value)}
+                        />
+                        <button
+                          onClick={handleAddAdmin}
+                          disabled={isUpdatingAdmins || !newAdminAddr}
+                          className="btn btn-primary rounded-xl px-6 font-black uppercase tracking-widest text-[10px]"
+                        >
+                          {isUpdatingAdmins ? <span className="loading loading-spinner loading-xs" /> : "Authorize"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[2.5rem] bg-primary/5 p-8 border border-primary/20 shadow-xl">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-base-100 flex items-center justify-center text-primary shadow-xl border border-primary/10">
+                        <ShieldCheckIcon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-lg uppercase tracking-tight">System Integrity</h4>
+                        <p className="text-xs text-base-content/60">
+                          Admin power allows for protocol-level verification and issuance control. Handle with care.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Additional governance info or tools can go here */}
+                  <div className="rounded-[2.5rem] bg-base-100/40 p-8 border border-base-300 shadow-2xl backdrop-blur-xl">
+                    <h3 className="text-xl font-black italic uppercase tracking-tight mb-4">Administrative Log</h3>
+                    <p className="text-sm text-base-content/60 italic border-l-2 border-primary/20 pl-4 py-2">
+                      All governance actions are recorded on the Stellar ledger for transparency and auditability.
+                    </p>
                   </div>
                 </div>
               </div>

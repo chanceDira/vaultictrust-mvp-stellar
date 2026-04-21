@@ -1,6 +1,6 @@
 export type AssetStateKey = "Pending" | "Active" | "Tokenized" | "Closed" | "Relisted";
 export type OwnershipModelKey = "WholeOwnership" | "Fractional";
-export type UserTab = "assets" | "compliance";
+export type UserTab = "assets" | "compliance" | "governance";
 
 export interface OnChainAsset {
   asset_id: number;
