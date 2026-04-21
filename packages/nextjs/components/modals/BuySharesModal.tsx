@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BanknotesIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import { fetchQuotePurchase, purchaseShares } from "~~/services/stellar/sorobanService";
@@ -19,6 +19,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
   const [sharesAmount, setSharesAmount] = useState<string>("1");
   const [isQuoting, setIsQuoting] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const isSubmitting = useRef(false);
   const [quote, setQuote] = useState<{ gross: bigint; fee: bigint; net: bigint } | null>(null);
 
   useEffect(() => {
@@ -48,8 +49,9 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
       e.preventDefault();
       e.stopPropagation();
     }
-    if (!sharesAmount || isNaN(Number(sharesAmount)) || isPurchasing) return;
+    if (!sharesAmount || isNaN(Number(sharesAmount)) || isPurchasing || isSubmitting.current) return;
 
+    isSubmitting.current = true;
     setIsPurchasing(true);
     const id = notification.loading(`Processing investment in ${asset.asset_name}...`);
     try {
@@ -83,6 +85,8 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
       notification.error(`Investment failed: ${e.message || "Network execution error"}`);
       setIsPurchasing(false); // Only allow re-attempts if it actually failed
     } finally {
+      setIsPurchasing(false);
+      isSubmitting.current = false;
       notification.remove(id);
     }
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowTopRightOnSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import { tokenizeAsset } from "~~/services/stellar/sorobanService";
@@ -23,6 +23,7 @@ export function TokenizeModal({
   const [investorCap, setInvestorCap] = useState("0");
   const [rwaIssuer, setRwaIssuer] = useState("");
   const [loading, setLoading] = useState(false);
+  const isSubmitting = useRef(false);
 
   const isIssuerValid = rwaIssuer.startsWith("G") && rwaIssuer.length === 56;
 
@@ -58,6 +59,8 @@ export function TokenizeModal({
       return;
     }
 
+    if (loading || isSubmitting.current) return; // Prevent double trigger
+    isSubmitting.current = true;
     setLoading(true);
     const id = notification.loading(`Tokenizing ${asset.asset_name}...`);
     try {
@@ -91,6 +94,7 @@ export function TokenizeModal({
       setLoading(false); // Only allow retry on actual failure
     } finally {
       notification.remove(id);
+      isSubmitting.current = false;
     }
   };
 

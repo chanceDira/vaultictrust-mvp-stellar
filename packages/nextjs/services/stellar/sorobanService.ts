@@ -224,21 +224,19 @@ function parseSorobanError(result: any): string | null {
   const events = result.diagnosticEvents || result.result?.diagnosticEvents || [];
   const contractMessages: string[] = [];
 
-  // Extremely defensive diagnostic event parsing to stop "Bad union switch" crashes
+  // 1. Prioritize diagnostic events (contract panics)
   for (const event of events) {
     try {
       if (!event || !event.event) continue;
-
-      // Accessing body() and v0() can trigger lazy XDR decoding crashes
-      let dataVal: any = null;
+      let body: any = null;
       try {
-        const body = (event.event as any).body?.();
-        dataVal = body?.v0?.()?.data?.() ?? (event.event as any).v0?.()?.data?.();
+        body = (event.event as any).body?.();
       } catch {
-        // Silently catch and ignore individual bad events (likely corrupted/unexpected XDR union)
         continue;
       }
+      if (!body) continue;
 
+      const dataVal = body.v0?.()?.data?.();
       if (!dataVal) continue;
 
       const nativeData = scValToNative(dataVal);
@@ -252,58 +250,62 @@ function parseSorobanError(result: any): string | null {
         }
       }
     } catch {
-      // General catch for this specific event to prevent crash propagation
+      // Defensive parsing
     }
   }
 
   const dynamicMessage = contractMessages.join(" | ");
 
-  // Prioritize real contract panic messages (dynamic reverts)
-  if (dynamicMessage) {
-    console.warn("[soroban] Contract panic message detected:", dynamicMessage);
-    // If the dynamic message is a recognized short-code, map it to a cleaner description
-    const lowerDynamic = dynamicMessage.toLowerCase();
-    for (const [key, value] of Object.entries(ERROR_MAP)) {
-      if (lowerDynamic.includes(key.toLowerCase())) return value;
-    }
-    return dynamicMessage;
-  }
+  // 2. Check for human-readable mappings in both dynamic messages and raw error strings
+  const joinedSource = `${dynamicMessage} ${errorStr}`.toLowerCase();
 
-  // Fallback to static mapping for common Soroban host errors or non-event errors
-  const lowerError = errorStr.toLowerCase();
   for (const [key, value] of Object.entries(ERROR_MAP)) {
-    if (lowerError.includes(key.toLowerCase())) return value;
+    if (joinedSource.includes(key.toLowerCase())) return value;
   }
 
-  if (errorStr.includes("InvalidAction")) return "Unauthorized or invalid contract state.";
-  if (errorStr.includes("HostStorageError")) return "Storage error: Contract data exceeded its TTL.";
+  // 3. Handle specific Soroban host/contract error patterns
+  if (dynamicMessage) return dynamicMessage;
+  if (errorStr.includes("InvalidAction")) return "Unauthorized or invalid contract state transition.";
+  if (errorStr.includes("HostStorageError")) return "Network storage error: Data TTL expired.";
+  if (errorStr.includes("Error(Contract, #")) {
+    const codeMatch = errorStr.match(/#(\d+)/);
+    const code = codeMatch ? codeMatch[1] : "";
+    if (code === "13") return "Trustline Required: Asset not trusted or authorized in wallet.";
+    if (code === "10") return "Insufficient Balance: You don't have enough USDC/XLM for this action.";
+    if (code === "1") return "Invalid Transition: Asset state does not permit this action.";
+    return `Contract Error #${code}: Please check inputs and try again.`;
+  }
 
-  return errorStr || null;
+  return errorStr || "Unknown contract error";
 }
 
 const ERROR_MAP: Record<string, string> = {
-  "already initialized": "The protocol is already initialized.",
-  "not an admin": "Unauthorized: This action requires a Vaultic Administrator wallet.",
-  "not authorized": "Unauthorized: You do not have permission for this action.",
-  "not found": "The requested record was not found on the Stellar ledger.",
-  "no investment pool": "This asset must be tokenized before you can invest.",
-  "investor not kyc verified": "KYC Verification required: Please complete your profile first.",
-  "investor cap exceeded": "You have reached the maximum share limit for this asset.",
-  "insufficient shares available": "Not enough shares remaining for this purchase.",
-  "offering fully subscribed": "This offering is closed: 100% of shares have been sold.",
-  "zero purchase amount": "Please enter a valid investment amount.",
-  "invalid valuation": "Registration failed: Asset valuation must be a positive number.",
-  "invalid transition": "This action is not allowed for the asset's current state.",
-  "already registered": "This asset has already been submitted for registration.",
-  "not asset owner": "Only the registered asset owner can perform this action.",
-  "model mismatch": "This asset was registered as Whole Ownership and cannot be fractionalized.",
-  "invalid input": "One or more inputs provided to the contract are invalid.",
-  tx_bad_seq: "Wallet Sequence Error: Please refresh and try again.",
-  tx_insufficient_balance: "Insufficient XLM: You need more Stellar native tokens for network fees.",
-  tx_no_trust: "Missing Trustline: You must establish a trustline for this asset before buying.",
-  "Error(Contract, #13)": "Trustline Required: Your wallet must establish and authorize a trustline for the asset.",
-  "Error(Contract, #10)": "Insufficient Balance: You do not have enough funds to complete this transaction.",
-  "Error(Contract, #1)": "Internal Protocol Error: please verify the asset state and try again.",
+  "already initialized": "Protocol already initialized.",
+  "not an admin": "Unauthorized: Admin privileges required.",
+  "not authorized": "Action not permitted for your wallet address.",
+  "not found": "Target record not found on-chain.",
+  "no investment pool": "Staging complete. Waiting for tokenization to open.",
+  "investor not kyc verified": "KYC Required: Please verify your identity first.",
+  "investor cap exceeded": "Investment limit reached for this asset.",
+  "insufficient shares available": "Not enough shares remaining.",
+  "offering fully subscribed": "Sold out! This offering is closed.",
+  "zero purchase amount": "Please enter a valid amount.",
+  "invalid valuation": "Asset valuation must be positive.",
+  "invalid transition": "Invalid Action: Asset state doesn't permit this (e.g. already tokenized).",
+  "already registered": "This asset ID is already registered.",
+  "not asset owner": "Only the asset owner can perform this action.",
+  "model mismatch": "Asset model (Whole/Fractional) does not support this action.",
+  "invalid input": "Request contains invalid parameters.",
+  "insufficient funds": "Insufficient USDC balance in wallet.",
+  "not permitted by contract logic": "Invalid Action: Contract state transition refused.",
+  unauthorized: "You lack permissions for this specific contract call.",
+  tx_bad_seq: "Sequence Mismatch: Refresh wallet and try again.",
+  tx_insufficient_balance: "Insufficient XLM for fees.",
+  tx_already_submitted: "Transaction was already processed successfully.",
+  tx_no_trust: "Trustline Required: Please add the asset to your wallet.",
+  "Error(Contract, #13)": "Trustline Error: Asset not trusted in your wallet.",
+  "Error(Contract, #10)": "Insufficient Balance: You don't have enough USDC/XLM.",
+  "Error(Contract, #1)": "Protocol State Conflict: Action currently restricted.",
 };
 
 async function simulateReadCall({

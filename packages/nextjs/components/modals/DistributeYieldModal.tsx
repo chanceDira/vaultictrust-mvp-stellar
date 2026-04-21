@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BanknotesIcon, CurrencyDollarIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import { depositYield, getContractIds, increaseAllowance } from "~~/services/stellar/sorobanService";
@@ -18,13 +18,21 @@ interface DistributeYieldModalProps {
 export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, publicKey }: DistributeYieldModalProps) {
   const [usdcAmount, setUsdcAmount] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const isSubmitting = useRef(false);
 
-  const handleDistribute = async () => {
-    if (!usdcAmount || isNaN(Number(usdcAmount)) || Number(usdcAmount) <= 0) {
-      notification.error("Please enter a valid USDC amount");
+  const handleDistribute = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!usdcAmount || isNaN(Number(usdcAmount)) || Number(usdcAmount) <= 0 || isProcessing || isSubmitting.current) {
+      if (!usdcAmount || isNaN(Number(usdcAmount)) || Number(usdcAmount) <= 0) {
+        notification.error("Please enter a valid USDC amount");
+      }
       return;
     }
 
+    isSubmitting.current = true;
     setIsProcessing(true);
     const id = notification.loading(`Preparing yield distribution for ${asset.asset_name}...`);
 
@@ -64,6 +72,7 @@ export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, public
       notification.error(`Distribution failed: ${e.message || "Network error"}`);
     } finally {
       setIsProcessing(false);
+      isSubmitting.current = false;
       notification.remove(id);
     }
   };

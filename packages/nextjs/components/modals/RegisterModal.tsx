@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import React from "react";
 import {
   ArrowTopRightOnSquareIcon,
   CheckCircleIcon,
@@ -28,6 +29,7 @@ export function RegisterModal({
   const [description, setDescription] = useState("");
   const [model, setModel] = useState<"Fractional" | "WholeOwnership">("Fractional");
   const [loading, setLoading] = useState(false);
+  const isSubmitting = useRef(false);
 
   const usdcToStroops = (usdc: string): bigint => {
     const parsed = parseFloat(usdc);
@@ -43,7 +45,12 @@ export function RegisterModal({
     maximumFractionDigits: 2,
   });
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      if ("stopPropagation" in e) e.stopPropagation();
+    }
+    if (loading || isSubmitting.current) return;
     if (!name.trim()) {
       notification.error("Asset name is required.");
       return;
@@ -57,6 +64,7 @@ export function RegisterModal({
       return;
     }
 
+    isSubmitting.current = true;
     setLoading(true);
     const id = notification.loading(`Uploading metadata and registering ${name}...`);
     try {
@@ -104,6 +112,7 @@ export function RegisterModal({
     } catch (e: any) {
       notification.error(`Registration failed: ${e.message}`);
     } finally {
+      isSubmitting.current = false;
       setLoading(false);
       notification.remove(id);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   CheckCircleIcon,
   FingerPrintIcon,
@@ -30,6 +30,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
   });
   const [idFile, setIdFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const lockSubmitting = useRef(false);
 
   const generateCommitment = async () => {
     const encoder = new TextEncoder();
@@ -45,11 +46,16 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
     return new Uint8Array(hashBuffer);
   };
 
-  const handleSubmit = async () => {
-    if (!idFile) {
-      notification.error("Please upload an identity document first.");
+  const handleSubmit = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!idFile || isSubmitting || lockSubmitting.current) {
+      if (!idFile) notification.error("Please upload an identity document first.");
       return;
     }
+    lockSubmitting.current = true;
     setIsSubmitting(true);
     const notif = notification.loading("Encrypting & Submitting KYC Proof...");
     try {
@@ -94,6 +100,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
       notification.error(`Submission failed: ${e.message}`);
     } finally {
       setIsSubmitting(false);
+      lockSubmitting.current = false;
       notification.remove(notif);
     }
   };
