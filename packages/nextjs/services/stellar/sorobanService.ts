@@ -103,14 +103,17 @@ export async function callContract({
       }
 
       if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-        // Hardened result extraction to avoid "Bad union switch" errors in some SDK versions
+        // High-reliability result extraction: prevent "Bad union switch" from crashing the UI
         let result = null;
         try {
-          // Attempt to access returnValue if available, otherwise fallback to null
-          // Some SDK versions might throw during lazy decoding of returnValue
-          result = (pollResult as any).returnValue || null;
+          // Some SDK versions or specific result types (Symbols/Enums) cause decoding crashes
+          // We cast to any and wrap in try-catch to ensure the success notification still fires
+          const rawResult = (pollResult as any).returnValue;
+          if (rawResult) {
+            result = rawResult;
+          }
         } catch (e) {
-          console.warn("[soroban] Failed to decode returnValue, but transaction succeeded:", e);
+          console.warn("[soroban] Successfully executed on-chain, but failed to decode return value:", e);
         }
         return { result, hash: response.hash };
       }
@@ -259,10 +262,14 @@ function parseSorobanError(result: any): string | null {
     "no fees to sweep": "No protocol fees available to sweep.",
     "not asset owner": "Only the asset owner can perform this action.",
     "invalid share supply": "Share supply must be greater than zero.",
-    "invalid price": "Price per share must be greater than zero.",
     "Error(Contract, #13)":
-      "USDC Authorization Required: Your wallet must establish and authorize a trustline for the testnet USDC asset.",
-    "Error(Contract, #10)": "Insufficient USDC Balance: You do not have enough funds to complete this investment.",
+      "Trustline Required: Your wallet must establish and authorize a trustline for the asset before this action.",
+    "Error(Contract, #10)": "Insufficient Balance: You do not have enough funds to complete this transaction.",
+    "Error(Contract, #1)": "Internal Protocol Error: please verify the asset state and try again.",
+    tx_bad_seq: "Transaction sequence error: Your wallet state is out of sync. Please refresh and try again.",
+    tx_insufficient_fee: "Insufficient XLM for transaction fees. Please fund your Stellar account.",
+    op_no_trust: "No Trustline: You must add a trustline for this asset in your wallet first.",
+    op_low_reserve: "Low Reserve: Your Stellar account needs more XLM to establish this trustline.",
   };
 
   for (const [key, msg] of Object.entries(ERROR_MAP)) {

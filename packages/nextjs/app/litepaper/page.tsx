@@ -14,7 +14,7 @@ const LitepaperPage: NextPage = () => {
       <article className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary/90 mb-2">Vaultic Trust</p>
         <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">Litepaper</h1>
-        <p className="mt-1 text-sm text-base-content/50">v2.0 — Stellar Network Edition</p>
+        <p className="mt-1 text-sm text-base-content/50">v3.0 — Stellar Network Edition</p>
 
         <div className="prose prose-neutral mt-8 max-w-none">
           <p className="text-base leading-relaxed text-base-content/85">

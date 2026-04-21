@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowPathIcon,
   ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
   BanknotesIcon,
@@ -71,55 +72,60 @@ export default function InvestorPage() {
     setIsHoldingsLoading(true);
     try {
       const total = await fetchTotalAssets();
-      const contractPositions: EnrichedHolding[] = [];
+      const assetIndices = Array.from({ length: total }, (_, i) => i + 1);
 
-      for (let i = 1; i <= total; i++) {
-        const asset = await fetchAsset(i);
-        if (!asset || asset.state.tag === "Pending" || asset.state.tag === "Active") continue;
+      const results = await Promise.all(
+        assetIndices.map(async i => {
+          try {
+            const asset = await fetchAsset(i);
+            if (!asset || asset.state.tag === "Pending" || asset.state.tag === "Active") return null;
 
-        const sharesHeld = await fetchInvestorHoldings(i, publicKey);
-        const balance = Number(sharesHeld);
-        if (balance <= 0) continue;
+            const sharesHeld = await fetchInvestorHoldings(i, publicKey);
+            const balance = Number(sharesHeld);
+            if (balance <= 0) return null;
 
-        // Get pool data for price
-        let price = 0;
-        let totalShares = Number(asset.total_shares);
-        try {
-          const pool = await fetchPool(i);
-          if (pool) {
-            price = Number(pool.price_per_share) / 1e7;
-            totalShares = Number(pool.total_shares);
-          } else {
-            // Fallback to registry price
-            price = Number(asset.price_per_share) / 1e7;
+            // Get pool data for price
+            let price = 0;
+            let totalShares = Number(asset.total_shares);
+            try {
+              const pool = await fetchPool(i);
+              if (pool) {
+                price = Number(pool.price_per_share) / 1e7;
+                totalShares = Number(pool.total_shares);
+              } else {
+                price = Number(asset.price_per_share) / 1e7;
+              }
+            } catch {
+              price = Number(asset.price_per_share) / 1e7;
+            }
+
+            const value = balance * price;
+            const ownershipPercent = totalShares > 0 ? (balance / totalShares) * 100 : 0;
+
+            const horizonMatch = horizonHoldings.find(
+              h => h.asset_code === asset.asset_code && Number.parseFloat(h.balance) > 0,
+            );
+
+            return {
+              assetId: asset.asset_id,
+              assetName: asset.asset_name,
+              assetCode: asset.asset_code,
+              assetIssuer: horizonMatch?.asset_issuer ?? asset.issuer ?? "",
+              balance,
+              price,
+              value,
+              ownershipPercent,
+              totalShares,
+              source: horizonMatch ? "horizon" : "contract",
+            } as EnrichedHolding;
+          } catch (err) {
+            console.error(`[InvestorPage] Error loading asset ${i}:`, err);
+            return null;
           }
-        } catch {
-          price = Number(asset.price_per_share) / 1e7;
-        }
+        }),
+      );
 
-        const value = balance * price;
-        const ownershipPercent = totalShares > 0 ? (balance / totalShares) * 100 : 0;
-
-        // Check if investor also has native tokens distributed (Horizon)
-        const horizonMatch = horizonHoldings.find(
-          h => h.asset_code === asset.asset_code && Number.parseFloat(h.balance) > 0,
-        );
-
-        contractPositions.push({
-          assetId: asset.asset_id,
-          assetName: asset.asset_name,
-          assetCode: asset.asset_code,
-          assetIssuer: horizonMatch?.asset_issuer ?? asset.issuer ?? "",
-          balance,
-          price,
-          value,
-          ownershipPercent,
-          totalShares,
-          source: horizonMatch ? "horizon" : "contract",
-        });
-      }
-
-      setEnrichedHoldings(contractPositions);
+      setEnrichedHoldings(results.filter((x): x is EnrichedHolding => x !== null));
     } catch (e) {
       console.error("Failed to load contract positions:", e);
     } finally {
@@ -131,20 +137,26 @@ export default function InvestorPage() {
     if (!publicKey || enrichedHoldings.length === 0) return;
     setIsYieldLoading(true);
     try {
-      const yieldResults: YieldInfo[] = [];
-      for (const holding of enrichedHoldings) {
-        const claimable = await fetchClaimableYield(holding.assetId, publicKey);
-        if (claimable > 0n) {
-          yieldResults.push({
-            assetId: holding.assetId,
-            assetCode: holding.assetCode,
-            claimable,
-          });
-        }
-      }
-      setYields(yieldResults);
+      const yieldResults = await Promise.all(
+        enrichedHoldings.map(async holding => {
+          try {
+            const claimable = await fetchClaimableYield(holding.assetId, publicKey);
+            if (claimable > 0n) {
+              return {
+                assetId: holding.assetId,
+                assetCode: holding.assetCode,
+                claimable,
+              } as YieldInfo;
+            }
+          } catch (e) {
+            console.error(`[InvestorPage] Yield fetch failed for ${holding.assetCode}:`, e);
+          }
+          return null;
+        }),
+      );
+      setYields(yieldResults.filter((x): x is YieldInfo => x !== null));
     } catch (e) {
-      console.error("Yield fetch failed:", e);
+      console.error("Yield fetch orchestration failed:", e);
     } finally {
       setIsYieldLoading(false);
     }
@@ -271,9 +283,26 @@ export default function InvestorPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
-                  <CheckBadgeIcon className="h-4 w-4" /> Your Active Positions
-                </h3>
+                <div className="flex justify-between items-end pb-2">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
+                    <CheckBadgeIcon className="h-4 w-4" /> Your Active Positions
+                  </h3>
+                  <button
+                    onClick={() => {
+                      loadContractPositions();
+                      loadKyc();
+                    }}
+                    className="btn btn-ghost btn-xs gap-1.5 font-bold uppercase tracking-widest text-[8px] opacity-40 hover:opacity-100 transition-opacity"
+                    disabled={isHoldingsLoading}
+                  >
+                    {isHoldingsLoading ? (
+                      <span className="loading loading-spinner loading-[10px]" />
+                    ) : (
+                      <ArrowPathIcon className="h-2.5 w-2.5" />
+                    )}
+                    Sync Ledger
+                  </button>
+                </div>
 
                 {isHoldingsLoading ? (
                   <div className="py-12 text-center">
