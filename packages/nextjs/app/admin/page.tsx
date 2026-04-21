@@ -222,6 +222,11 @@ export default function AdminPage() {
   const [decryptedFileUrl, setDecryptedFileUrl] = useState<string | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [adminOrgKey, setAdminOrgKey] = useState("");
+  const [kycApplicantMeta, setKycApplicantMeta] = useState<{
+    fullName?: string;
+    country?: string;
+    submittedAt?: string;
+  } | null>(null);
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
@@ -397,30 +402,31 @@ export default function AdminPage() {
     try {
       const cid = foundUser.metadata_uri;
       const cidClean = cid.replace("ipfs://", "");
-      let encryptedData;
+      let ipfsPayload: any;
 
       try {
         const gatewayUrl = `https://ipfs.io/ipfs/${cidClean}`;
         const response = await fetch(gatewayUrl);
-
-        if (!response.ok) {
-          throw new Error(`Gateway returned ${response.status}`);
-        }
-        encryptedData = await response.json();
+        if (!response.ok) throw new Error(`Gateway returned ${response.status}`);
+        ipfsPayload = await response.json();
       } catch {
         const mockKey = `vltc_mock_${cid}`;
         const mockData = localStorage.getItem(mockKey);
-
         if (mockData) {
           console.warn("[ADMIN] IPFS Fetch failed, loading from local mock cache:", mockKey);
-          encryptedData = JSON.parse(mockData);
+          ipfsPayload = JSON.parse(mockData);
         } else {
-          throw new Error("Unable to retrieve encrypted document from IPFS or local cache. Ensure the file is pinned.");
+          throw new Error("Unable to retrieve document from IPFS or local cache. Ensure the file is pinned.");
         }
       }
 
-      const decryptedBuffer = await decryptFileAsAdmin(encryptedData, adminOrgKey);
+      // Support both old format (bare encryptedData) and new format ({ applicant, encryptedDocument })
+      const encryptedData = ipfsPayload?.encryptedDocument ?? ipfsPayload;
+      if (ipfsPayload?.applicant) {
+        setKycApplicantMeta(ipfsPayload.applicant);
+      }
 
+      const decryptedBuffer = await decryptFileAsAdmin(encryptedData, adminOrgKey);
       const blob = new Blob([decryptedBuffer], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
       setDecryptedFileUrl(url);
@@ -508,7 +514,7 @@ export default function AdminPage() {
                     <BanknotesIcon className="w-8 h-8" />
                   </div>
                   <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Accumulated Fees</div>
-                  <div className="stat-value text-secondary">
+                  <div className="stat-value text-accent text-secondary">
                     {(Number(platformFees) / 10 ** 7).toFixed(2)}{" "}
                     <span className="text-sm text-accent font-normal">USDC</span>
                   </div>
@@ -725,6 +731,33 @@ export default function AdminPage() {
                                     {foundUser.metadata_uri}
                                   </code>
                                 </div>
+
+                                {kycApplicantMeta && (
+                                  <div className="grid grid-cols-2 gap-2 mt-1">
+                                    <div className="bg-base-200 rounded-lg p-2">
+                                      <p className="text-[9px] uppercase tracking-widest text-base-content/40 mb-0.5">
+                                        Full Name
+                                      </p>
+                                      <p className="text-xs font-bold">{kycApplicantMeta.fullName ?? "—"}</p>
+                                    </div>
+                                    <div className="bg-base-200 rounded-lg p-2">
+                                      <p className="text-[9px] uppercase tracking-widest text-base-content/40 mb-0.5">
+                                        Country
+                                      </p>
+                                      <p className="text-xs font-bold">{kycApplicantMeta.country ?? "—"}</p>
+                                    </div>
+                                    {kycApplicantMeta.submittedAt && (
+                                      <div className="bg-base-200 rounded-lg p-2 col-span-2">
+                                        <p className="text-[9px] uppercase tracking-widest text-base-content/40 mb-0.5">
+                                          Submitted At
+                                        </p>
+                                        <p className="text-[10px] font-mono">
+                                          {new Date(kycApplicantMeta.submittedAt).toLocaleString()}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
 
                                 {!decryptedFileUrl ? (
                                   <div className="flex flex-col gap-2">

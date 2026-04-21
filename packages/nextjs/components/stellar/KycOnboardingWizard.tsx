@@ -57,7 +57,20 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
 
       const commitment = await generateCommitment();
 
-      const ipfsUri = await uploadToIpfs(encryptedPayload, `kyc_${publicKey.substring(0, 8)}.json`);
+      // Embed cleartext applicant metadata so admins can identify who applied
+      // without needing to decrypt the document. Sensitive biometric data
+      // (ID number, document image) remain encrypted inside encryptedPayload.
+      const kycPackage = {
+        applicant: {
+          fullName: formData.fullName,
+          country: formData.country,
+          submittedAt: new Date().toISOString(),
+          walletAddress: publicKey,
+        },
+        encryptedDocument: encryptedPayload,
+      };
+
+      const ipfsUri = await uploadToIpfs(kycPackage, `kyc_${publicKey.substring(0, 8)}.json`);
       console.log("[KYC] Encrypted Payload pinned to IPFS:", ipfsUri);
 
       const { hash } = await submitKyc(ipfsUri, commitment, publicKey);

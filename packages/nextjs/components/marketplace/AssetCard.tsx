@@ -8,6 +8,7 @@ import {
   ShoppingBagIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
+import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import { OnChainAsset } from "~~/types/stellar";
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -69,6 +70,9 @@ export const AssetCard = ({
               </span>
               <span className="text-primary font-mono bg-primary/5 px-1.5 rounded">{asset.asset_code}</span>
               <span>ID: #{asset.asset_id}</span>
+              <span className="font-mono bg-base-200 px-1.5 py-0.5 rounded text-[10px]" title={asset.asset_owner}>
+                Owner: {shortenStellarAddress(asset.asset_owner, 6)}
+              </span>
             </div>
 
             {isTokenized ? (
