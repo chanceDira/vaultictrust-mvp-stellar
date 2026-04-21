@@ -16,6 +16,10 @@ import { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } f
 
 let _rpcServer: rpc.Server | null = null;
 
+// GLOBAL SEMAPHORE: Prevents "double-spending" bugs by ensuring only one
+// transaction is ever processing at a time from this client session.
+let isTransactionPending = false;
+
 function getRpcServer(): rpc.Server {
   if (!_rpcServer) {
     _rpcServer = new rpc.Server(getSorobanRpcUrl(), { allowHttp: false });
@@ -48,11 +52,18 @@ export async function callContract({
   const networkPassphrase = getNetworkPassphrase();
   const contract = new Contract(contractId);
 
+  // Check the global semaphore before starting
+  if (isTransactionPending) {
+    console.error("[soroban] Transaction aborted: Another signing request is already in-flight.");
+    throw new Error("A transaction is already in-flight. Please finish the current request in your wallet.");
+  }
+
   // Increase reliability with a higher fee (1000 stroops)
   const RELIABLE_FEE = "1000";
 
   // CRITICAL: We removed the retry loop to prevent double-execution bugs.
   // Transaction lifecycle is now one-shot: simulate -> sign -> submit -> poll.
+  isTransactionPending = true;
   try {
     // 1. Fetch fresh account for sequence number
     const account = await server.getAccount(callerPublicKey);
@@ -128,58 +139,53 @@ export async function callContract({
   } catch (e: any) {
     console.error("[soroban] callContract execution failed:", e.message);
     throw e;
+  } finally {
+    isTransactionPending = false;
   }
 }
 
 export async function setupUsdcTrustline(callerPublicKey: string) {
+  if (isTransactionPending) {
+    throw new Error("A transaction is already in-flight. Please finish the current request in your wallet.");
+  }
+
   const { getHorizonServer } = await import("./horizonClient");
   const horizon = getHorizonServer();
   const networkPassphrase = getNetworkPassphrase();
 
   const RELIABLE_FEE = "1000";
-  const MAX_RETRIES = 1;
-  let attempts = 0;
+  isTransactionPending = true;
 
-  while (attempts <= MAX_RETRIES) {
-    try {
-      const account = await horizon.loadAccount(callerPublicKey);
-      const usdcAsset = new Asset(TESTNET_USDC_ASSET.code, TESTNET_USDC_ASSET.issuer);
+  try {
+    const account = await horizon.loadAccount(callerPublicKey);
+    const usdcAsset = new Asset(TESTNET_USDC_ASSET.code, TESTNET_USDC_ASSET.issuer);
 
-      const tx = new TransactionBuilder(account, {
-        fee: RELIABLE_FEE,
-        networkPassphrase,
-      })
-        .addOperation(
-          Operation.changeTrust({
-            asset: usdcAsset,
-          }),
-        )
-        .setTimeout(60)
-        .build();
+    const tx = new TransactionBuilder(account, {
+      fee: RELIABLE_FEE,
+      networkPassphrase,
+    })
+      .addOperation(
+        Operation.changeTrust({
+          asset: usdcAsset,
+        }),
+      )
+      .setTimeout(60)
+      .build();
 
-      const { signTransaction } = await import("@stellar/freighter-api");
-      const signedResult = await signTransaction(tx.toXDR(), {
-        networkPassphrase,
-      });
+    const { signTransaction } = await import("@stellar/freighter-api");
+    const signedResult = await signTransaction(tx.toXDR(), {
+      networkPassphrase,
+    });
 
-      const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
-      const response = await horizon.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
-      return response;
-    } catch (e: any) {
-      const errXdr =
-        e.response?.data?.extras?.result_codes?.transaction === "tx_bad_seq" || e.message?.includes("////9");
-      if (errXdr && attempts < MAX_RETRIES) {
-        console.warn("[horizon] txBAD_SEQ detected, retrying...");
-        attempts++;
-        await new Promise(r => setTimeout(r, 1000));
-        continue;
-      }
-      if (attempts >= MAX_RETRIES) throw e;
-      attempts++;
-      await new Promise(r => setTimeout(r, 1500));
-    }
+    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+    const response = await horizon.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
+    return response;
+  } catch (e: any) {
+    console.error("[horizon] setupUsdcTrustline failed:", e.message);
+    throw e;
+  } finally {
+    isTransactionPending = false;
   }
-  throw new Error("Setup trustline failed after retries.");
 }
 
 export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{

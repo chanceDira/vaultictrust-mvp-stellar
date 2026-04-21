@@ -109,7 +109,11 @@ export const AssetCard = ({
 
         <div className="shrink-0">
           <button
-            onClick={() => onInvestClick(asset)}
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              onInvestClick(asset);
+            }}
             disabled={
               !isConnected ||
               (asset.model.tag === "Fractional" && asset.state.tag === "Active") ||

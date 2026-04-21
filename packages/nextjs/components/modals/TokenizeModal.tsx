@@ -38,7 +38,11 @@ export function TokenizeModal({
 
   const registrationValuationUsdc = asset.valuation ? Number(asset.valuation) / 1e7 : 0;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      if ("stopPropagation" in e) e.stopPropagation();
+    }
     if (loading) return; // Prevent double trigger
 
     if (!rwaIssuer.trim()) {

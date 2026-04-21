@@ -43,7 +43,11 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
     return () => clearTimeout(timer);
   }, [sharesAmount, asset.asset_id]);
 
-  const handlePurchase = async () => {
+  const handlePurchase = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!sharesAmount || isNaN(Number(sharesAmount)) || isPurchasing) return;
 
     setIsPurchasing(true);
