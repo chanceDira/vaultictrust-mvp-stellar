@@ -34,10 +34,22 @@ interface YieldInfo {
   claimable: bigint;
 }
 
+interface EnrichedHolding {
+  assetId: number;
+  assetCode: string;
+  assetIssuer: string;
+  balance: number;
+  price: number;
+  value: number;
+  ownershipPercent: number;
+  totalShares: number;
+}
+
 export default function InvestorPage() {
   const { isConnected, publicKey } = useStellarWallet();
   const { holdings, isLoading: isHoldingsLoading } = useStellarHoldings(publicKey);
-  const [assetMapping, setAssetMapping] = useState<Record<string, number>>({});
+  const [assetMapping, setAssetMapping] = useState<Record<string, any>>({});
+  const [enrichedHoldings, setEnrichedHoldings] = useState<EnrichedHolding[]>([]);
   const [yields, setYields] = useState<YieldInfo[]>([]);
   const [isYieldLoading, setIsYieldLoading] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -51,11 +63,11 @@ export default function InvestorPage() {
     if (!isDeployed) return;
     try {
       const total = await fetchTotalAssets();
-      const mapping: Record<string, number> = {};
+      const mapping: Record<string, any> = {};
       for (let i = 1; i <= total; i++) {
         const asset = await fetchAsset(i);
         if (asset) {
-          mapping[asset.asset_code] = asset.asset_id;
+          mapping[asset.asset_code] = asset;
         }
       }
       setAssetMapping(mapping);
@@ -64,22 +76,54 @@ export default function InvestorPage() {
     }
   }, [isDeployed]);
 
+  const enrichHoldings = useCallback(() => {
+    if (Object.keys(assetMapping).length === 0 || holdings.length === 0) {
+      setEnrichedHoldings([]);
+      return;
+    }
+
+    const enriched = holdings
+      .map(h => {
+        const asset = assetMapping[h.asset_code];
+        if (!asset) return null;
+
+        const balance = Number.parseFloat(h.balance);
+        if (balance <= 0) return null;
+
+        const price = Number(asset.price_per_share) / 1e7;
+        const totalShares = Number(asset.total_shares);
+        const value = balance * price;
+        const ownershipPercent = totalShares > 0 ? (balance / totalShares) * 100 : 0;
+
+        return {
+          assetId: asset.asset_id,
+          assetCode: h.asset_code,
+          assetIssuer: h.asset_issuer,
+          balance,
+          price,
+          value,
+          ownershipPercent,
+          totalShares,
+        };
+      })
+      .filter((h): h is EnrichedHolding => h !== null);
+
+    setEnrichedHoldings(enriched);
+  }, [holdings, assetMapping]);
+
   const loadYields = useCallback(async () => {
-    if (!publicKey || Object.keys(assetMapping).length === 0) return;
+    if (!publicKey || enrichedHoldings.length === 0) return;
     setIsYieldLoading(true);
     try {
       const yieldResults: YieldInfo[] = [];
-      for (const holding of holdings) {
-        const assetId = assetMapping[holding.asset_code];
-        if (assetId !== undefined) {
-          const claimable = await fetchClaimableYield(assetId, publicKey);
-          if (claimable > 0n) {
-            yieldResults.push({
-              assetId,
-              assetCode: holding.asset_code,
-              claimable,
-            });
-          }
+      for (const holding of enrichedHoldings) {
+        const claimable = await fetchClaimableYield(holding.assetId, publicKey);
+        if (claimable > 0n) {
+          yieldResults.push({
+            assetId: holding.assetId,
+            assetCode: holding.assetCode,
+            claimable,
+          });
         }
       }
       setYields(yieldResults);
@@ -88,7 +132,7 @@ export default function InvestorPage() {
     } finally {
       setIsYieldLoading(false);
     }
-  }, [publicKey, holdings, assetMapping]);
+  }, [publicKey, enrichedHoldings]);
 
   const loadKyc = useCallback(async () => {
     if (!publicKey || !isDeployed) return;
@@ -107,6 +151,10 @@ export default function InvestorPage() {
     loadAssetMapping();
     loadKyc();
   }, [loadAssetMapping, loadKyc]);
+
+  useEffect(() => {
+    enrichHoldings();
+  }, [enrichHoldings]);
 
   useEffect(() => {
     loadYields();
@@ -139,8 +187,6 @@ export default function InvestorPage() {
       notification.remove(notifId);
     }
   };
-
-  const totalClaimableYield = yields.reduce((acc, curr) => acc + curr.claimable, 0n);
 
   return (
     <div className="flex flex-col grow min-h-screen">
@@ -185,7 +231,7 @@ export default function InvestorPage() {
                   <CubeIcon className="h-4 w-4" />
                   <span className="text-[10px] uppercase tracking-widest font-bold">Total Assets Held</span>
                 </div>
-                <p className="text-4xl font-black italic text-base-content">{holdings.length}</p>
+                <p className="text-4xl font-black italic text-base-content">{enrichedHoldings.length}</p>
                 <p className="text-[9px] text-primary font-bold uppercase tracking-widest mt-1">Verified on Stellar</p>
               </div>
 
@@ -193,13 +239,15 @@ export default function InvestorPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-base-content/40">
                     <BanknotesIcon className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-widest font-bold">Accrued Claimable Yield</span>
+                    <span className="text-[10px] uppercase tracking-widest font-bold">Portfolio Valuation</span>
                   </div>
                   {isYieldLoading && <span className="loading loading-spinner loading-xs text-primary" />}
                 </div>
                 <div className="flex items-end justify-between mt-2">
                   <p className="text-3xl font-bold text-success">
-                    {(Number(totalClaimableYield) / 1e7).toFixed(2)}{" "}
+                    {enrichedHoldings
+                      .reduce((acc, curr) => acc + curr.value, 0)
+                      .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
                     <span className="text-sm font-medium opacity-60">USDC</span>
                   </p>
                   <p className="text-xs text-base-content/40 font-mono">{shortenStellarAddress(publicKey || "")}</p>
@@ -217,7 +265,7 @@ export default function InvestorPage() {
                   <div className="py-12 text-center">
                     <span className="loading loading-dots loading-md text-primary" />
                   </div>
-                ) : holdings.length === 0 ? (
+                ) : enrichedHoldings.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-base-300 p-12 text-center bg-base-100/50">
                     <p className="text-sm text-base-content/40 italic">You don&apos;t hold any Vaultic assets yet.</p>
                     <Link href="/marketplace" className="btn btn-primary btn-sm mt-4 gap-2">
@@ -227,35 +275,56 @@ export default function InvestorPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {holdings.map(holding => (
+                    {enrichedHoldings.map(holding => (
                       <div
-                        key={holding.asset_code}
-                        className="rounded-2xl border border-base-300 bg-base-100/60 backdrop-blur-sm p-6 hover:border-primary/50 transition-all flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-primary/5"
+                        key={holding.assetCode}
+                        className="rounded-2xl border border-base-300 bg-base-100/60 backdrop-blur-sm p-5 hover:border-primary/50 transition-all flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-primary/5 group"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner">
+                          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner group-hover:scale-110 transition-transform">
                             <CubeIcon className="h-5 w-5" />
                           </div>
                           <div>
-                            <p className="font-bold text-base-content">{holding.asset_code}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-base-content">{holding.assetCode}</p>
+                              <span className="px-1.5 py-0.5 rounded bg-base-200 text-[8px] font-bold opacity-60 uppercase tracking-tighter">
+                                {holding.ownershipPercent.toFixed(4)}% Share
+                              </span>
+                            </div>
                             <p className="text-[10px] text-base-content/40 font-mono">
-                              Issuer: {shortenStellarAddress(holding.asset_issuer, 6)}
+                              Issuer: {shortenStellarAddress(holding.assetIssuer, 6)}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-base-content">
-                            {Number.parseFloat(holding.balance).toLocaleString()}{" "}
-                            <span className="text-xs font-normal opacity-50">Shares</span>
-                          </p>
-                          <a
-                            href={`https://stellar.expert/explorer/testnet/asset/${holding.asset_code}-${holding.asset_issuer}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] text-primary hover:underline flex items-center justify-end gap-1 mt-0.5"
-                          >
-                            Explore Asset <ArrowTopRightOnSquareIcon className="h-2 w-2" />
-                          </a>
+                        <div className="flex items-center gap-8">
+                          <div className="text-right hidden sm:block">
+                            <p className="text-[10px] uppercase font-bold tracking-widest opacity-30 mb-0.5">Price</p>
+                            <p className="text-xs font-mono font-bold">${holding.price.toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-black text-base-content">
+                              {holding.balance.toLocaleString()}{" "}
+                              <span className="text-[10px] uppercase font-normal opacity-40 tracking-widest">
+                                Shares
+                              </span>
+                            </p>
+                            <p className="text-xs font-black text-primary">
+                              $
+                              {holding.value.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              <span className="text-[8px] opacity-60">USDC</span>
+                            </p>
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/asset/${holding.assetCode}-${holding.assetIssuer}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[9px] text-primary hover:underline flex items-center justify-end gap-1 mt-1 opacity-60"
+                            >
+                              Details <ArrowTopRightOnSquareIcon className="h-2 w-2" />
+                            </a>
+                          </div>
                         </div>
                       </div>
                     ))}

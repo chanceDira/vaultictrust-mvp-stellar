@@ -151,15 +151,22 @@ export default function MarketplacePage() {
           </a>
         </div>,
       );
+
       await loadAssets();
-    } catch (error: any) {
-      console.error(error);
-      notification.error(`Investment failed: ${error.message || "Soroban contract error"}`);
+      setSelectedAsset(null);
+    } catch (e: any) {
+      console.error("Investment failed", e);
+      notification.error(`Investment failed: ${e.message || "Unknown error"}`);
     } finally {
       setIsPurchasing(false);
       notification.remove(notificationId);
-      setSelectedAsset(null);
     }
+  };
+
+  const handlePurchaseComplete = async () => {
+    setIsBuyModalOpen(false);
+    setSelectedAsset(null);
+    await loadAssets();
   };
 
   const kycStatus = typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag;
@@ -232,12 +239,9 @@ export default function MarketplacePage() {
           <BuySharesModal
             isOpen={isBuyModalOpen}
             onClose={() => setIsBuyModalOpen(false)}
-            asset={selectedAsset as any}
+            asset={selectedAsset}
             publicKey={publicKey ?? ""}
-            onSuccess={() => {
-              setIsBuyModalOpen(false);
-              loadAssets();
-            }}
+            onSuccess={handlePurchaseComplete}
           />
         </>
       )}

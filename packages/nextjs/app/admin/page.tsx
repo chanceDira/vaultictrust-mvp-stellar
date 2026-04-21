@@ -509,7 +509,8 @@ export default function AdminPage() {
                   </div>
                   <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Accumulated Fees</div>
                   <div className="stat-value text-secondary">
-                    {(Number(platformFees) / 10 ** 7).toFixed(2)} <span className="text-sm font-normal">USDC</span>
+                    {(Number(platformFees) / 10 ** 7).toFixed(2)}{" "}
+                    <span className="text-sm text-accent font-normal">USDC</span>
                   </div>
                   <div className="stat-desc text-xs mt-1">Ready for Treasury Sweep</div>
                 </div>
