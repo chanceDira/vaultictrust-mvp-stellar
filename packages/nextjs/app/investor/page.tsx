@@ -226,31 +226,33 @@ export default function InvestorPage() {
         ) : (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-xl shadow-primary/5">
-                <div className="flex items-center gap-2 text-base-content/40 mb-1">
+              <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center gap-2 text-base-content/40 mb-2">
                   <CubeIcon className="h-4 w-4" />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">Total Assets Held</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets Held</span>
                 </div>
-                <p className="text-4xl font-black italic text-base-content">{enrichedHoldings.length}</p>
-                <p className="text-[9px] text-primary font-bold uppercase tracking-widest mt-1">Verified on Stellar</p>
+                <p className="text-5xl font-black italic text-base-content leading-none">{enrichedHoldings.length}</p>
+                <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">Verified on Ledger</p>
               </div>
 
-              <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm col-span-1 md:col-span-2 flex flex-col justify-between">
+              <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 md:col-span-2 flex flex-col justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-base-content/40">
                     <BanknotesIcon className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-widest font-bold">Portfolio Valuation</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Portfolio Valuation</span>
                   </div>
                   {isYieldLoading && <span className="loading loading-spinner loading-xs text-primary" />}
                 </div>
-                <div className="flex items-end justify-between mt-2">
-                  <p className="text-3xl font-bold text-success">
+                <div className="flex items-end justify-between mt-3">
+                  <p className="text-4xl font-black text-success italic leading-none">
                     {enrichedHoldings
                       .reduce((acc, curr) => acc + curr.value, 0)
                       .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                    <span className="text-sm font-medium opacity-60">USDC</span>
+                    <span className="text-xs font-bold opacity-60 not-italic tracking-widest">USDC</span>
                   </p>
-                  <p className="text-xs text-base-content/40 font-mono">{shortenStellarAddress(publicKey || "")}</p>
+                  <p className="text-[10px] text-base-content/30 font-mono tracking-tighter">
+                    {shortenStellarAddress(publicKey || "")}
+                  </p>
                 </div>
               </div>
             </div>
