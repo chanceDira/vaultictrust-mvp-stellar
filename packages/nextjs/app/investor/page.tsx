@@ -22,6 +22,8 @@ import {
   claimAllYield,
   fetchAsset,
   fetchClaimableYield,
+  fetchInvestorHoldings,
+  fetchPool,
   fetchTotalAssets,
   fetchUserRecord,
   getContractIds,
@@ -36,6 +38,7 @@ interface YieldInfo {
 
 interface EnrichedHolding {
   assetId: number;
+  assetName: string;
   assetCode: string;
   assetIssuer: string;
   balance: number;
@@ -43,13 +46,14 @@ interface EnrichedHolding {
   value: number;
   ownershipPercent: number;
   totalShares: number;
+  source: "contract" | "horizon";
 }
 
 export default function InvestorPage() {
   const { isConnected, publicKey } = useStellarWallet();
-  const { holdings, isLoading: isHoldingsLoading } = useStellarHoldings(publicKey);
-  const [assetMapping, setAssetMapping] = useState<Record<string, any>>({});
+  const { holdings: horizonHoldings } = useStellarHoldings(publicKey);
   const [enrichedHoldings, setEnrichedHoldings] = useState<EnrichedHolding[]>([]);
+  const [isHoldingsLoading, setIsHoldingsLoading] = useState(false);
   const [yields, setYields] = useState<YieldInfo[]>([]);
   const [isYieldLoading, setIsYieldLoading] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -57,59 +61,71 @@ export default function InvestorPage() {
   const [isKycLoading, setIsKycLoading] = useState(false);
 
   const contracts = getContractIds();
-  const isDeployed = !!contracts.registry;
+  const isDeployed = !!contracts.registry && !!contracts.investmentManager;
 
-  const loadAssetMapping = useCallback(async () => {
-    if (!isDeployed) return;
+  // Primary source of truth: read investor holdings directly from the Soroban
+  // investment-manager contract. Native token distribution is a separate step,
+  // so Horizon balances alone will miss contract-recorded positions.
+  const loadContractPositions = useCallback(async () => {
+    if (!publicKey || !isDeployed) return;
+    setIsHoldingsLoading(true);
     try {
       const total = await fetchTotalAssets();
-      const mapping: Record<string, any> = {};
+      const contractPositions: EnrichedHolding[] = [];
+
       for (let i = 1; i <= total; i++) {
         const asset = await fetchAsset(i);
-        if (asset) {
-          mapping[asset.asset_code] = asset;
+        if (!asset || asset.state.tag === "Pending" || asset.state.tag === "Active") continue;
+
+        const sharesHeld = await fetchInvestorHoldings(i, publicKey);
+        const balance = Number(sharesHeld);
+        if (balance <= 0) continue;
+
+        // Get pool data for price
+        let price = 0;
+        let totalShares = Number(asset.total_shares);
+        try {
+          const pool = await fetchPool(i);
+          if (pool) {
+            price = Number(pool.price_per_share) / 1e7;
+            totalShares = Number(pool.total_shares);
+          } else {
+            // Fallback to registry price
+            price = Number(asset.price_per_share) / 1e7;
+          }
+        } catch {
+          price = Number(asset.price_per_share) / 1e7;
         }
-      }
-      setAssetMapping(mapping);
-    } catch (e) {
-      console.error("Mapping fetch failed:", e);
-    }
-  }, [isDeployed]);
 
-  const enrichHoldings = useCallback(() => {
-    if (Object.keys(assetMapping).length === 0 || holdings.length === 0) {
-      setEnrichedHoldings([]);
-      return;
-    }
-
-    const enriched = holdings
-      .map(h => {
-        const asset = assetMapping[h.asset_code];
-        if (!asset) return null;
-
-        const balance = Number.parseFloat(h.balance);
-        if (balance <= 0) return null;
-
-        const price = Number(asset.price_per_share) / 1e7;
-        const totalShares = Number(asset.total_shares);
         const value = balance * price;
         const ownershipPercent = totalShares > 0 ? (balance / totalShares) * 100 : 0;
 
-        return {
+        // Check if investor also has native tokens distributed (Horizon)
+        const horizonMatch = horizonHoldings.find(
+          h => h.asset_code === asset.asset_code && Number.parseFloat(h.balance) > 0,
+        );
+
+        contractPositions.push({
           assetId: asset.asset_id,
-          assetCode: h.asset_code,
-          assetIssuer: h.asset_issuer,
+          assetName: asset.asset_name,
+          assetCode: asset.asset_code,
+          assetIssuer: horizonMatch?.asset_issuer ?? asset.issuer ?? "",
           balance,
           price,
           value,
           ownershipPercent,
           totalShares,
-        };
-      })
-      .filter((h): h is EnrichedHolding => h !== null);
+          source: horizonMatch ? "horizon" : "contract",
+        });
+      }
 
-    setEnrichedHoldings(enriched);
-  }, [holdings, assetMapping]);
+      setEnrichedHoldings(contractPositions);
+    } catch (e) {
+      console.error("Failed to load contract positions:", e);
+    } finally {
+      setIsHoldingsLoading(false);
+    }
+  }, [publicKey, isDeployed, horizonHoldings]);
 
   const loadYields = useCallback(async () => {
     if (!publicKey || enrichedHoldings.length === 0) return;
@@ -148,13 +164,9 @@ export default function InvestorPage() {
   }, [publicKey, isDeployed]);
 
   useEffect(() => {
-    loadAssetMapping();
+    loadContractPositions();
     loadKyc();
-  }, [loadAssetMapping, loadKyc]);
-
-  useEffect(() => {
-    enrichHoldings();
-  }, [enrichHoldings]);
+  }, [loadContractPositions, loadKyc]);
 
   useEffect(() => {
     loadYields();
@@ -232,7 +244,7 @@ export default function InvestorPage() {
                   <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets Held</span>
                 </div>
                 <p className="text-5xl font-black italic text-base-content leading-none">{enrichedHoldings.length}</p>
-                <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">Verified on Ledger</p>
+                <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">On-Chain Positions</p>
               </div>
 
               <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 md:col-span-2 flex flex-col justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -279,53 +291,69 @@ export default function InvestorPage() {
                   <div className="space-y-3">
                     {enrichedHoldings.map(holding => (
                       <div
-                        key={holding.assetCode}
-                        className="rounded-2xl border border-base-300 bg-base-100/60 backdrop-blur-sm p-5 hover:border-primary/50 transition-all flex items-center justify-between shadow-sm hover:shadow-xl hover:shadow-primary/5 group"
+                        key={`${holding.assetCode}-${holding.assetId}`}
+                        className="rounded-2xl border border-base-300 bg-base-100/60 backdrop-blur-sm p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 group"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner group-hover:scale-110 transition-transform">
-                            <CubeIcon className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-bold text-base-content">{holding.assetCode}</p>
-                              <span className="px-1.5 py-0.5 rounded bg-base-200 text-[8px] font-bold opacity-60 uppercase tracking-tighter">
-                                {holding.ownershipPercent.toFixed(4)}% Share
-                              </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner group-hover:scale-110 transition-transform">
+                              <CubeIcon className="h-5 w-5" />
                             </div>
-                            <p className="text-[10px] text-base-content/40 font-mono">
-                              Issuer: {shortenStellarAddress(holding.assetIssuer, 6)}
-                            </p>
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-bold text-base-content">{holding.assetName}</p>
+                                <span className="font-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                  {holding.assetCode}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded bg-base-200 text-[8px] font-bold opacity-60 uppercase tracking-tighter">
+                                  {holding.ownershipPercent.toFixed(4)}% Share
+                                </span>
+                                {holding.source === "horizon" && (
+                                  <span className="px-1.5 py-0.5 rounded bg-success/10 text-success text-[8px] font-bold uppercase">
+                                    ✓ Distributed
+                                  </span>
+                                )}
+                              </div>
+                              {holding.assetIssuer && (
+                                <p className="text-[10px] text-base-content/40 font-mono mt-0.5">
+                                  Issuer: {shortenStellarAddress(holding.assetIssuer, 8)}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-8">
-                          <div className="text-right hidden sm:block">
-                            <p className="text-[10px] uppercase font-bold tracking-widest opacity-30 mb-0.5">Price</p>
-                            <p className="text-xs font-mono font-bold">${holding.price.toFixed(2)}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-black text-base-content">
-                              {holding.balance.toLocaleString()}{" "}
-                              <span className="text-[10px] uppercase font-normal opacity-40 tracking-widest">
-                                Shares
-                              </span>
-                            </p>
-                            <p className="text-xs font-black text-primary">
-                              $
-                              {holding.value.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
-                              <span className="text-[8px] opacity-60">USDC</span>
-                            </p>
-                            <a
-                              href={`https://stellar.expert/explorer/testnet/asset/${holding.assetCode}-${holding.assetIssuer}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[9px] text-primary hover:underline flex items-center justify-end gap-1 mt-1 opacity-60"
-                            >
-                              Details <ArrowTopRightOnSquareIcon className="h-2 w-2" />
-                            </a>
+                          <div className="flex items-center gap-8">
+                            <div className="text-right hidden sm:block">
+                              <p className="text-[10px] uppercase font-bold tracking-widest opacity-30 mb-0.5">
+                                Price/Share
+                              </p>
+                              <p className="text-xs font-mono font-bold">${holding.price.toFixed(2)} USDC</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-black text-base-content">
+                                {holding.balance.toLocaleString()}{" "}
+                                <span className="text-[10px] uppercase font-normal opacity-40 tracking-widest">
+                                  Shares
+                                </span>
+                              </p>
+                              <p className="text-xs font-black text-primary">
+                                $
+                                {holding.value.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                <span className="text-[8px] opacity-60">USDC</span>
+                              </p>
+                              {holding.assetIssuer && (
+                                <a
+                                  href={`https://stellar.expert/explorer/testnet/asset/${holding.assetCode}-${holding.assetIssuer}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[9px] text-primary hover:underline flex items-center justify-end gap-1 mt-1 opacity-60"
+                                >
+                                  Explorer <ArrowTopRightOnSquareIcon className="h-2 w-2" />
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
