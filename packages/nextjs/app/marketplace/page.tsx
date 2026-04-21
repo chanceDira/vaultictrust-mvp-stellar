@@ -8,6 +8,7 @@ import {
   ConnectWalletBanner,
   MarketplaceHeader,
   MarketplaceLoading,
+  WalletPreparationBanner,
 } from "~~/components/marketplace/MarketplaceLayout";
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
@@ -16,6 +17,7 @@ import { PROTOCOL_METADATA } from "~~/scaffold.config";
 import {
   fetchAsset,
   fetchTotalAssets,
+  fetchUsdcTrustlineStatus,
   fetchUserRecord,
   getContractIds,
   purchaseWholeAsset,
@@ -33,6 +35,11 @@ export default function MarketplacePage() {
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const [kycRecord, setKycRecord] = useState<any>(null);
+  const [usdcStatus, setUsdcStatus] = useState<{
+    hasTrustline: boolean;
+    isAuthorized: boolean;
+    balance: string;
+  } | null>(null);
 
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
@@ -66,14 +73,22 @@ export default function MarketplacePage() {
     }
   }, [publicKey, isDeployed]);
 
+  const checkUsdc = useCallback(async () => {
+    if (!publicKey) return;
+    const status = await fetchUsdcTrustlineStatus(publicKey);
+    setUsdcStatus(status);
+  }, [publicKey]);
+
   useEffect(() => {
     if (isConnected && isDeployed) {
       loadAssets();
       loadKyc();
+      checkUsdc();
     } else {
       setKycRecord(null);
+      setUsdcStatus(null);
     }
-  }, [isConnected, isDeployed, loadAssets, loadKyc]);
+  }, [isConnected, isDeployed, loadAssets, loadKyc, checkUsdc]);
 
   const handleInvestClick = (asset: OnChainAsset) => {
     if (!publicKey) return;
@@ -167,7 +182,12 @@ export default function MarketplacePage() {
             </div>
           </div>
         ) : (
-          <KycStatusBanner kycRecord={kycRecord} />
+          <>
+            {isConnected && publicKey && usdcStatus && (!usdcStatus.hasTrustline || !usdcStatus.isAuthorized) && (
+              <WalletPreparationBanner publicKey={publicKey} onSuccess={checkUsdc} />
+            )}
+            <KycStatusBanner kycRecord={kycRecord} />
+          </>
         )}
 
         {isLoading ? (

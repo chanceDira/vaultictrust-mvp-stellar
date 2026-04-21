@@ -1,16 +1,18 @@
 import { getNetworkPassphrase, getSorobanRpcUrl } from "./horizonClient";
 import {
   Address,
+  Asset,
   BASE_FEE,
   Contract,
   Keypair,
+  Operation,
   TransactionBuilder,
   nativeToScVal,
   rpc,
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
-import { TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
+import { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
 
 let _rpcServer: rpc.Server | null = null;
 
@@ -44,68 +46,161 @@ export async function callContract({
 }): Promise<{ result: xdr.ScVal | null; hash: string }> {
   const server = getRpcServer();
   const networkPassphrase = getNetworkPassphrase();
-
-  const account = await server.getAccount(callerPublicKey);
   const contract = new Contract(contractId);
 
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase,
-  })
-    .addOperation(contract.call(method, ...args))
-    .setTimeout(30)
-    .build();
-
-  const simResult = await server.simulateTransaction(tx);
-  if (rpc.Api.isSimulationError(simResult)) {
-    const errorMsg = parseSorobanError(simResult);
-    throw new Error(errorMsg || `Simulation failed: ${simResult.error}`);
-  }
-
-  const preparedTx = rpc.assembleTransaction(tx, simResult).build();
-
-  const { signTransaction } = await import("@stellar/freighter-api");
-  const signedResult = await signTransaction(preparedTx.toXDR(), {
-    networkPassphrase,
-  });
-  const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
-
-  const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
-  const response = await server.sendTransaction(submittedTx);
-
-  if (response.status === "ERROR") {
-    const errXdr = response.errorResult?.toXDR("base64") ?? "unknown error";
-    throw new Error(`Transaction failed: ${errXdr}`);
-  }
-
-  let pollResult: Awaited<ReturnType<typeof server.getTransaction>> = null as any;
+  // Increase reliability with a higher fee (1000 stroops)
+  const RELIABLE_FEE = "1000";
+  const MAX_RETRIES = 1;
   let attempts = 0;
-  try {
-    pollResult = await server.getTransaction(response.hash);
-    while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && attempts < 30) {
-      await new Promise(r => setTimeout(r, 1000));
-      pollResult = await server.getTransaction(response.hash);
-      attempts++;
-    }
-  } catch {
-    return { result: null, hash: response.hash };
-  }
 
-  if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
+  while (attempts <= MAX_RETRIES) {
     try {
-      const result = (pollResult as any).returnValue ?? null;
-      return { result, hash: response.hash };
-    } catch {
-      return { result: null, hash: response.hash };
+      const account = await server.getAccount(callerPublicKey);
+      const tx = new TransactionBuilder(account, {
+        fee: RELIABLE_FEE,
+        networkPassphrase,
+      })
+        .addOperation(contract.call(method, ...args))
+        .setTimeout(60) // 60s for signing
+        .build();
+
+      const simResult = await server.simulateTransaction(tx);
+      if (rpc.Api.isSimulationError(simResult)) {
+        const errorMsg = parseSorobanError(simResult);
+        throw new Error(errorMsg || `Simulation failed: ${simResult.error}`);
+      }
+
+      const preparedTx = rpc.assembleTransaction(tx, simResult).build();
+
+      const { signTransaction } = await import("@stellar/freighter-api");
+      const signedResult = await signTransaction(preparedTx.toXDR(), {
+        networkPassphrase,
+      });
+      const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+
+      const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
+      const response = await server.sendTransaction(submittedTx);
+
+      if (response.status === "ERROR") {
+        const errXdr = response.errorResult?.toXDR("base64") ?? "unknown error";
+        // If txBAD_SEQ (encoded as ////9), retry once with fresh sequence
+        if (errXdr.includes("////9") && attempts < MAX_RETRIES) {
+          console.warn("[soroban] txBAD_SEQ detected, retrying...");
+          attempts++;
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+        throw new Error(`Transaction failed: ${errXdr}`);
+      }
+
+      let pollResult: Awaited<ReturnType<typeof server.getTransaction>> = null as any;
+      let pollAttempts = 0;
+      pollResult = await server.getTransaction(response.hash);
+      while (pollResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND && pollAttempts < 30) {
+        await new Promise(r => setTimeout(r, 1000));
+        pollResult = await server.getTransaction(response.hash);
+        pollAttempts++;
+      }
+
+      if (pollResult.status === rpc.Api.GetTransactionStatus.SUCCESS) {
+        const result = (pollResult as any).returnValue ?? null;
+        return { result, hash: response.hash };
+      }
+
+      if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
+        const errorMessage = parseSorobanError(pollResult);
+        throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
+      }
+
+      throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
+    } catch (e: any) {
+      if (attempts >= MAX_RETRIES) throw e;
+      console.warn(`[soroban] Attempt ${attempts + 1} failed, retrying...`, e.message);
+      attempts++;
+      await new Promise(r => setTimeout(r, 1500));
     }
   }
+  throw new Error("Transaction execution failed after retries.");
+}
 
-  if (pollResult.status === rpc.Api.GetTransactionStatus.FAILED) {
-    const errorMessage = parseSorobanError(pollResult);
-    throw new Error(errorMessage || `Transaction failed on-chain. Hash: ${response.hash}`);
+export async function setupUsdcTrustline(callerPublicKey: string) {
+  const { getHorizonServer } = await import("./horizonClient");
+  const horizon = getHorizonServer();
+  const networkPassphrase = getNetworkPassphrase();
+
+  const RELIABLE_FEE = "1000";
+  const MAX_RETRIES = 1;
+  let attempts = 0;
+
+  while (attempts <= MAX_RETRIES) {
+    try {
+      const account = await horizon.loadAccount(callerPublicKey);
+      const usdcAsset = new Asset(TESTNET_USDC_ASSET.code, TESTNET_USDC_ASSET.issuer);
+
+      const tx = new TransactionBuilder(account, {
+        fee: RELIABLE_FEE,
+        networkPassphrase,
+      })
+        .addOperation(
+          Operation.changeTrust({
+            asset: usdcAsset,
+          }),
+        )
+        .setTimeout(60)
+        .build();
+
+      const { signTransaction } = await import("@stellar/freighter-api");
+      const signedResult = await signTransaction(tx.toXDR(), {
+        networkPassphrase,
+      });
+
+      const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+      const response = await horizon.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
+      return response;
+    } catch (e: any) {
+      const errXdr =
+        e.response?.data?.extras?.result_codes?.transaction === "tx_bad_seq" || e.message?.includes("////9");
+      if (errXdr && attempts < MAX_RETRIES) {
+        console.warn("[horizon] txBAD_SEQ detected, retrying...");
+        attempts++;
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      if (attempts >= MAX_RETRIES) throw e;
+      attempts++;
+      await new Promise(r => setTimeout(r, 1500));
+    }
   }
+  throw new Error("Setup trustline failed after retries.");
+}
 
-  throw new Error(`Transaction did not finalize. Status: ${pollResult.status}`);
+export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{
+  hasTrustline: boolean;
+  isAuthorized: boolean;
+  balance: string;
+}> {
+  try {
+    const { getHorizonServer } = await import("./horizonClient");
+    const horizon = getHorizonServer();
+    const account = await horizon.loadAccount(publicKey);
+
+    const usdc = account.balances.find(
+      (b: any) => b.asset_code === TESTNET_USDC_ASSET.code && b.asset_issuer === TESTNET_USDC_ASSET.issuer,
+    );
+
+    if (!usdc) {
+      return { hasTrustline: false, isAuthorized: false, balance: "0" };
+    }
+
+    return {
+      hasTrustline: true,
+      isAuthorized: (usdc as any).is_authorized !== false,
+      balance: (usdc as any).balance || "0",
+    };
+  } catch (e) {
+    console.error("[soroban] Error fetching trustline status:", e);
+    return { hasTrustline: false, isAuthorized: false, balance: "0" };
+  }
 }
 
 function parseSorobanError(result: any): string | null {
@@ -157,6 +252,9 @@ function parseSorobanError(result: any): string | null {
     "not asset owner": "Only the asset owner can perform this action.",
     "invalid share supply": "Share supply must be greater than zero.",
     "invalid price": "Price per share must be greater than zero.",
+    "Error(Contract, #13)":
+      "USDC Authorization Required: Your wallet must establish and authorize a trustline for the testnet USDC asset.",
+    "Error(Contract, #10)": "Insufficient USDC Balance: You do not have enough funds to complete this investment.",
   };
 
   for (const [key, msg] of Object.entries(ERROR_MAP)) {
