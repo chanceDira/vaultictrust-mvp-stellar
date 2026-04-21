@@ -43,8 +43,12 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
     return () => clearTimeout(timer);
   }, [sharesAmount, asset.asset_id]);
 
-  const handlePurchase = async () => {
-    if (!sharesAmount || isNaN(Number(sharesAmount))) return;
+  const handlePurchase = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!sharesAmount || isNaN(Number(sharesAmount)) || isPurchasing) return;
 
     setIsPurchasing(true);
     const id = notification.loading(`Processing investment in ${asset.asset_name}...`);
@@ -71,12 +75,14 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
           </a>
         </div>,
       );
+
+      // Clear the modal state before calling onSuccess to prevent any re-clicks
       onSuccess();
     } catch (e: any) {
       console.error("[BuySharesModal] Purchase error:", e);
       notification.error(`Investment failed: ${e.message || "Network execution error"}`);
+      setIsPurchasing(false); // Only allow re-attempts if it actually failed
     } finally {
-      setIsPurchasing(false);
       notification.remove(id);
     }
   };
