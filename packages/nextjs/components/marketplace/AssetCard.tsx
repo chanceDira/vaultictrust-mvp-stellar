@@ -119,10 +119,9 @@ export const AssetCard = ({
               isPurchasing ||
               (isConnected && kycStatus !== "Verified")
             }
-            className={`btn btn-primary btn-lg rounded-2xl px-10 gap-3 shadow-lg shadow-primary/20 stellar-glow ${
-              isCurrentPurchasing ? "loading" : ""
-            }`}
+            className={`btn btn-primary btn-lg rounded-2xl px-10 gap-3 shadow-lg shadow-primary/20 stellar-glow`}
           >
+            {isCurrentPurchasing && <span className="loading loading-bars loading-sm" />}
             {isCurrentPurchasing
               ? asset.model.tag === "WholeOwnership"
                 ? "Purchasing..."

@@ -325,11 +325,7 @@ export function RegisterModal({
             onClick={handleSubmit}
             disabled={loading || valuationStroops <= 0n || !name.trim() || !code.trim()}
           >
-            {loading ? (
-              <span className="loading loading-spinner loading-sm" />
-            ) : (
-              <CheckCircleIcon className="h-5 w-5" />
-            )}
+            {loading ? <span className="loading loading-bars loading-xs" /> : <CheckCircleIcon className="h-5 w-5" />}
             Register Asset
           </button>
         </div>

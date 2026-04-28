@@ -18,6 +18,7 @@ import {
   WalletIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import { VaulticLoader } from "~~/components/VaulticLoader";
 import { TokenizeModal } from "~~/components/modals/TokenizeModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
@@ -701,9 +702,7 @@ export default function AdminPage() {
                 )}
 
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-16">
-                    <span className="loading loading-dots loading-lg text-primary" />
-                  </div>
+                  <VaulticLoader />
                 ) : filteredAssets.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-base-300 p-10 text-center">
                     <ChartBarIcon className="h-10 w-10 text-base-content/20 mx-auto mb-3" />

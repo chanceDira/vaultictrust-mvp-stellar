@@ -14,6 +14,7 @@ import {
   SparklesIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
+import { VaulticLoader } from "~~/components/VaulticLoader";
 import { DistributeYieldModal } from "~~/components/modals/DistributeYieldModal";
 import { RegisterModal } from "~~/components/modals/RegisterModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
@@ -234,9 +235,7 @@ export default function OwnerPage() {
               </h2>
 
               {isLoading ? (
-                <div className="flex justify-center py-16">
-                  <span className="loading loading-spinner loading-lg text-primary" />
-                </div>
+                <VaulticLoader />
               ) : assets.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-base-300 p-16 text-center bg-base-100/50 italic text-base-content/40">
                   You haven&apos;t registered any assets yet.

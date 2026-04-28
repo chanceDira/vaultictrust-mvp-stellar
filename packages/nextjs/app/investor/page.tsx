@@ -13,6 +13,7 @@ import {
   CubeIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
+import { VaulticLoader } from "~~/components/VaulticLoader";
 import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
@@ -310,9 +311,7 @@ export default function InvestorPage() {
                 </div>
 
                 {isHoldingsLoading ? (
-                  <div className="py-12 text-center">
-                    <span className="loading loading-dots loading-md text-primary" />
-                  </div>
+                  <VaulticLoader />
                 ) : enrichedHoldings.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-base-300 p-12 text-center bg-base-100/50">
                     <p className="text-sm text-base-content/40 italic">You don&apos;t hold any Vaultic assets yet.</p>
