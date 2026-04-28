@@ -1,0 +1,103 @@
+VAULTIC TRUST — STELLAR EDITION
+SYSTEM ARCHITECTURE & USAGE GUIDE
+================================================================================
+
+1. INTRODUCTION
+--------------------------------------------------------------------------------
+Vaultic Trust is a Real-World Asset (RWA) tokenization platform designed for the
+Stellar Network. It enables the fractionalization of assets such as real estate,
+commodities, and carbon credits into liquid, programmable digital tokens.
+
+The platform bridges the gap between traditional finance and decentralized
+liquidity by providing a compliant, transparent, and high-performance ecosystem.
+
+2. TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+The system is built using modern, industry-standard technologies:
+
+*   Frontend Architecture:
+    - Framework: Next.js 16+ (React)
+    - Language: TypeScript (Strict mode for high reliability)
+    - Styling: Tailwind CSS (Clean, premium UI components)
+    - State Management: React Hooks & Context
+
+*   Blockchain & Smart Contracts:
+    - Network: Stellar (optimized for low fees and fast finality)
+    - Contract Framework: Soroban (Rust-based smart contracts)
+    - Language: Rust (Compiled to optimized WebAssembly / WASM)
+    - Integration: Stellar SDK (JS/TS)
+
+*   Infrastructure & Security:
+    - Wallet Provider: Freighter (Non-custodial browser wallet)
+    - Data Storage: IPFS (InterPlanetary File System) for immutable metadata
+    - Cryptography: tweetnacl & SubtleCrypto (E2E encryption for sensitive KYC data)
+    - API Layer: Stellar Horizon (REST) & Soroban RPC (JSON-RPC)
+
+3. SYSTEM ARCHITECTURE
+--------------------------------------------------------------------------------
+Vaultic Trust uses a "Hybrid Native" architecture. This means we combine the 
+best of both worlds on Stellar:
+
+A. Stellar Native Assets (The Token Layer):
+   Instead of using gas-heavy smart contracts for every token (like ERC-20), we 
+   issue shares as Native Stellar Assets. This ensures:
+   - Near-zero transaction fees.
+   - Instant, protocol-level payments.
+   - Native compliance through Trustlines.
+
+B. Soroban Smart Contracts (The Logic Layer):
+   Complex business rules are handled by four core Rust contracts:
+   1. VaulticAssetRegistry: Canonical source of truth for all assets and their lifecycle states.
+   2. VaulticUserRegistry: On-chain KYC registry that gates all financial interactions.
+   3. VaulticInvestmentManager: The marketplace engine handling USDC payments and pool math.
+   4. VaulticDividendManager: Manages pro-rata yield distribution to shareholders.
+
+C. Privacy-Preserving KYC:
+   Identity documents are encrypted locally in the browser using a high-security
+   Montgomery point-mapping algorithm (Ed25519 to X25519) before being uploaded 
+   to IPFS. Only authorized Protocol Admins can decrypt and view these documents.
+
+4. STEP-BY-STEP USAGE GUIDE
+--------------------------------------------------------------------------------
+
+FOR INVESTORS:
+1.  Connect Wallet: Install and connect the Freighter browser extension.
+2.  Setup Trustlines: One-click "Add USDC" to your wallet to enable payments.
+3.  Onboarding (KYC): Submit your verification details through the secure wizard. 
+    Your data is encrypted before it leaves your computer.
+4.  Browse Marketplace: Discover verified real-world assets.
+5.  Buy Shares: Purchase fractional shares of an asset using USDC. 
+6.  Claim Yield: When an asset generates profit, claim your yield directly 
+    from your dashboard.
+
+FOR ASSET OWNERS:
+1.  Register Asset: Submit your property, commodity, or credit details.
+2.  KYC Verification: Complete your owner-level identity verification.
+3.  Tokenization: Once approved, "Tokenize" your asset to issue shares to 
+    the marketplace.
+4.  Collect Funds: Once the funding goal is reached, withdraw the raised 
+    USDC for your project.
+5.  Distribute Yield: Deposit profits into the Dividend Manager to reward 
+    your investors automatically.
+
+FOR PROTOCOL ADMINS:
+1.  Review Submissions: Access the Admin Panel to review new asset listings 
+    and KYC applications.
+2.  Verification: Verify, Suspend, or Reject users and assets based on compliance.
+3.  Manage Admins: Add or remove secondary administrators for the protocol.
+4.  Fee Sweeping: Collect accumulated protocol fees into the treasury.
+
+5. OPERATIONAL INTEGRITY
+--------------------------------------------------------------------------------
+The system includes several "Hardened" features for production reliability:
+- Global Transaction Semaphore: Prevents "double-spending" or parallel signing 
+  requests in the wallet.
+- XDR Decode Guards: Ensures that even if the network returns exotic metadata, 
+  successful transactions are always correctly reported to the user.
+- Success-First Polling: Prioritizes ledger finality over transient API warnings.
+
+--------------------------------------------------------------------------------
+Vaultic Trust — Empowering Africa's Financial Future.
+
+---------------------
+@0xJonaseb11
