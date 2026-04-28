@@ -5,7 +5,6 @@ import { ArrowRightIcon, InformationCircleIcon } from "@heroicons/react/24/outli
 import { AssetCard } from "~~/components/marketplace/AssetCard";
 import { KycStatusBanner } from "~~/components/marketplace/KycStatusBanner";
 import {
-  ConnectWalletBanner,
   MarketplaceHeader,
   MarketplaceLoading,
   WalletPreparationBanner,
@@ -209,7 +208,6 @@ export default function MarketplacePage() {
           </div>
         ) : (
           <>
-            {!isConnected && <ConnectWalletBanner />}
             {isConnected && publicKey && usdcStatus && (!usdcStatus.hasTrustline || !usdcStatus.isAuthorized) && (
               <WalletPreparationBanner publicKey={publicKey} onSuccess={checkUsdc} />
             )}
