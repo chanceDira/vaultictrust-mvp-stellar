@@ -100,7 +100,8 @@ const Home: NextPage = () => {
           </p>
           <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-4 sm:mt-12 sm:flex-row sm:items-center sm:gap-5 md:gap-6">
             <Link
-              href="/owner"
+              href="https://forms.gle/QoMKbVJ4FoPxeXiQ6"
+              target="_blank"
               className="stellar-glow btn btn-primary btn-lg min-h-14 flex flex-1 items-center justify-center gap-2 rounded-2xl px-12 font-black uppercase tracking-widest sm:flex-initial sm:flex-none"
             >
               Get Early Access
