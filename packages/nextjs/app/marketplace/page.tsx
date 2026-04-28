@@ -26,7 +26,7 @@ import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function MarketplacePage() {
-  const { isConnected, publicKey } = useStellarWallet();
+  const { isConnected, publicKey, connect } = useStellarWallet();
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<OnChainAsset | null>(null);
@@ -93,18 +93,26 @@ export default function MarketplacePage() {
   }, [publicKey]);
 
   useEffect(() => {
-    if (isConnected && isDeployed) {
+    if (isDeployed) {
       loadAssets();
+    }
+  }, [isDeployed, loadAssets]);
+
+  useEffect(() => {
+    if (isConnected && isDeployed && publicKey) {
       loadKyc();
       checkUsdc();
     } else {
       setKycRecord(null);
       setUsdcStatus(null);
     }
-  }, [isConnected, isDeployed, loadAssets, loadKyc, checkUsdc]);
+  }, [isConnected, isDeployed, publicKey, loadKyc, checkUsdc]);
 
-  const handleInvestClick = (asset: OnChainAsset) => {
-    if (!publicKey) return;
+  const handleInvestClick = async (asset: OnChainAsset) => {
+    if (!publicKey) {
+      await connect();
+      return;
+    }
 
     if (asset.asset_owner === publicKey) {
       notification.error("Owners cannot purchase their own assets.");
@@ -189,9 +197,7 @@ export default function MarketplacePage() {
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
         <MarketplaceHeader stats={stats} />
 
-        {!isConnected ? (
-          <ConnectWalletBanner />
-        ) : !isDeployed ? (
+        {!isDeployed ? (
           <div className="alert alert-info shadow-lg mb-10 border-blue-500/30 bg-blue-500/5">
             <InformationCircleIcon className="h-6 w-6 shrink-0" />
             <div>
@@ -203,6 +209,7 @@ export default function MarketplacePage() {
           </div>
         ) : (
           <>
+            {!isConnected && <ConnectWalletBanner />}
             {isConnected && publicKey && usdcStatus && (!usdcStatus.hasTrustline || !usdcStatus.isAuthorized) && (
               <WalletPreparationBanner publicKey={publicKey} onSuccess={checkUsdc} />
             )}
@@ -212,7 +219,7 @@ export default function MarketplacePage() {
 
         {isLoading ? (
           <MarketplaceLoading />
-        ) : assets.length === 0 && isConnected && isDeployed ? (
+        ) : assets.length === 0 && isDeployed ? (
           <div className="rounded-2xl border border-dashed border-base-300 p-16 text-center bg-base-100 italic text-base-content/50">
             No active opportunities at this time.
           </div>

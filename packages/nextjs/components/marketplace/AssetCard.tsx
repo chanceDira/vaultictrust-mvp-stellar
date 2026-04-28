@@ -115,10 +115,9 @@ export const AssetCard = ({
               onInvestClick(asset);
             }}
             disabled={
-              !isConnected ||
-              (asset.model.tag === "Fractional" && asset.state.tag === "Active") ||
+              (isConnected && asset.model.tag === "Fractional" && asset.state.tag === "Active") ||
               isPurchasing ||
-              kycStatus !== "Verified"
+              (isConnected && kycStatus !== "Verified")
             }
             className={`btn btn-primary btn-lg rounded-2xl px-10 gap-3 shadow-lg shadow-primary/20 stellar-glow ${
               isCurrentPurchasing ? "loading" : ""
@@ -128,9 +127,11 @@ export const AssetCard = ({
               ? asset.model.tag === "WholeOwnership"
                 ? "Purchasing..."
                 : "Investing..."
-              : asset.model.tag === "WholeOwnership"
-                ? "Buy Whole Asset"
-                : "Invest Now"}
+              : !isConnected
+                ? "Connect Wallet"
+                : asset.model.tag === "WholeOwnership"
+                  ? "Buy Whole Asset"
+                  : "Invest Now"}
             {!isCurrentPurchasing && <ArrowRightIcon className="h-5 w-5" />}
           </button>
         </div>
