@@ -1,6 +1,7 @@
 "use client";
 
 import { ExclamationTriangleIcon, Squares2X2Icon, WalletIcon } from "@heroicons/react/24/outline";
+import { VaulticLoader } from "~~/components/VaulticLoader";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { setupUsdcTrustline } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
@@ -102,9 +103,4 @@ export const WalletPreparationBanner = ({
   );
 };
 
-export const MarketplaceLoading = () => (
-  <div className="flex flex-col items-center justify-center py-24 gap-4">
-    <span className="loading loading-bars loading-lg text-primary" />
-    <p className="text-sm font-bold uppercase tracking-widest text-base-content/40">Fetching Ledger State...</p>
-  </div>
-);
+export const MarketplaceLoading = () => <VaulticLoader />;

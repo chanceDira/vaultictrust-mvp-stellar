@@ -144,7 +144,7 @@ export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, public
               disabled={isProcessing || !usdcAmount}
             >
               {isProcessing ? (
-                <span className="loading loading-spinner loading-xs" />
+                <span className="loading loading-bars loading-xs" />
               ) : (
                 <>
                   Confirm Payout

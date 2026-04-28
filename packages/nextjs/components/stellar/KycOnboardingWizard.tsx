@@ -327,7 +327,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                 Edit Info
               </button>
               <button className="btn btn-primary flex-1 rounded-xl" onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <span className="loading loading-spinner" /> : "Submit to Ledger"}
+                {isSubmitting ? <span className="loading loading-bars loading-xs" /> : "Submit to Ledger"}
               </button>
             </div>
           </div>

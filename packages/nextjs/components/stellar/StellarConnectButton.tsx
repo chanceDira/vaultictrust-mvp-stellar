@@ -10,7 +10,7 @@ export const StellarConnectButton = () => {
   if (isLoading) {
     return (
       <button className="btn btn-primary btn-sm min-h-9 gap-2" disabled>
-        <span className="loading loading-spinner loading-xs" />
+        <span className="loading loading-bars loading-xs" />
         Connecting…
       </button>
     );

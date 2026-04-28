@@ -15,6 +15,7 @@ import {
   TagIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
+import { VaulticLoader } from "~~/components/VaulticLoader";
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
@@ -59,8 +60,7 @@ export default function AssetDetailsPage() {
   if (loading) {
     return (
       <div className="flex flex-col grow items-center justify-center min-h-[60vh]">
-        <span className="loading loading-spinner loading-lg text-primary" />
-        <p className="mt-4 text-[10px] uppercase tracking-widest font-bold opacity-40">Fetching Ledger State...</p>
+        <VaulticLoader />
       </div>
     );
   }

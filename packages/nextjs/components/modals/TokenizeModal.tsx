@@ -274,7 +274,7 @@ export function TokenizeModal({
             onClick={handleSubmit}
             disabled={loading || priceStroops <= 0n || totalSharesNum <= 0 || !isIssuerValid}
           >
-            {loading ? <span className="loading loading-spinner loading-sm" /> : "Tokenize Now"}
+            {loading ? <span className="loading loading-bars loading-xs" /> : "Tokenize Now"}
           </button>
         </div>
       </div>

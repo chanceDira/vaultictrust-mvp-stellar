@@ -158,7 +158,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
               <span className="text-sm font-black uppercase tracking-tighter italic">Total Cost</span>
               <span className="text-xl font-black text-primary">
                 {isQuoting ? (
-                  <span className="loading loading-dots loading-sm" />
+                  <span className="loading loading-bars loading-xs" />
                 ) : (
                   `$${totalUsdc.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                 )}
@@ -189,7 +189,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
               disabled={isPurchasing || isQuoting || !quote || Number(sharesAmount) > availableShares}
             >
               {isPurchasing ? (
-                <span className="loading loading-spinner loading-xs" />
+                <span className="loading loading-bars loading-xs" />
               ) : (
                 <>
                   Confirm Purchase

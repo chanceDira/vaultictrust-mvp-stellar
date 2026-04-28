@@ -24,7 +24,7 @@ type NotificationOptions = {
 
 const ENUM_STATUSES = {
   success: <CheckCircleIcon className="w-7 text-success" />,
-  loading: <span className="w-6 loading loading-spinner"></span>,
+  loading: <span className="w-6 loading loading-bars loading-xs text-primary"></span>,
   error: <ExclamationCircleIcon className="w-7 text-error" />,
   info: <InformationCircleIcon className="w-7 text-info" />,
   warning: <ExclamationTriangleIcon className="w-7 text-warning" />,
