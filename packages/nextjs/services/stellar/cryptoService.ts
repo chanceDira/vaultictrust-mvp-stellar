@@ -27,7 +27,11 @@ export async function encryptFileForAdmin(file: File, adminPublicKeyStr: string)
   const fileBuffer = await file.arrayBuffer();
 
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const encryptedFileBuffer = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, fileBuffer);
+  const encryptedFileBuffer = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as any },
+    aesKey,
+    fileBuffer,
+  );
 
   const rawAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
 

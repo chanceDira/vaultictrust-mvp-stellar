@@ -42,7 +42,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
       secret: Array.from(secret),
     });
     const data = encoder.encode(dataString);
-    const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+    const hashBuffer = await window.crypto.subtle.digest("SHA-256", data as any);
     return new Uint8Array(hashBuffer);
   };
 
