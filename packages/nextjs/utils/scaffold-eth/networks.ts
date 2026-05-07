@@ -1,7 +1,3 @@
-/**
- * Vaultic Network Utilities (Stellar Migration)
- */
-
 export type StellarNetwork = {
   id: string;
   name: string;
@@ -21,9 +17,6 @@ export const STELLAR_NETWORKS: Record<string, StellarNetwork> = {
   },
 };
 
-/**
- * DEPRECATED EVM TYPES — stubs kept for internal dependency resolution during phase 1 cleanup.
- */
 export type ChainWithAttributes = any;
 export type AllowedChainIds = any;
 export const NETWORKS_EXTRA_DATA: any = {};

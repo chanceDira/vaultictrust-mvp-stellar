@@ -1,9 +1,5 @@
 import { create } from "zustand";
 
-/**
- * Vaultic Global Store (Stellar Migration)
- */
-
 type GlobalState = {
   targetNetworkId: string;
   setTargetNetworkId: (id: string) => void;

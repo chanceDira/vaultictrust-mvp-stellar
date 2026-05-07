@@ -44,7 +44,7 @@ export function TokenizeModal({
       e.preventDefault();
       if ("stopPropagation" in e) e.stopPropagation();
     }
-    if (loading) return; // Prevent double trigger
+    if (loading) return;
 
     if (!rwaIssuer.trim()) {
       notification.error("RWA Issuer address is required");
@@ -59,7 +59,7 @@ export function TokenizeModal({
       return;
     }
 
-    if (loading || isSubmitting.current) return; // Prevent double trigger
+    if (loading || isSubmitting.current) return;
     isSubmitting.current = true;
     setLoading(true);
     const id = notification.loading(`Tokenizing ${asset.asset_name}...`);
@@ -91,7 +91,7 @@ export function TokenizeModal({
       onSuccess();
     } catch (e: any) {
       notification.error(`Tokenization failed: ${e.message || "Unknown error"}`);
-      setLoading(false); // Only allow retry on actual failure
+      setLoading(false);
     } finally {
       notification.remove(id);
       isSubmitting.current = false;

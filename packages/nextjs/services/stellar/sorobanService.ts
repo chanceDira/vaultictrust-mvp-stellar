@@ -16,8 +16,6 @@ import { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } f
 
 let _rpcServer: rpc.Server | null = null;
 
-// GLOBAL SEMAPHORE: Prevents "double-spending" bugs by ensuring only one
-// transaction is ever processing at a time from this client session.
 let isTransactionPending = false;
 
 function getRpcServer(): rpc.Server {
@@ -52,49 +50,39 @@ export async function callContract({
   const networkPassphrase = getNetworkPassphrase();
   const contract = new Contract(contractId);
 
-  // Check the global semaphore before starting
   if (isTransactionPending) {
     console.error("[soroban] Transaction aborted: Another signing request is already in-flight.");
     throw new Error("A transaction is already in-flight. Please finish the current request in your wallet.");
   }
 
-  // Increase reliability with a higher fee (1000 stroops)
   const RELIABLE_FEE = "1000";
 
-  // CRITICAL: We removed the retry loop to prevent double-execution bugs.
-  // Transaction lifecycle is now one-shot: simulate -> sign -> submit -> poll.
   isTransactionPending = true;
   try {
-    // 1. Fetch fresh account for sequence number
     const account = await server.getAccount(callerPublicKey);
 
-    // 2. Build template transaction
     const tx = new TransactionBuilder(account, {
       fee: RELIABLE_FEE,
       networkPassphrase,
     })
       .addOperation(contract.call(method, ...args))
-      .setTimeout(60) // 60s for signing window
+      .setTimeout(60)
       .build();
 
-    // 3. Simulate to get footprints and resource requirements
     const simResult = await server.simulateTransaction(tx);
     if (rpc.Api.isSimulationError(simResult)) {
       const errorMsg = parseSorobanError(simResult);
       throw new Error(errorMsg || `Simulation failed: ${simResult.error}`);
     }
 
-    // 4. Assemble and prepare for signing
     const preparedTx = rpc.assembleTransaction(tx, simResult).build();
 
-    // 5. User signs via Freighter
     const { signTransaction } = await import("@stellar/freighter-api");
     const signedResult = await signTransaction(preparedTx.toXDR(), {
       networkPassphrase,
     });
     const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
 
-    // 6. Final submission to the network
     const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
     const response = await server.sendTransaction(submittedTx);
 
@@ -103,15 +91,9 @@ export async function callContract({
       throw new Error(`Submission failed: ${errXdr}`);
     }
 
-    // 7. Poll until finalized or timed out.
-    // CRITICAL: server.getTransaction() lazy-decodes XDR on access. If the Stellar SDK
-    // encounters an unknown union discriminant in the result metadata, it throws
-    // "Bad union switch" even on a fully SUCCESSFUL transaction. We catch decode errors
-    // at each poll attempt individually so a false exception never masks a real success.
     let pollResult: Awaited<ReturnType<typeof server.getTransaction>> | null = null;
     let pollAttempts = 0;
 
-    // Helper: detect all known XDR / SDK decode errors
     function isXdrDecodeError(e: any): boolean {
       const msg: string = e?.message ?? "";
       return (
@@ -124,14 +106,10 @@ export async function callContract({
       );
     }
 
-    // Initial poll
     try {
       pollResult = await server.getTransaction(response.hash);
     } catch (xdrErr: any) {
       if (isXdrDecodeError(xdrErr)) {
-        // Transaction was already submitted without an ERROR status.
-        // An XDR decode error here means the on-chain result exists but the SDK
-        // can't parse the metadata — the tx itself succeeded.
         console.warn(
           "[soroban] XDR decode error on initial poll (tx submitted successfully). Returning success. hash:",
           response.hash,
@@ -143,7 +121,6 @@ export async function callContract({
       throw xdrErr;
     }
 
-    // Wait loop
     while (pollResult?.status === rpc.Api.GetTransactionStatus.NOT_FOUND && pollAttempts < 30) {
       await new Promise(r => setTimeout(r, 1000));
       try {
@@ -169,7 +146,6 @@ export async function callContract({
         const rawResult = (pollResult as any).returnValue;
         if (rawResult) result = rawResult;
       } catch (e) {
-        // XDR decode on return value — tx still succeeded
         console.warn("[soroban] Executed successfully, but failed to decode return value:", e);
       }
       return { result, hash: response.hash };
@@ -271,7 +247,6 @@ function parseSorobanError(result: any): string | null {
   const events = result.diagnosticEvents || result.result?.diagnosticEvents || [];
   const contractMessages: string[] = [];
 
-  // 1. Prioritize diagnostic events (contract panics)
   for (const event of events) {
     try {
       if (!event || !event.event) continue;
@@ -296,21 +271,17 @@ function parseSorobanError(result: any): string | null {
           }
         }
       }
-    } catch {
-      // Defensive parsing
-    }
+    } catch {}
   }
 
   const dynamicMessage = contractMessages.join(" | ");
 
-  // 2. Check for human-readable mappings in both dynamic messages and raw error strings
   const joinedSource = `${dynamicMessage} ${errorStr}`.toLowerCase();
 
   for (const [key, value] of Object.entries(ERROR_MAP)) {
     if (joinedSource.includes(key.toLowerCase())) return value;
   }
 
-  // 3. Handle specific Soroban host/contract error patterns
   if (dynamicMessage) return dynamicMessage;
   if (errorStr.includes("InvalidAction")) return "Unauthorized or invalid contract state transition.";
   if (errorStr.includes("HostStorageError")) return "Network storage error: Data TTL expired.";
@@ -397,11 +368,6 @@ async function simulateReadCall({
   }
 }
 
-/**
- * Safe wrapper around scValToNative. The SDK can throw "Bad union switch"
- * when decoding exotic XDR union discriminants. This helper returns null
- * instead of crashing so read queries never break the UI.
- */
 function safeScValToNative(val: xdr.ScVal | null | undefined): any {
   if (!val) return null;
   try {
@@ -624,10 +590,6 @@ export async function fetchInvestorHoldings(assetId: number, investor: string): 
   });
   return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
-
-// ---------------------------------------------------------------------------
-// InvestmentManager — Write functions
-// ---------------------------------------------------------------------------
 
 export async function tokenizeAsset(
   params: {
@@ -951,7 +913,6 @@ export async function fetchKycSubmissions(): Promise<string[]> {
   if (!userRegistry) return [];
 
   try {
-    // Get latest ledger for lookback window (~24 hours / 15,000 ledgers)
     const latestLedger = await server.getLatestLedger();
     const startLedger = Math.max(1, latestLedger.sequence - 15000);
 
@@ -966,7 +927,6 @@ export async function fetchKycSubmissions(): Promise<string[]> {
       ],
     });
 
-    // Extract user addresses from topic[1]
     const userSet = new Set<string>();
     for (const event of eventResponse.events) {
       if (event.topic.length >= 2) {

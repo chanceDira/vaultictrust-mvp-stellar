@@ -1,9 +1,3 @@
-/**
- * DEPRECATED — EVM contract utilities. Stub for TS compatibility during Stellar migration.
- * These types will be replaced by Soroban contract types in Phase 2.
- * The viem/wagmi imports are removed.
- */
-
 export type ContractName = string;
 export type GenericContract = { address: string; abi: unknown[] };
 export type GenericContractsDeclaration = Record<number, Record<string, GenericContract>>;
@@ -13,7 +7,6 @@ export const ContractCodeStatusEnum = { LOADING: "LOADING", DEPLOYED: "DEPLOYED"
 
 export type AllowedChainIds = string | number;
 
-// Stubs for types referenced by dead-code hooks
 export type AbiFunctionInputs = readonly unknown[];
 export type AbiFunctionArguments = readonly unknown[];
 export type AbiFunctionOutputs = readonly unknown[];
@@ -25,6 +18,4 @@ export const contracts: GenericContractsDeclaration | null = null;
 
 export const getParsedErrorWithAllAbis = (error: unknown): string => String(error);
 
-export const simulateContractWriteAndNotifyError = async (): Promise<void> => {
-  // no-op stub
-};
+export const simulateContractWriteAndNotifyError = async (): Promise<void> => {};

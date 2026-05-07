@@ -2,9 +2,6 @@
 
 import type { NextPage } from "next";
 
-/**
- * Control Panel — Disabled during Stellar migration.
- */
 const ControlPanelPage: NextPage = () => {
   return (
     <div className="flex flex-col grow items-center justify-center py-16 px-4 text-center">

@@ -76,9 +76,7 @@ export default function OwnerPage() {
           if (asset.total_shares > 0n) {
             fundingProgress = Math.round((Number(asset.sold_shares) / Number(asset.total_shares)) * 100);
           }
-        } catch {
-          // non-critical enrichment failure — continue
-        }
+        } catch {}
 
         items.push({ ...(asset as OnChainAsset), withdrawable, fundingProgress });
       }
@@ -126,8 +124,6 @@ export default function OwnerPage() {
     }
   };
 
-  // Aggregate stats
-  // Approximate total raised: sold_shares × price_per_share from each asset
   const totalRaised = assets.reduce((acc, a) => {
     const sold = Number(a.sold_shares ?? 0n);
     const price = Number(a.price_per_share ?? 0n) / 1e7;
@@ -140,7 +136,6 @@ export default function OwnerPage() {
 
   return (
     <div className="flex flex-col grow pb-20 min-h-screen">
-      {/* Header */}
       <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
@@ -169,7 +164,6 @@ export default function OwnerPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Actions row */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="flex items-center gap-3 bg-base-100 px-4 py-2.5 rounded-2xl border border-base-300 shadow-sm">
                 <div className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px] shadow-success" />
@@ -186,7 +180,6 @@ export default function OwnerPage() {
               </button>
             </div>
 
-            {/* Stats */}
             {assets.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -228,7 +221,6 @@ export default function OwnerPage() {
               </div>
             )}
 
-            {/* Asset list */}
             <div className="space-y-3">
               <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" /> Your Registrations
@@ -260,7 +252,6 @@ export default function OwnerPage() {
                         key={asset.asset_id}
                         className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 md:p-8 shadow-xl shadow-primary/5 hover:border-primary/40 transition-all group"
                       >
-                        {/* Header */}
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                           <div className="flex items-start gap-4">
                             <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:bg-primary/10 transition-colors shrink-0">
@@ -296,7 +287,6 @@ export default function OwnerPage() {
                             </div>
                           </div>
 
-                          {/* Action buttons */}
                           <div className="flex flex-wrap items-center gap-2 shrink-0">
                             {tag === "Pending" && (
                               <div className="flex items-center gap-1.5 text-warning text-xs font-bold uppercase tracking-widest bg-warning/10 px-3 py-1.5 rounded-xl border border-warning/20">
@@ -334,10 +324,8 @@ export default function OwnerPage() {
                           </div>
                         </div>
 
-                        {/* Funding progress + proceeds for tokenized assets */}
                         {isTokenized && (
                           <div className="mt-6 pt-6 border-t border-base-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Progress bar */}
                             <div>
                               <div className="flex justify-between items-end mb-2">
                                 <span className="text-xs font-bold text-base-content/40 uppercase tracking-widest">
@@ -365,7 +353,6 @@ export default function OwnerPage() {
                               </p>
                             </div>
 
-                            {/* Withdrawable proceeds */}
                             <div className="bg-base-200/50 rounded-2xl border border-base-300 p-4 flex flex-col justify-between">
                               <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">
@@ -401,7 +388,6 @@ export default function OwnerPage() {
               )}
             </div>
 
-            {/* Footer info card */}
             <div className="rounded-[2.5rem] bg-primary/5 p-10 border border-primary/10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary/5">
               <div className="h-20 w-20 rounded-3xl bg-base-100 flex items-center justify-center text-primary shrink-0 border border-primary/20 shadow-xl">
                 <DocumentTextIcon className="h-10 w-10" />

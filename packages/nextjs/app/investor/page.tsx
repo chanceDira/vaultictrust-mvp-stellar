@@ -66,9 +66,6 @@ export default function InvestorPage() {
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry && !!contracts.investmentManager;
 
-  // Primary source of truth: read investor holdings directly from the Soroban
-  // investment-manager contract. Native token distribution is a separate step,
-  // so Horizon balances alone will miss contract-recorded positions.
   const loadContractPositions = useCallback(async () => {
     if (!publicKey || !isDeployed) return;
     setIsHoldingsLoading(true);
@@ -86,7 +83,6 @@ export default function InvestorPage() {
             const balance = Number(sharesHeld);
             if (balance <= 0) return null;
 
-            // Get pool data for price
             let price = 0;
             let totalShares = Number(asset.total_shares);
             try {

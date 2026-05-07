@@ -1,13 +1,3 @@
-/**
- * Vaultic Trust – Stellar Network Configuration
- *
- * Phase 2: Soroban contract IDs added after testnet deployment.
- */
-
-// ---------------------------------------------------------------------------
-// Stellar Network Constants
-// ---------------------------------------------------------------------------
-
 export const STELLAR_NETWORKS = {
   mainnet: {
     name: "Stellar Mainnet",
@@ -25,20 +15,11 @@ export const STELLAR_NETWORKS = {
 
 export type StellarNetworkId = keyof typeof STELLAR_NETWORKS;
 
-// ---------------------------------------------------------------------------
-// Testnet USDC (Circle / SDF official testnet issuer)
-// See: https://developers.stellar.org/docs/tokens/usdc
-// ---------------------------------------------------------------------------
 export const TESTNET_USDC_CONTRACT = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 export const TESTNET_USDC_ASSET = {
   code: "USDC",
   issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
 };
-
-// ---------------------------------------------------------------------------
-// Deployed Soroban Contract IDs
-// Run packages/soroban-contracts/deploy-testnet.sh to populate after deployment.
-// ---------------------------------------------------------------------------
 
 export type DeployedSorobanContracts = {
   VaulticAssetRegistry: string | null;
@@ -47,13 +28,10 @@ export type DeployedSorobanContracts = {
   VaulticDividendManager: string | null;
 };
 
-// ---------------------------------------------------------------------------
-// Administrative Controls
-// ---------------------------------------------------------------------------
 export const ADMIN_ADDRESSES = [
   "GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI",
-  "GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL", // Secondary admin for testing
-  "GD74RCHSIVH7TJYCBP3ZQKALGL7VUSF3SWXBVLCLLKWGRMFPSMDT56AK", // Platform owner
+  "GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL",
+  "GD74RCHSIVH7TJYCBP3ZQKALGL7VUSF3SWXBVLCLLKWGRMFPSMDT56AK",
 ];
 
 export const deployedSorobanContracts: Partial<Record<StellarNetworkId, DeployedSorobanContracts>> = {
@@ -64,27 +42,18 @@ export const deployedSorobanContracts: Partial<Record<StellarNetworkId, Deployed
     VaulticDividendManager: "CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF",
   },
   mainnet: {
-    VaulticAssetRegistry: null, // Not yet deployed
-    VaulticUserRegistry: null, // Not yet deployed
-    VaulticInvestmentManager: null, // Not yet deployed
-    VaulticDividendManager: null, // Not yet deployed
+    VaulticAssetRegistry: null,
+    VaulticUserRegistry: null,
+    VaulticInvestmentManager: null,
+    VaulticDividendManager: null,
   },
 };
 
-// ---------------------------------------------------------------------------
-// Protocol Metadata & Privacy Configuration
-// ---------------------------------------------------------------------------
-
 export const PROTOCOL_METADATA = {
-  // Vaultic Organization identity for PII encryption (Curve25519 target)
   VAULTIC_ORG_PUBLIC_KEY: "GBFUEPUJ5JVBI7ZMFUE4MPVDACCWOOSOV4XSGMOO7Q6H7LAD7UPIXRA7",
   ENCRYPTION_SCHEME: "AES-GCM-256 / NaCl Box",
   EXPLORER_TX_URL: (hash: string) => `https://stellar.expert/explorer/testnet/tx/${hash}`,
 };
-
-// ---------------------------------------------------------------------------
-// App Config
-// ---------------------------------------------------------------------------
 
 export type VaulticConfig = {
   targetNetwork: StellarNetworkId;

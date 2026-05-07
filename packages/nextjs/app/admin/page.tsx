@@ -939,7 +939,6 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                {/* Recent KYC Applications List */}
                 <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -998,7 +997,6 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                {/* Info Card */}
                 <div className="rounded-xl bg-primary/5 border border-primary/10 p-6">
                   <div className="flex gap-4">
                     <UserGroupIcon className="h-6 w-6 text-primary shrink-0" />
@@ -1101,7 +1099,6 @@ export default function AdminPage() {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Additional governance info or tools can go here */}
                   <div className="rounded-[2.5rem] bg-base-100/40 p-8 border border-base-300 shadow-2xl backdrop-blur-xl">
                     <h3 className="text-xl font-black italic uppercase tracking-tight mb-4">Administrative Log</h3>
                     <p className="text-sm text-base-content/60 italic border-l-2 border-primary/20 pl-4 py-2">
@@ -1115,7 +1112,6 @@ export default function AdminPage() {
         )}
       </section>
 
-      {/* Tokenize Modal */}
       {tokenizeTarget && publicKey && (
         <TokenizeModal
           asset={tokenizeTarget!}

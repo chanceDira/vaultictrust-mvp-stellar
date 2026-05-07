@@ -63,9 +63,6 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
 
       const commitment = await generateCommitment();
 
-      // Embed cleartext applicant metadata so admins can identify who applied
-      // without needing to decrypt the document. Sensitive biometric data
-      // (ID number, document image) remain encrypted inside encryptedPayload.
       const kycPackage = {
         applicant: {
           fullName: formData.fullName,
