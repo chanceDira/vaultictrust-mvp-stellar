@@ -73,7 +73,7 @@ export function RegisterModal({
           name,
           description,
           category,
-          valuation: parseFloat(valuationUsdc), // real USDC, not stroops
+          valuation: parseFloat(valuationUsdc),
           currency: "USDC",
           assetCode: code.toUpperCase(),
           createdAt: new Date().toISOString(),

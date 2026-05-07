@@ -2,11 +2,6 @@
 
 import type { NextPage } from "next";
 
-/**
- * Debug page — disabled during Stellar migration.
- * The EVM contract debug interface (Scaffold-ETH) has been removed.
- * Soroban contract debugging tooling will be added in Phase 2.
- */
 const DebugPage: NextPage = () => {
   return (
     <div className="flex flex-col grow items-center justify-center py-16 px-4 text-center">

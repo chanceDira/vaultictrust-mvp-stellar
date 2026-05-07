@@ -10,10 +10,6 @@ export type StellarHolding = {
   selling_liabilities: string;
 };
 
-/**
- * Hook to fetch and track Stellar asset holdings for a given public key.
- * Filters for Vaultic (VT-) assets.
- */
 export function useStellarHoldings(publicKey: string | null) {
   const [holdings, setHoldings] = useState<StellarHolding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,8 +29,6 @@ export function useStellarHoldings(publicKey: string | null) {
         const account = await server.loadAccount(publicKey);
         const vaulticBalances = account.balances
           .filter(b => {
-            // Only include assets with a code (Native XLM has no code)
-            // and filter for our Vaultic naming convention or specific issuers
             if (b.asset_type === "native") return false;
             const assetCode = (b as any).asset_code;
             return assetCode && assetCode.startsWith("VT");
@@ -60,7 +54,6 @@ export function useStellarHoldings(publicKey: string | null) {
 
     fetchBalances();
 
-    // Set up polling for balance updates (increased to 120s to reduce jitter)
     const interval = setInterval(fetchBalances, 120000);
     return () => clearInterval(interval);
   }, [publicKey]);

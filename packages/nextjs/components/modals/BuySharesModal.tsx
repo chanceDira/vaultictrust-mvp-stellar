@@ -78,12 +78,11 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
         </div>,
       );
 
-      // Clear the modal state before calling onSuccess to prevent any re-clicks
       onSuccess();
     } catch (e: any) {
       console.error("[BuySharesModal] Purchase error:", e);
       notification.error(`Investment failed: ${e.message || "Network execution error"}`);
-      setIsPurchasing(false); // Only allow re-attempts if it actually failed
+      setIsPurchasing(false);
     } finally {
       setIsPurchasing(false);
       isSubmitting.current = false;

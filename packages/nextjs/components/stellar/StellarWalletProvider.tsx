@@ -45,9 +45,7 @@ export const StellarWalletProvider = ({ children }: { children: React.ReactNode 
               const { network: net } = await freighter.getNetworkDetails();
               setNetwork(net ?? null);
             }
-          } catch {
-            // User likely hasn't granted access yet on this specific session
-          }
+          } catch {}
         }
       } catch {
         setIsFreighterInstalled(false);

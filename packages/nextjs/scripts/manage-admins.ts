@@ -13,22 +13,13 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-/**
- * Vaultic Admin Management CLI Utility
- * 
- * Usage:
- *   export ADMIN_SECRET="S..."
- *   npx ts-node packages/nextjs/scripts/manage-admins.ts add GD...
- *   npx ts-node packages/nextjs/scripts/manage-admins.ts remove GD...
- */
-
-const USER_REGISTRY_CID = "CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR"; // From scaffold.config.ts
+const USER_REGISTRY_CID = "CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR";
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = "Test SDF Network ; September 2015";
 
 async function main() {
   const args = process.argv.slice(2);
-  const action = args[0]; // 'add' or 'remove'
+  const action = args[0];
   const targetAddr = args[1];
   const secretKey = process.env.ADMIN_SECRET;
 
@@ -48,7 +39,6 @@ async function main() {
   console.log(`🔍 Connecting to Testnet...`);
   console.log(`👤 Admin Wallet: ${adminKp.publicKey()}`);
 
-  // 1. Fetch current admins
   console.log("📡 Fetching current admins from contract...");
   const getAdminsOp = new TransactionBuilder(new Account(adminKp.publicKey(), "0"), {
     fee: BASE_FEE,
@@ -61,10 +51,10 @@ async function main() {
             contractAddress: Address.fromString(USER_REGISTRY_CID).toScAddress(),
             functionName: "get_admins",
             args: [],
-          })
+          }),
         ),
         auth: [],
-      })
+      }),
     )
     .build();
 
@@ -76,7 +66,6 @@ async function main() {
   const currentAdmins: string[] = scValToNative(response.result!.retval);
   console.log("✅ Current Admins:", currentAdmins);
 
-  // 2. Prepare new list
   let newList: string[];
   if (action === "add") {
     if (currentAdmins.includes(targetAddr)) {
@@ -90,7 +79,7 @@ async function main() {
       console.log(`⚠️  Address ${targetAddr} is not an admin.`);
       return;
     }
-    newList = currentAdmins.filter((a) => a !== targetAddr);
+    newList = currentAdmins.filter(a => a !== targetAddr);
     if (newList.length === 0) {
       console.error("❌ Error: Cannot remove the last admin.");
       process.exit(1);
@@ -101,9 +90,8 @@ async function main() {
     process.exit(1);
   }
 
-  // 3. Submit set_admins
   console.log("🚀 Submitting on-chain transaction...");
-  const adminAddresses = newList.map((addr) => new Address(addr).toScVal());
+  const adminAddresses = newList.map(addr => new Address(addr).toScVal());
 
   const userAccount = await server.getAccount(adminKp.publicKey());
   const tx = new TransactionBuilder(userAccount, {
@@ -116,18 +104,14 @@ async function main() {
           new xdr.InvokeContractArgs({
             contractAddress: Address.fromString(USER_REGISTRY_CID).toScAddress(),
             functionName: "set_admins",
-            args: [
-              new Address(adminKp.publicKey()).toScVal(),
-              xdr.ScVal.scvVec(adminAddresses),
-            ],
-          })
+            args: [new Address(adminKp.publicKey()).toScVal(), xdr.ScVal.scvVec(adminAddresses)],
+          }),
         ),
         auth: [],
-      })
+      }),
     )
     .build();
 
-  // Prepare and sign
   const preparedTx = await server.prepareTransaction(tx);
   preparedTx.sign(adminKp);
 
@@ -138,11 +122,14 @@ async function main() {
 
   console.log(`⏳ Waiting for consensus (TX: ${submitResponse.hash})...`);
   let statusResponse = await server.getTransaction(submitResponse.hash);
-  while (statusResponse.status === "NOT_FOUND" || statusResponse.status === rpc.Api.GetTransactionStatus.SUCCESS === false) {
-     await new Promise(r => setTimeout(r, 2000));
-     statusResponse = await server.getTransaction(submitResponse.hash);
-     if (statusResponse.status === rpc.Api.GetTransactionStatus.FAILED) break;
-     if (statusResponse.status === rpc.Api.GetTransactionStatus.SUCCESS) break;
+  while (
+    statusResponse.status === "NOT_FOUND" ||
+    (statusResponse.status === rpc.Api.GetTransactionStatus.SUCCESS) === false
+  ) {
+    await new Promise(r => setTimeout(r, 2000));
+    statusResponse = await server.getTransaction(submitResponse.hash);
+    if (statusResponse.status === rpc.Api.GetTransactionStatus.FAILED) break;
+    if (statusResponse.status === rpc.Api.GetTransactionStatus.SUCCESS) break;
   }
 
   if (statusResponse.status === rpc.Api.GetTransactionStatus.SUCCESS) {

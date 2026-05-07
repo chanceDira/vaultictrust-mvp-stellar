@@ -53,9 +53,6 @@ const HeaderMenuLinks = ({ onClose }: { onClose?: () => void }) => {
   );
 };
 
-/**
- * Site header — Stellar / Freighter wallet, Vaultic Trust branding.
- */
 export const Header = () => {
   const { isConnected, network } = useStellarWallet();
 

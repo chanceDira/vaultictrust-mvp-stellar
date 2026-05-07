@@ -42,7 +42,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
       secret: Array.from(secret),
     });
     const data = encoder.encode(dataString);
-    const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+    const hashBuffer = await window.crypto.subtle.digest("SHA-256", data as any);
     return new Uint8Array(hashBuffer);
   };
 
@@ -63,9 +63,6 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
 
       const commitment = await generateCommitment();
 
-      // Embed cleartext applicant metadata so admins can identify who applied
-      // without needing to decrypt the document. Sensitive biometric data
-      // (ID number, document image) remain encrypted inside encryptedPayload.
       const kycPackage = {
         applicant: {
           fullName: formData.fullName,
