@@ -5,7 +5,7 @@ import { BanknotesIcon, CurrencyDollarIcon, RocketLaunchIcon, XMarkIcon } from "
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { depositYield, getContractIds, increaseAllowance } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 interface DistributeYieldModalProps {
   asset: OnChainAsset;

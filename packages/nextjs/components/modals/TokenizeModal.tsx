@@ -5,7 +5,7 @@ import { ArrowTopRightOnSquareIcon, XMarkIcon } from "@heroicons/react/24/outlin
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { tokenizeAsset } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 export function TokenizeModal({
   asset,

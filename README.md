@@ -6,118 +6,111 @@ Built with Next.js, Stellar SDK, Soroban (Rust), and TypeScript.
 
 ---
 
-## 🚀 Live on Stellar Testnet (Verified Contracts)
+## Deployed contracts (Stellar testnet)
 
-The full ecosystem is currently deployed and operational on the Stellar Testnet.
+The current Soroban deployment used by the frontend:
 
 | Contract | Role | Contract ID (Soroban) | Explorer |
 | :--- | :--- | :--- | :--- |
-| **VaulticAssetRegistry** | Canonical Asset Source of Truth | `CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB) |
-| **VaulticUserRegistry** | On-Chain KYC/AML Compliance | `CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR) |
-| **VaulticInvestmentManager** | KYC-Gated Investment Engine | `CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG) |
-| **VaulticDividendManager** | Yield/Dividend Distribution | `CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF) |
+| **VaulticAssetRegistry** | Canonical asset registry | `CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB) |
+| **VaulticUserRegistry** | On-chain KYC registry | `CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR) |
+| **VaulticInvestmentManager** | KYC-gated investment engine | `CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG) |
+| **VaulticDividendManager** | Yield and dividend distribution | `CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF) |
+
+Contract IDs are also configured in `packages/nextjs/scaffold.config.ts`.
 
 ---
 
-## 🏗 Key Architectural Shift (Avalanche → Stellar)
+## Architecture
 
-Vaultic Trust has transitioned from an EVM-heavy model to a **Stellar Native Hybrid Architecture**:
+Vaultic Trust uses a Stellar-native hybrid model:
 
-*   **Logic (Soroban)**: Complex business logic (KYC gating, lifecycle states, investment pool math) is handled by high-performance Rust-based smart contracts.
-*   **Tokenization (Native Assets)**: Instead of custom ERC-20 smart contracts, fractional shares are issued as **Native Stellar Assets**. This leverages Stellar's protocol-level optimizations for payments and trustlines, resulting in near-zero fees and instant settlement.
-*   **Compliance (KYC Registry)**: No more off-chain-only whitelists. Compliance is enforced on the ledger via the `VaulticUserRegistry`, allowing for atomic "Check-then-Invest" operations.
-
----
-
-## 🛠 Product Features
-
-### 🏢 Asset Owners
-- **Transparent Registration**: Submit RWA metadata and valuations to the immutable registry.
-- **Hybrid Fractionalization**: Distribute yield-bearing shares via Stellar Native Assets.
-- **Lifecycle Management**: Asset states (`PENDING`, `ACTIVE`, `TOKENIZED`, `CLOSED`, `RELISTED`) are tracked on-chain.
-
-### 💰 Investors
-- **Marketplace Browsing**: Discover validated real-world opportunities across Africa.
-- **KYC Gating**: Direct integration with the `UserRegistry` ensures a compliant environment for institutional and retail capital.
-- **Automated Dividends**: Claim pro-rata USDC yield distributions directly via the `DividendManager`.
-
-### 🛡 Protocol Admins
-- **Compliance Control**: Manage user verification statuses (Verify, Suspend, Reject) directly from the dashboard.
-- **Treasury Management**: Automated protocol fee collection and sweeping.
+- **Soroban contracts** for KYC gating, asset lifecycle, investment pools, and dividends.
+- **Native Stellar assets** for fractional shares (trustlines, not custom token contracts).
+- **On-chain compliance** via `VaulticUserRegistry` before investment actions execute.
 
 ---
 
-## 🚦 Getting Started
+## Product features
 
-### 1. Requirements
-- **Node.js** (>= v20.x)
-- **Stellar CLI** (v26.0.0+)
-- **Freighter Wallet** (Active browser extension)
-- **Rust/Cargo** (For contract development)
+### Asset owners
+- Register RWA metadata and valuations on-chain
+- Tokenize assets as native Stellar fractional shares
+- Track lifecycle states: Pending, Active, Tokenized, Closed, Relisted
 
-### 2. Setup
-Clone the repository and install dependencies:
+### Investors
+- Browse approved marketplace listings
+- Complete KYC and add trustlines before purchasing shares
+- Claim pro-rata USDC dividends
+
+### Protocol admins
+- Review assets and KYC submissions
+- Manage admin wallets and protocol fee sweeps
+
+---
+
+## Getting started
+
+### Requirements
+- Node.js (>= v20.x)
+- Stellar CLI (v26.0.0+)
+- Freighter wallet (browser extension)
+- Rust/Cargo (for contract development)
+
+### Install
+
 ```bash
 yarn install
+cp packages/nextjs/.env.example packages/nextjs/.env.local
 ```
 
-### 3. Detailed Deployment Steps (CLI)
-For a fresh ecosystem bootstrap, follow these commands:
+Set `NEXT_PUBLIC_PINATA_JWT` in `.env.local` for IPFS uploads (KYC and asset metadata).
 
-```bash
-# 1. Generate a local deployment key (alias: deployer)
-stellar keys generate deployer --network testnet
+### Deploy contracts (optional)
 
-# 2. Fund the deployer account with testnet XLM
-stellar keys fund deployer --network testnet
+Automated testnet deployment:
 
-# 3. Build optimized WASM binaries for the contracts
-stellar contract build --package vaultic-user-registry --optimize
-
-# 4. Deploy the WASM binary to the network to get a Contract ID
-stellar contract deploy --wasm target/wasm32v1-none/release/vaultic_user_registry.wasm --source deployer --network testnet
-
-# 5. Initialize the contract with your Admin Address
-stellar contract invoke --id [ID] --source deployer --network testnet -- initialize --admin [YOUR_ADDRESS]
-```
-
-*Note: You can automate this entire process using our orchestrated script:*
 ```bash
 cd packages/soroban-contracts && ./deploy-testnet.sh
 ```
 
-### 4. Start Frontend
+Then update contract IDs in `packages/nextjs/scaffold.config.ts`.
+
+Manual CLI steps are documented in `deployment_suite.txt` and `architecture_and_usage.txt`.
+
+### Run the frontend
+
 ```bash
 yarn start
 ```
-Access the dashboard at `http://localhost:3000`.
+
+Open `http://localhost:3000`.
 
 ---
 
-## 📂 Project Layout
+## Project layout
 
-- `packages/soroban-contracts/` — Soroban smart contracts (Rust), build artifacts, and deployment scripts.
-- `packages/nextjs/` — Frontend application, Stellar SDK integration, and UI components.
-
----
-
-## 🧱 Smart Contract Breakdown
-
-### **VaulticAssetRegistry**
-The source of truth for all tokenized assets. Enforces valid state transitions and stores IPFS-linked metadata.
-
-### **VaulticUserRegistry**
-The core compliance layer. Stores a mapping of account addresses to their verified KYC status. This gated contract is the first check for any investment activity.
-
-### **VaulticInvestmentManager**
-The marketplace engine. Handles USDC payments (Stellar Testnet USDC), pool accounting, and verifies KYC status before permitting purchase.
-
-### **VaulticDividendManager**
-Manages the distribution of RWA yield rounds. Calculates pro-rata shares for investors based on their holdings at the time of deposit.
+- `packages/soroban-contracts/` — Soroban contracts (Rust), build artifacts, deployment scripts
+- `packages/nextjs/` — Next.js app, Stellar SDK integration, UI
 
 ---
 
-Vaultic Trust — Tokenizing Africa's real economy with trust, transparency, and traceability on Stellar.
+## Smart contracts
 
--------------
+### VaulticAssetRegistry
+Source of truth for registered assets, state transitions, and IPFS-linked metadata.
+
+### VaulticUserRegistry
+Compliance layer mapping Stellar addresses to KYC status.
+
+### VaulticInvestmentManager
+Primary sales, USDC pool accounting, and KYC checks before investment.
+
+### VaulticDividendManager
+Yield rounds and pro-rata USDC claims for shareholders.
+
+---
+
+Vaultic Trust — tokenizing Africa's real economy with trust, transparency, and traceability on Stellar.
+
 @ChanceDira && @0xJonaseb11

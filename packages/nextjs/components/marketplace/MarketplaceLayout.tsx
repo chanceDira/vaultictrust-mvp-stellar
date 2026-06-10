@@ -5,7 +5,7 @@ import { VaulticLoader } from "~~/components/VaulticLoader";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { StatCard } from "~~/components/ui/StatCard";
 import { setupUsdcTrustline } from "~~/services/stellar/sorobanService";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tvl: string } }) => (
   <>

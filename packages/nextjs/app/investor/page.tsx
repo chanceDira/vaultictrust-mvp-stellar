@@ -27,7 +27,7 @@ import {
   fetchUserRecord,
   getContractIds,
 } from "~~/services/stellar/sorobanService";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 interface YieldInfo {
   assetId: number;

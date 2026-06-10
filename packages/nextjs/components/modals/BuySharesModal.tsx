@@ -5,7 +5,7 @@ import { BanknotesIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { fetchQuotePurchase, purchaseShares } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 interface BuySharesModalProps {
   asset: OnChainAsset;

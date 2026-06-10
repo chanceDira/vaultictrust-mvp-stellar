@@ -1,86 +1,67 @@
-# Welcome to Scaffold-ETH 2 Contributing Guide
+# Contributing to Vaultic Trust
 
-Thank you for investing your time in contributing to Scaffold-ETH 2!
+Thank you for helping improve Vaultic Trust. This guide covers how we work on the repo and what we expect in contributions.
 
-This guide aims to provide an overview of the contribution workflow to help us make the contribution process effective for everyone involved.
+## About the project
 
-## About the Project
+Vaultic Trust is a real-world asset tokenization platform for Rwanda and Africa, built on Stellar with Soroban smart contracts and a Next.js frontend.
 
-Scaffold-ETH 2 is a minimal and forkable repo providing builders with a starter kit to build decentralized applications on Ethereum.
+Read the [README](README.md) for architecture, deployment, and local setup.
 
-Read the [README](README.md) to get an overview of the project.
+## How to contribute
 
-### Vision
+You can help by:
 
-The goal of Scaffold-ETH 2 is to provide the primary building blocks for a decentralized application.
+- Fixing bugs or open issues
+- Proposing features with clear use cases
+- Improving documentation or developer experience
 
-The repo can be forked to include integrations and more features, but we want to keep the master branch simple and minimal.
+Contributions flow through GitHub Issues and Pull Requests.
 
-### Project Status
+### Before you start
 
-The project is under active development.
-
-You can view the open Issues, follow the development process and contribute to the project.
-
-## Getting started
-
-You can contribute to this repo in many ways:
-
-- Solve open issues
-- Report bugs or feature requests
-- Improve the documentation
-
-Contributions are made via Issues and Pull Requests (PRs). A few general guidelines for contributions:
-
-- Search for existing Issues and PRs before creating your own.
-- Contributions should only fix/add the functionality in the issue OR address style issues, not both.
-- If you're running into an error, please give context. Explain what you're trying to do and how to reproduce the error.
-- Please use the same formatting in the code repository. You can configure your IDE to do it by using the prettier / linting config files included in each package.
-- If applicable, please edit the README.md file to reflect the changes.
+- Search existing issues and pull requests to avoid duplicate work.
+- Keep pull requests focused: one concern per PR when possible.
+- Match existing code style. Prettier and ESLint configs live under `packages/nextjs/`.
+- When reporting bugs, include steps to reproduce, expected vs actual behavior, and screenshots if relevant.
 
 ### Issues
 
-Issues should be used to report problems, request a new feature, or discuss potential changes before a PR is created.
+Use issues to report bugs, propose features, or discuss changes before opening a large PR.
 
-#### Solve an issue
+If you plan to work on an existing issue, comment on it so others know it is in progress.
 
-Scan through our [existing issues](https://github.com/scaffold-eth/scaffold-eth-2/issues) to find one that interests you.
+### Pull requests
 
-If a contributor is working on the issue, they will be assigned to the individual. If you find an issue to work on, you are welcome to assign it to yourself and open a PR with a fix for it.
+We use a fork-and-pull workflow:
 
-#### Create a new issue
+1. Fork the repository
+2. Create a branch with a descriptive name
+3. Make your changes and commit with a clear message
+4. Push to your fork and open a PR against `main`
+5. Link the related issue when applicable
 
-If a related issue doesn't exist, you can open a new issue.
+Good pull requests include:
 
-Some tips to follow when you are creating an issue:
+- A title that states what changed and why
+- A short description with bullet points for non-obvious changes
+- Notes on how you tested the change
 
-- Provide as much context as possible. Over-communicate to give the most details to the reader.
-- Include the steps to reproduce the issue or the reason for adding the feature.
-- Screenshots, videos etc., are highly appreciated.
+Maintainers may request updates before merge. Once approved, we typically squash-and-merge to keep history readable.
 
-### Pull Requests
+## Development
 
-#### Pull Request Process
+From the repo root:
 
-We follow the ["fork-and-pull" Git workflow](https://github.com/susam/gitpr)
+```bash
+yarn install
+yarn start          # frontend at http://localhost:3000
+yarn next:build     # production build check
+yarn next:lint      # lint
+```
 
-1. Fork the repo
-2. Clone the project
-3. Create a new branch with a descriptive name
-4. Commit your changes to the new branch
-5. Push changes to your fork
-6. Open a PR in our repository and tag one of the maintainers to review your PR
+Soroban contracts live in `packages/soroban-contracts/`. See the README for deployment steps.
 
-Here are some tips for a high-quality pull request:
+## Questions
 
-- Create a title for the PR that accurately defines the work done.
-- Structure the description neatly to make it easy to consume by the readers. For example, you can include bullet points and screenshots instead of having one large paragraph.
-- Add the link to the issue if applicable.
-- Have a good commit message that summarises the work done.
-
-Once you submit your PR:
-
-- We may ask questions, request additional information or ask for changes to be made before a PR can be merged. Please note that these are to make the PR clear for everyone involved and aims to create a frictionless interaction process.
-- As you update your PR and apply changes, mark each conversation resolved.
-
-Once the PR is approved, we'll "squash-and-merge" to keep the git commit history clean.
+For product, partnership, or support inquiries, use the contact email on the app's Support page (`/support`) or visit [vaultictrust.com](https://vaultictrust.com).

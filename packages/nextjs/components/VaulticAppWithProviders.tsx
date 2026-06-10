@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "react-hot-toast";
 import { Footer } from "~~/components/Footer";
@@ -25,15 +24,7 @@ const VaulticApp = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-export const ScaffoldEthAppWithProviders = ({ children }: { children: React.ReactNode }) => {
+export const VaulticAppWithProviders = ({ children }: { children: React.ReactNode }) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -43,11 +34,9 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
   if (!mounted) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <StellarWalletProvider>
-        <ProgressBar height="3px" color="#7c3aed" options={{ showSpinner: false }} />
-        <VaulticApp>{children}</VaulticApp>
-      </StellarWalletProvider>
-    </QueryClientProvider>
+    <StellarWalletProvider>
+      <ProgressBar height="3px" color="#7c3aed" options={{ showSpinner: false }} />
+      <VaulticApp>{children}</VaulticApp>
+    </StellarWalletProvider>
   );
 };

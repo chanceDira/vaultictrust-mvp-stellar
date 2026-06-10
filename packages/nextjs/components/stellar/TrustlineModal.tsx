@@ -3,7 +3,7 @@ import { Spinner } from "../Spinner";
 import { QuestionMarkCircleIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { getHorizonServer } from "~~/services/stellar/horizonClient";
 import { setupTrustline } from "~~/services/stellar/stellarService";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 type TrustlineModalProps = {
   isOpen: boolean;

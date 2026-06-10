@@ -1,4 +1,4 @@
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 

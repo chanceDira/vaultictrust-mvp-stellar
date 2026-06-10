@@ -28,7 +28,7 @@ import {
   withdrawProceeds,
 } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 interface EnrichedOwnerAsset extends OnChainAsset {
   withdrawable: bigint;

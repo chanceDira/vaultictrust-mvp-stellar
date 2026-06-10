@@ -1,4 +1,4 @@
-import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
+import { getMetadata } from "~~/utils/vaultic/getMetadata";
 
 export const metadata = getMetadata({
   title: "Marketplace",

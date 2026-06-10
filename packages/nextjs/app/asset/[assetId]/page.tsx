@@ -22,7 +22,7 @@ import { PageLoading } from "~~/components/ui/PageLoading";
 import { PageStatus } from "~~/components/ui/PageStatus";
 import { fetchAsset, fetchYieldRoundCount } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 export default function AssetDetailsPage() {
   const { assetId } = useParams();

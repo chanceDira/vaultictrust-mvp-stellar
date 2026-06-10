@@ -12,7 +12,7 @@ import { PROTOCOL_METADATA, getExplorerTxUrl } from "~~/scaffold.config";
 import { encryptFileForAdmin } from "~~/services/stellar/cryptoService";
 import { uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { submitKyc } from "~~/services/stellar/sorobanService";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 interface KycOnboardingWizardProps {
   publicKey: string;
@@ -74,7 +74,6 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
       };
 
       const ipfsUri = await uploadToIpfs(kycPackage, `kyc_${publicKey.substring(0, 8)}.json`);
-      console.log("[KYC] Encrypted Payload pinned to IPFS:", ipfsUri);
 
       const { hash } = await submitKyc(ipfsUri, commitment, publicKey);
 
