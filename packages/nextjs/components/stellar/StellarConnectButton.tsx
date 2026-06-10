@@ -1,17 +1,22 @@
 "use client";
 
+import { ChevronDownIcon, WalletIcon } from "@heroicons/react/24/outline";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 
 export const StellarConnectButton = () => {
   const { publicKey, isConnected, isLoading, isFreighterInstalled, connect, disconnect } = useStellarWallet();
 
-  const shortKey = publicKey ? `${publicKey.slice(0, 5)}…${publicKey.slice(-4)}` : null;
+  const shortKey = publicKey ? `${publicKey.slice(0, 6)}...${publicKey.slice(-4)}` : null;
+  const mobileKey = publicKey ? `${publicKey.slice(0, 4)}...${publicKey.slice(-3)}` : null;
 
   if (isLoading) {
     return (
-      <button className="btn btn-primary btn-sm min-h-9 gap-2" disabled>
+      <button
+        className="btn btn-primary btn-xs min-h-8 min-w-[5.5rem] px-2 sm:btn-sm sm:min-h-9 sm:min-w-[7.5rem] sm:px-3"
+        disabled
+      >
         <span className="loading loading-bars loading-xs" />
-        Connecting…
+        <span className="hidden sm:inline">Connecting</span>
       </button>
     );
   }
@@ -19,20 +24,27 @@ export const StellarConnectButton = () => {
   if (isConnected && publicKey) {
     return (
       <div className="dropdown dropdown-end">
-        <button tabIndex={0} className="btn btn-primary btn-sm min-h-9 gap-2 font-mono">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
-          {shortKey}
+        <button
+          tabIndex={0}
+          type="button"
+          aria-label={`Wallet ${publicKey}`}
+          className="btn btn-primary btn-xs min-h-8 min-w-[6.75rem] gap-1.5 rounded-xl px-2.5 font-mono text-[10px] sm:btn-sm sm:min-h-9 sm:min-w-[11rem] sm:gap-2 sm:px-4 sm:text-xs"
+        >
+          <WalletIcon className="h-3.5 w-3.5 shrink-0 opacity-90 sm:h-4 sm:w-4" />
+          <span className="truncate sm:hidden">{mobileKey}</span>
+          <span className="hidden truncate sm:inline">{shortKey}</span>
+          <ChevronDownIcon className="hidden h-3.5 w-3.5 shrink-0 opacity-70 sm:inline" />
         </button>
         <ul
           tabIndex={0}
-          className="dropdown-content menu rounded-box z-[100] mt-2 w-52 bg-base-100 p-2 shadow-lg border border-base-300"
+          className="dropdown-content menu z-[100] mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
         >
           <li className="menu-title px-2 pt-1 pb-0">
-            <span className="text-xs text-base-content/50 font-mono break-all">{publicKey}</span>
+            <span className="break-all font-mono text-xs text-base-content/50">{publicKey}</span>
           </li>
           <div className="divider my-1" />
           <li>
-            <button onClick={disconnect} className="text-error">
+            <button type="button" onClick={disconnect} className="text-error">
               Disconnect
             </button>
           </li>
@@ -42,29 +54,21 @@ export const StellarConnectButton = () => {
   }
 
   return (
-    <button className="btn btn-primary btn-sm min-h-9 gap-2" onClick={connect}>
+    <button
+      type="button"
+      className="btn btn-primary btn-xs min-h-8 min-w-[5.5rem] px-2.5 sm:btn-sm sm:min-h-9 sm:min-w-[8.5rem] sm:gap-2 sm:px-4"
+      onClick={connect}
+    >
       {!isFreighterInstalled ? (
         <>
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            />
-          </svg>
-          Install Freighter
+          <span className="sm:hidden">Install</span>
+          <span className="hidden sm:inline">Install Freighter</span>
         </>
       ) : (
         <>
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-            />
-          </svg>
-          Connect Wallet
+          <WalletIcon className="h-4 w-4 sm:hidden" />
+          <span className="sm:hidden">Connect</span>
+          <span className="hidden sm:inline">Connect Wallet</span>
         </>
       )}
     </button>

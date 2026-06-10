@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bars3Icon } from "@heroicons/react/24/outline";
+import { BrandLogo } from "~~/components/BrandLogo";
 import { SwitchTheme } from "~~/components/SwitchTheme";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
@@ -18,84 +19,103 @@ type HeaderMenuLink = {
 
 const menuLinks: HeaderMenuLink[] = [
   { label: "Home", href: "/" },
-  { label: "My assets", href: "/owner" },
+  { label: "Assets", href: "/owner" },
   { label: "Marketplace", href: "/marketplace" },
-  { label: "My investments", href: "/investor" },
-  { label: "Admin", href: "/admin", adminOnly: true },
+  { label: "Portfolio", href: "/investor" },
   { label: "Litepaper", href: "/litepaper" },
+  { label: "Admin", href: "/admin", adminOnly: true },
 ];
 
-const HeaderMenuLinks = ({ onClose }: { onClose?: () => void }) => {
+const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; compact?: boolean }) => {
   const pathname = usePathname();
   const { publicKey } = useStellarWallet();
   const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
 
+  if (compact) {
+    return (
+      <>
+        {menuLinks.map(({ label, href, adminOnly }) => {
+          if (adminOnly && !isAdmin) return null;
+          const isActive = pathname === href;
+          return (
+            <li key={href}>
+              <Link
+                href={href}
+                onClick={onClose}
+                className={`${
+                  isActive ? "bg-secondary shadow-md" : ""
+                } rounded-full px-3 py-1.5 text-sm hover:bg-secondary hover:shadow-md`}
+              >
+                {label}
+              </Link>
+            </li>
+          );
+        })}
+      </>
+    );
+  }
+
   return (
-    <>
+    <nav className="hidden items-center lg:flex">
       {menuLinks.map(({ label, href, adminOnly }) => {
         if (adminOnly && !isAdmin) return null;
         const isActive = pathname === href;
         return (
-          <li key={href}>
-            <Link
-              href={href}
-              onClick={onClose}
-              className={`${
-                isActive ? "bg-secondary shadow-md" : ""
-              } hover:bg-secondary hover:shadow-md focus:!bg-secondary active:!text-neutral py-1.5 px-3 text-sm rounded-full`}
-            >
-              {label}
-            </Link>
-          </li>
+          <Link
+            key={href}
+            href={href}
+            className={`rounded-full px-2.5 py-1 text-[13px] font-medium transition-colors xl:px-3 xl:text-sm ${
+              isActive
+                ? "bg-secondary text-base-content shadow-sm"
+                : "text-base-content/70 hover:bg-base-200/80 hover:text-base-content"
+            }`}
+          >
+            {label}
+          </Link>
         );
       })}
-    </>
+    </nav>
   );
 };
 
 export const Header = () => {
-  const { isConnected, network } = useStellarWallet();
-
   const burgerMenuRef = useRef<HTMLDetailsElement>(null);
   const closeMenu = () => burgerMenuRef?.current?.removeAttribute("open");
   useOutsideClick(burgerMenuRef, closeMenu);
 
-  const networkLabel = network ?? "Stellar Testnet";
-
   return (
-    <header className="sticky top-0 z-20 border-b border-base-300 bg-base-100">
-      <div className="navbar min-h-0 shrink-0 justify-between px-4 sm:px-6 lg:px-8">
-        <div className="navbar-start w-auto lg:w-1/2">
-          <details className="dropdown" ref={burgerMenuRef}>
-            <summary className="ml-1 btn btn-ghost lg:hidden hover:bg-transparent" aria-label="Open menu">
-              <Bars3Icon className="h-6 w-6" />
+    <header className="border-b border-base-300/80 bg-base-100/95">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:h-[3.75rem] sm:gap-3 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3 lg:gap-6">
+          <details className="dropdown shrink-0 lg:hidden" ref={burgerMenuRef}>
+            <summary
+              className="btn btn-ghost btn-sm btn-square min-h-9 w-9 hover:bg-transparent"
+              aria-label="Open menu"
+            >
+              <Bars3Icon className="h-5 w-5" />
             </summary>
-            <ul className="menu menu-compact dropdown-content mt-3 p-2 shadow-lg bg-base-100 rounded-box w-52">
-              <HeaderMenuLinks onClose={closeMenu} />
+            <ul className="menu menu-compact dropdown-content rounded-box mt-2 w-52 bg-base-100 p-2 shadow-lg">
+              <HeaderMenuLinks onClose={closeMenu} compact />
+              <li className="mt-1 border-t border-base-300 pt-1">
+                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                  <span className="text-sm text-base-content/70">Theme</span>
+                  <SwitchTheme />
+                </div>
+              </li>
             </ul>
           </details>
-          <Link href="/" className="hidden lg:flex items-center gap-1 mr-8 shrink-0">
-            <div className="flex flex-col">
-              <span className="font-black text-xl leading-none text-base-content tracking-tighter uppercase">
-                Vaultic<span className="text-primary italic">Trust</span>
-              </span>
-              <span className="text-[9px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
-                Stellar RWA Gateway
-              </span>
-            </div>
-          </Link>
-          <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">
-            <HeaderMenuLinks />
-          </ul>
+
+          <BrandLogo
+            size="md"
+            showTagline={false}
+            compact
+            className="min-w-0 overflow-hidden max-[374px]:shrink-0 max-[374px]:overflow-visible"
+          />
+          <HeaderMenuLinks />
         </div>
-        <div className="navbar-end gap-3">
-          {isConnected && (
-            <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-success">
-              <span className="inline-block h-2 w-2 rounded-full bg-success shadow-[0_0_6px] shadow-success" />
-              {networkLabel}
-            </span>
-          )}
-          <SwitchTheme className="flex items-center" />
+
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <SwitchTheme className="hidden items-center sm:flex sm:scale-100" />
           <StellarConnectButton />
         </div>
       </div>

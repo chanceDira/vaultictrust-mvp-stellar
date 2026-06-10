@@ -12,7 +12,7 @@ import {
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { getExplorerTxUrl } from "~~/scaffold.config";
 import {
   fetchAsset,
   fetchTotalAssets,
@@ -162,7 +162,7 @@ export default function MarketplacePage() {
         <div className="flex flex-col gap-1">
           <p className="font-bold uppercase tracking-tight text-xs">Purchase Successful!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -193,7 +193,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="flex flex-col grow">
-      <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
+      <section className="mx-auto w-full max-w-5xl px-3 py-8 sm:px-4 md:py-12">
         <MarketplaceHeader stats={stats} />
 
         {!isDeployed ? (
@@ -236,12 +236,6 @@ export default function MarketplacePage() {
             ))}
           </div>
         )}
-
-        <div className="mt-16 text-center">
-          <p className="text-xs text-base-content/30 uppercase tracking-[0.2em] font-bold">
-            Vaultic Trust · Institutional Grade African RWAs · Stellar Consensus
-          </p>
-        </div>
       </section>
 
       {selectedAsset && (

@@ -12,14 +12,13 @@ import {
   DocumentTextIcon,
   PlusIcon,
   SparklesIcon,
-  WalletIcon,
 } from "@heroicons/react/24/outline";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { DistributeYieldModal } from "~~/components/modals/DistributeYieldModal";
 import { RegisterModal } from "~~/components/modals/RegisterModal";
-import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
+import { getExplorerAssetUrl, getExplorerTxUrl } from "~~/scaffold.config";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   fetchAsset,
@@ -105,7 +104,7 @@ export default function OwnerPage() {
         <div className="flex flex-col gap-1">
           <p className="font-bold">Proceeds withdrawn!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -136,32 +135,20 @@ export default function OwnerPage() {
 
   return (
     <div className="flex flex-col grow pb-20 min-h-screen">
-      <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
-            <BuildingOffice2Icon className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter italic">Owner Dashboard</h1>
-            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
-              RWA Submission &amp; Issuance Control
-            </p>
-          </div>
+      <section className="mx-auto w-full max-w-5xl px-3 py-8 sm:px-4 md:py-12">
+        <div className="mb-4">
+          <h1 className="page-title">Owner dashboard</h1>
+          <p className="section-label mt-1">Register and manage your assets</p>
         </div>
-        <p className="text-base-content/70 mb-8 max-w-2xl leading-relaxed">
-          Manage your real-world assets on the Stellar Network. Submit new assets for compliance review, monitor
-          tokenization rounds, and withdraw your USDC proceeds.
+        <p className="page-subtitle mb-8 max-w-2xl">
+          Submit assets for review, track tokenization, withdraw USDC proceeds, and distribute yield to investors.
         </p>
 
         {!isConnected ? (
-          <div className="rounded-3xl border border-dashed border-base-300 p-12 text-center bg-base-100 shadow-sm">
-            <WalletIcon className="h-16 w-16 text-base-content/20 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-base-content mb-2">Connect Your Wallet</h2>
-            <p className="text-base-content/60 mb-8 max-w-sm mx-auto">
-              Sign in with Freighter to manage your African RWA listings and monitor tokenization.
-            </p>
-            <StellarConnectButton />
-          </div>
+          <ConnectWalletPrompt
+            title="Connect your wallet"
+            description="Connect Freighter to register assets and manage listings tied to your Stellar address."
+          />
         ) : (
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -173,10 +160,10 @@ export default function OwnerPage() {
               </div>
               <button
                 onClick={() => setIsRegisterModalOpen(true)}
-                className="btn btn-primary btn-md rounded-2xl gap-2 px-8 shadow-lg shadow-primary/20 w-full md:w-auto stellar-glow font-black uppercase tracking-widest"
+                className="btn btn-primary btn-md stellar-glow w-full gap-2 rounded-2xl px-8 shadow-lg shadow-primary/20 md:w-auto"
               >
                 <PlusIcon className="h-5 w-5" />
-                Register New Asset
+                Register asset
               </button>
             </div>
 
@@ -188,7 +175,7 @@ export default function OwnerPage() {
                     <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets</span>
                   </div>
                   <p className="text-5xl font-black italic text-base-content leading-none">{assets.length}</p>
-                  <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">Registered</p>
+                  <p className="mt-2 text-sm text-base-content/50">Registered</p>
                 </div>
 
                 <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -200,9 +187,7 @@ export default function OwnerPage() {
                     {totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
                     <span className="text-xs font-bold opacity-60 not-italic tracking-widest">USDC</span>
                   </p>
-                  <p className="text-[9px] text-base-content/40 font-black uppercase tracking-widest mt-2">
-                    Across all rounds
-                  </p>
+                  <p className="mt-2 text-sm text-base-content/50">Across all rounds</p>
                 </div>
 
                 <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -216,14 +201,14 @@ export default function OwnerPage() {
                       <span className="badge badge-warning badge-sm font-bold mb-1">{pendingCount} Pending</span>
                     )}
                   </div>
-                  <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">Active Rounds</p>
+                  <p className="mt-2 text-sm text-base-content/50">Tokenized listings</p>
                 </div>
               </div>
             )}
 
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
-                <SparklesIcon className="h-4 w-4" /> Your Registrations
+              <h2 className="section-label flex items-center gap-2">
+                <SparklesIcon className="h-4 w-4" /> Your registrations
               </h2>
 
               {isLoading ? (
@@ -276,7 +261,7 @@ export default function OwnerPage() {
                                   </span>
                                 </span>
                                 <a
-                                  href={`https://stellar.expert/explorer/testnet/asset/${asset.asset_code}-${asset.issuer}`}
+                                  href={getExplorerAssetUrl(asset.asset_code, asset.issuer ?? "")}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-primary hover:underline flex items-center gap-1 opacity-70 hover:opacity-100"
@@ -372,7 +357,7 @@ export default function OwnerPage() {
                                 onClick={e => handleWithdraw(e, asset)}
                               >
                                 {isWithdrawing ? (
-                                  <span className="loading loading-spinner loading-xs" />
+                                  <span className="loading loading-bars loading-xs" />
                                 ) : (
                                   <BanknotesIcon className="h-4 w-4" />
                                 )}
@@ -393,11 +378,10 @@ export default function OwnerPage() {
                 <DocumentTextIcon className="h-10 w-10" />
               </div>
               <div>
-                <h3 className="font-black text-2xl mb-1 uppercase tracking-tight">Stellar Compliance First</h3>
-                <p className="text-sm text-base-content/60 max-w-xl leading-relaxed">
-                  Vaultic utilizes precision-engineered Soroban smart contracts to ensure every RWA meets global
-                  regulatory standards. Assets are audited before transitioning into Stellar native primitives, securing
-                  institutional-grade liquidity.
+                <h3 className="text-lg font-semibold">Compliance review</h3>
+                <p className="max-w-xl text-sm leading-relaxed text-base-content/60">
+                  Assets are reviewed by admins before listing. Soroban contracts record lifecycle states and investment
+                  activity on Stellar.
                 </p>
               </div>
             </div>

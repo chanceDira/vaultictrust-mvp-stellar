@@ -1,15 +1,19 @@
 "use client";
 
 import type { NextPage } from "next";
+import { PageStatus } from "~~/components/ui/PageStatus";
 
 const ControlPanelPage: NextPage = () => {
   return (
-    <div className="flex flex-col grow items-center justify-center py-16 px-4 text-center">
-      <h1 className="text-xl font-bold text-base-content">Control Panel</h1>
-      <p className="mt-2 text-sm text-base-content/60">
-        This feature is being migrated to Stellar Network and is currently unavailable.
-      </p>
-    </div>
+    <PageStatus
+      variant="unavailable"
+      title="Control panel unavailable"
+      description="This area is being migrated to Stellar and is not open in the current release."
+      actions={[
+        { label: "Asset owners", href: "/owner", primary: true },
+        { label: "Go home", href: "/" },
+      ]}
+    />
   );
 };
 

@@ -8,7 +8,7 @@ import {
   RocketLaunchIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { PROTOCOL_METADATA, getExplorerTxUrl } from "~~/scaffold.config";
 import { encryptFileForAdmin } from "~~/services/stellar/cryptoService";
 import { uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { submitKyc } from "~~/services/stellar/sorobanService";
@@ -82,7 +82,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
         <div className="flex flex-col gap-1">
           <p className="font-bold">KYC Details Submitted!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -109,7 +109,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
           <div className="bg-primary/10 p-2 rounded-xl">
             <IdentificationIcon className="h-5 w-5 text-primary" />
           </div>
-          <h2 className="font-bold uppercase tracking-tight text-sm">Investor Verification</h2>
+          <h2 className="font-semibold">Investor verification</h2>
         </div>
         <div className="flex gap-1.5">
           {(["intro", "data", "proof", "submit", "success"] as WizardStep[]).map((s, i) => (
@@ -126,24 +126,27 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
       <div className="p-8">
         {step === "intro" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-2xl font-bold mb-4">Unlock High-Yield RWAs</h3>
+            <h3 className="text-2xl font-semibold mb-4">Verify before you invest</h3>
             <p className="text-base-content/60 mb-6 leading-relaxed">
-              To comply with global financial regulations and ensure a secure marketplace, Vaultic Trust requires all
-              investors to complete a one-time verification.
+              Vaultic requires a one-time identity check before you can buy shares on the marketplace.
             </p>
             <div className="space-y-4 mb-8">
               {[
                 {
                   icon: LockClosedIcon,
-                  title: "Privacy First",
-                  desc: "Your data is hashed and never stored unencrypted.",
+                  title: "Privacy first",
+                  desc: "Documents are encrypted in your browser before upload.",
                 },
                 {
                   icon: ShieldCheckIcon,
-                  title: "Regulatory Compliance",
-                  desc: "Access institutional-grade real estate & mineral assets.",
+                  title: "Regulatory review",
+                  desc: "Admins verify your submission before updating your on-chain status.",
                 },
-                { icon: FingerPrintIcon, title: "ZK-Ready", desc: "Prepare for a decentralized identity future." },
+                {
+                  icon: FingerPrintIcon,
+                  title: "On-chain record",
+                  desc: "Only a commitment hash is stored on Stellar.",
+                },
               ].map((item, i) => (
                 <div key={i} className="flex gap-4">
                   <div className="bg-base-200 rounded-lg p-2 h-fit">
@@ -164,13 +167,11 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
 
         {step === "data" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-xl font-bold mb-6">Personal Attributes</h3>
+            <h3 className="text-xl font-semibold mb-6">Your details</h3>
             <div className="space-y-4 mb-8">
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-xs font-bold uppercase tracking-widest opacity-50">
-                    Full Legal Name
-                  </span>
+                  <span className="label-text text-sm font-medium text-base-content/60">Full legal name</span>
                 </label>
                 <input
                   type="text"
@@ -182,9 +183,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
               </div>
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-xs font-bold uppercase tracking-widest opacity-50">
-                    Identity Document Number
-                  </span>
+                  <span className="label-text text-sm font-medium text-base-content/60">Document number</span>
                 </label>
                 <input
                   type="text"
@@ -196,9 +195,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
               </div>
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text text-xs font-bold uppercase tracking-widest opacity-50">
-                    Tax Residency
-                  </span>
+                  <span className="label-text text-sm font-medium text-base-content/60">Country of tax residency</span>
                 </label>
                 <select
                   className="select select-bordered rounded-xl"
@@ -290,7 +287,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                 disabled={!idFile}
                 onClick={() => setStep("submit")}
               >
-                Proceed to Cryptography
+                Proceed to review
               </button>
             </div>
           </div>
@@ -301,7 +298,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <RocketLaunchIcon className="h-10 w-10 text-primary animate-bounce" />
             </div>
-            <h3 className="text-xl font-bold mb-4">Generate Proof</h3>
+            <h3 className="text-xl font-semibold mb-4">Review and submit</h3>
             <p className="text-sm text-base-content/60 mb-8 max-w-sm mx-auto">
               A unique SHA-256 commitment will be generated from your data. This commitment stays on the Stellar ledger,
               while your raw data is securely linked.
@@ -324,7 +321,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                 Edit Info
               </button>
               <button className="btn btn-primary flex-1 rounded-xl" onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <span className="loading loading-bars loading-xs" /> : "Submit to Ledger"}
+                {isSubmitting ? <span className="loading loading-bars loading-xs" /> : "Submit application"}
               </button>
             </div>
           </div>

@@ -12,7 +12,7 @@ import {
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
-import { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
+import vaulticConfig, { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
 
 let _rpcServer: rpc.Server | null = null;
 
@@ -26,7 +26,7 @@ function getRpcServer(): rpc.Server {
 }
 
 export function getContractIds() {
-  const contracts = deployedSorobanContracts["testnet"];
+  const contracts = deployedSorobanContracts[vaulticConfig.targetNetwork];
   return {
     registry: contracts?.VaulticAssetRegistry ?? null,
     userRegistry: contracts?.VaulticUserRegistry ?? null,

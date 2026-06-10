@@ -1,12 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { NextPage } from "next";
+import { DocArticleFooter, DocArticleHeader } from "~~/components/ui/DocArticleHeader";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
   title: "Support",
-  description:
-    "Get help with Vaultic Trust. FAQ, transaction flows, wallet confirmations, and how to contact the team.",
+  description: "Help with Vaultic Trust. FAQ, transaction flows, wallet setup, and how to contact the team.",
 });
 
 const SUPPORT_LINKS = [
@@ -21,24 +20,24 @@ const SUPPORT_LINKS = [
 
 const FAQ = [
   {
-    q: "Why do I need to approve a 'Trustline' before buying?",
-    a: "On the Stellar Network, an account must explicitly 'trust' an asset before it can hold its tokens. This acts as a native compliance layer. When you first invest in a Vaultic asset, you'll be asked to establish a Trustline in your wallet. This is a one-time setup per asset that protects you from receiving unwanted or malicious tokens.",
+    q: "Why do I need a trustline before buying shares?",
+    a: "On Stellar, an account must trust an asset before it can hold that asset. When you invest in a Vaultic asset for the first time, you will be asked to add a trustline in Freighter. This is a one-time step per asset.",
   },
   {
-    q: 'My transaction failed with "No Trustline". What do I do?',
-    a: "This means the trustline transaction was rejected or hasn't finished being recorded on the ledger. Ensure you approve the first wallet popup to establish the trustline, then proceed to the purchase confirmation. If you're using Freighter, double-check that you have enough XLM (at least 2-3 XLM) to cover the network reserve for new trustlines.",
+    q: 'My transaction failed with "No trustline". What should I do?',
+    a: "Approve the trustline prompt first, wait for it to confirm, then submit the purchase. Keep at least 2 to 3 XLM in your wallet to cover network reserves for new trustlines.",
   },
   {
     q: "Which network does Vaultic Trust use?",
-    a: "We are built on the Stellar Network. For testnet, we use the Stellar Testnet. Always ensure your wallet (e.g. Freighter) is set to the correct network as shown in the top header of the platform.",
+    a: "Vaultic Trust runs on the Stellar network. Connect Freighter and approve transactions when prompted.",
   },
   {
     q: "Do I need to create an account?",
-    a: "No registration is required. You only need a Stellar-compatible wallet like Freighter and some Stellar USDC for investments. All your holdings are tied directly to your Stellar public key.",
+    a: "No email registration is required. You need a Stellar wallet such as Freighter and USDC for investments. Holdings are tied to your Stellar public key.",
   },
   {
-    q: "Where can I read about transaction flows and trustlines?",
-    a: "Our Terms of Service explain the Stellar asset model, including trustlines and one-step purchases, along with all in-app status messages.",
+    q: "Where can I read about transaction flows?",
+    a: "The Terms of Service describe trustlines, purchases, and the in-app status messages you will see during each step.",
   },
 ];
 
@@ -46,26 +45,20 @@ const SupportPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
       <article className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
-        <div className="flex items-center gap-3 mb-6">
-          <Image src="/logo.jpeg" alt="Vaultic Logo" width={48} height={48} className="rounded-xl shadow-lg" />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary/90">Vaultic Trust</p>
-            <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">Support</h1>
-          </div>
-        </div>
+        <DocArticleHeader title="Support" />
 
-        <p className="mt-6 text-base leading-relaxed text-base-content/85">
-          Find answers to common questions and links to our legal and product documentation. For transaction flows and
-          wallet confirmations (including the three popups when buying shares), see the Terms of Service.
+        <p className="text-base leading-relaxed text-base-content/85">
+          Common questions and links to product and legal documentation. For trustline and purchase steps, see the Terms
+          of Service.
         </p>
 
-        <h2 className="mt-10 text-xl font-bold text-base-content">Documentation &amp; Legal</h2>
+        <h2 className="mt-10 text-xl font-semibold text-base-content">Documentation and legal</h2>
         <ul className="mt-4 space-y-3">
           {SUPPORT_LINKS.map(({ label, href, description }) => (
             <li key={href}>
               <Link
                 href={href}
-                className="group flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 p-3 rounded-xl border border-base-300/70 bg-base-100 hover:border-primary/30 hover:shadow-sm"
+                className="group flex flex-col gap-1 rounded-xl border border-base-300/70 bg-base-100 p-3 hover:border-primary/30 hover:shadow-sm sm:flex-row sm:items-center sm:gap-3"
               >
                 <span className="font-semibold text-base-content group-hover:text-primary">{label}</span>
                 <span className="text-sm text-base-content/70">{description}</span>
@@ -74,7 +67,7 @@ const SupportPage: NextPage = () => {
           ))}
         </ul>
 
-        <h2 className="mt-10 text-xl font-bold text-base-content">Frequently Asked Questions</h2>
+        <h2 className="mt-10 text-xl font-semibold text-base-content">Frequently asked questions</h2>
         <ul className="mt-4 space-y-6">
           {FAQ.map(({ q, a }, i) => (
             <li key={i} className="rounded-xl border border-base-300/70 bg-base-100 p-4 sm:p-5">
@@ -84,16 +77,20 @@ const SupportPage: NextPage = () => {
           ))}
         </ul>
 
-        <h2 className="mt-10 text-xl font-bold text-base-content">Contact</h2>
+        <h2 className="mt-10 text-xl font-semibold text-base-content">Contact</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
-          For technical issues, partnership inquiries, or feedback, reach out via the official channels listed on{" "}
+          For technical issues, partnerships, or feedback, email us directly at{" "}
+          <a href="mailto:chancedesire60@gmail.com" className="link link-primary">
+            chancedesire60@gmail.com
+          </a>
+          . You can also find updates on{" "}
           <a href="https://vaultictrust.com" target="_blank" rel="noreferrer" className="link link-primary">
             vaultictrust.com
           </a>
-          . We do not provide support via direct messages from unofficial accounts; always verify links and handles.
+          . We do not provide support through unofficial accounts. Verify links before sharing wallet details.
         </p>
 
-        <div className="mt-12 flex flex-wrap gap-4">
+        <DocArticleFooter>
           <Link href="/" className="btn btn-primary gap-2 rounded-xl">
             Back to home
           </Link>
@@ -103,7 +100,7 @@ const SupportPage: NextPage = () => {
           <Link href="/privacy" className="btn btn-ghost rounded-xl">
             Privacy Policy
           </Link>
-        </div>
+        </DocArticleFooter>
       </article>
     </div>
   );

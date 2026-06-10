@@ -8,7 +8,7 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { getExplorerTxUrl } from "~~/scaffold.config";
 import { uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { registerAsset } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/scaffold-eth";
@@ -99,7 +99,7 @@ export function RegisterModal({
         <div className="flex flex-col gap-1">
           <p className="font-bold">{name} registered!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -123,10 +123,8 @@ export function RegisterModal({
       <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
         <div className="flex justify-between items-start p-8 pb-6 border-b border-base-300">
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-tighter italic">Register RWA</h2>
-            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold mt-1">
-              Submit for Compliance Review
-            </p>
+            <h2 className="page-title text-2xl">Register asset</h2>
+            <p className="section-label mt-1">Submit for admin review</p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm ml-4 shrink-0">
             <XMarkIcon className="h-5 w-5" />
@@ -157,8 +155,8 @@ export function RegisterModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control w-full">
               <label className="label pb-1">
-                <span className="label-text font-black uppercase tracking-widest text-[10px]">
-                  Ticker Code <span className="text-error">*</span>
+                <span className="label-text text-sm font-medium">
+                  Ticker code <span className="text-error">*</span>
                 </span>
                 {code && (
                   <span
@@ -250,7 +248,7 @@ export function RegisterModal({
             </label>
             <textarea
               className="textarea textarea-bordered h-24 w-full resize-none"
-              placeholder="Briefly describe the asset and its location in Africa — e.g. 'Commercial plot in Nairobi CBD, 0.5 acres, freehold title'"
+              placeholder="e.g. Commercial plot in Nairobi CBD, 0.5 acres, freehold title"
               value={description}
               onChange={e => setDescription(e.target.value)}
               disabled={loading}
@@ -274,7 +272,7 @@ export function RegisterModal({
                   <div
                     className={`w-3 h-3 rounded-full ${model === "Fractional" ? "bg-primary shadow-[0_0_8px] shadow-primary" : "bg-base-300"}`}
                   />
-                  <span className="font-black uppercase tracking-widest text-[10px]">Fractional</span>
+                  <span className="text-sm font-medium">Fractional</span>
                 </div>
                 <p className="text-[10px] text-base-content/50 leading-tight">
                   Asset is split into shares for multiple investors to pool funds.
@@ -293,7 +291,7 @@ export function RegisterModal({
                   <div
                     className={`w-3 h-3 rounded-full ${model === "WholeOwnership" ? "bg-primary shadow-[0_0_8px] shadow-primary" : "bg-base-300"}`}
                   />
-                  <span className="font-black uppercase tracking-widest text-[10px]">Whole Asset</span>
+                  <span className="text-sm font-medium">Whole asset</span>
                 </div>
                 <p className="text-[10px] text-base-content/50 leading-tight">
                   The entire asset is purchased by a single investor at full valuation.
@@ -313,15 +311,11 @@ export function RegisterModal({
         </div>
 
         <div className="flex gap-4 p-8 pt-4">
-          <button
-            className="btn btn-ghost flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]"
-            onClick={onClose}
-            disabled={loading}
-          >
+          <button className="btn btn-ghost flex-1 rounded-2xl" onClick={onClose} disabled={loading}>
             Cancel
           </button>
           <button
-            className="btn btn-primary flex-1 rounded-2xl gap-3 stellar-glow shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
+            className="btn btn-primary stellar-glow flex-1 gap-3 rounded-2xl shadow-lg shadow-primary/20"
             onClick={handleSubmit}
             disabled={loading || valuationStroops <= 0n || !name.trim() || !code.trim()}
           >

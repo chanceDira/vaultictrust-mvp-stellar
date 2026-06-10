@@ -52,7 +52,6 @@ export const deployedSorobanContracts: Partial<Record<StellarNetworkId, Deployed
 export const PROTOCOL_METADATA = {
   VAULTIC_ORG_PUBLIC_KEY: "GBFUEPUJ5JVBI7ZMFUE4MPVDACCWOOSOV4XSGMOO7Q6H7LAD7UPIXRA7",
   ENCRYPTION_SCHEME: "AES-GCM-256 / NaCl Box",
-  EXPLORER_TX_URL: (hash: string) => `https://stellar.expert/explorer/testnet/tx/${hash}`,
 };
 
 export type VaulticConfig = {
@@ -66,6 +65,18 @@ export type VaulticConfig = {
 const targetNetworkId: StellarNetworkId = (process.env.NEXT_PUBLIC_STELLAR_NETWORK as StellarNetworkId) ?? "testnet";
 
 const network = STELLAR_NETWORKS[targetNetworkId];
+
+const explorerNetworkSlug = (networkId: StellarNetworkId) => (networkId === "mainnet" ? "public" : "testnet");
+
+export const getExplorerTxUrl = (hash: string, networkId: StellarNetworkId = targetNetworkId) =>
+  `https://stellar.expert/explorer/${explorerNetworkSlug(networkId)}/tx/${hash}`;
+
+export const getExplorerAssetUrl = (code: string, issuer: string, networkId: StellarNetworkId = targetNetworkId) =>
+  `https://stellar.expert/explorer/${explorerNetworkSlug(networkId)}/asset/${code}-${issuer}`;
+
+export const STELLAR_DISPLAY_NAME = "Stellar";
+
+export const EARLY_ACCESS_FORM_URL = "https://forms.gle/QoMKbVJ4FoPxeXiQ6";
 
 const vaulticConfig: VaulticConfig = {
   targetNetwork: targetNetworkId,
