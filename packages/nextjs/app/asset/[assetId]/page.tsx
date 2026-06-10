@@ -15,10 +15,11 @@ import {
   TagIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
-import { VaulticLoader } from "~~/components/VaulticLoader";
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
+import { PageLoading } from "~~/components/ui/PageLoading";
+import { PageStatus } from "~~/components/ui/PageStatus";
 import { fetchAsset, fetchYieldRoundCount } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
@@ -29,6 +30,7 @@ export default function AssetDetailsPage() {
 
   const [asset, setAsset] = useState<OnChainAsset | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [yieldRoundCount, setYieldRoundCount] = useState(0);
 
   const [isTrustlineOpen, setIsTrustlineOpen] = useState(false);
@@ -37,16 +39,24 @@ export default function AssetDetailsPage() {
   const loadData = useCallback(async () => {
     if (!assetId) return;
     setLoading(true);
+    setLoadError(false);
     try {
-      const id = parseInt(assetId as string);
+      const id = parseInt(assetId as string, 10);
+      if (Number.isNaN(id) || id < 0) {
+        setAsset(null);
+        return;
+      }
       const data = await fetchAsset(id);
       if (data) {
         setAsset(data);
         const rounds = await fetchYieldRoundCount(id);
         setYieldRoundCount(rounds);
+      } else {
+        setAsset(null);
       }
     } catch (e) {
       console.error("[AssetDetails] Load error:", e);
+      setLoadError(true);
       notification.error("Failed to load asset details");
     } finally {
       setLoading(false);
@@ -58,21 +68,36 @@ export default function AssetDetailsPage() {
   }, [loadData]);
 
   if (loading) {
+    return <PageLoading label="Loading asset" />;
+  }
+
+  if (loadError) {
     return (
-      <div className="flex flex-col grow items-center justify-center min-h-[60vh]">
-        <VaulticLoader />
-      </div>
+      <PageStatus
+        variant="error"
+        title="Could not load asset"
+        description="We could not fetch this asset from the network. Check your connection and try again."
+        onRetry={loadData}
+        actions={[
+          { label: "Marketplace", href: "/marketplace", primary: true },
+          { label: "Go home", href: "/" },
+        ]}
+      />
     );
   }
 
   if (!asset) {
     return (
-      <div className="flex flex-col grow items-center justify-center min-h-[60vh] text-center p-4">
-        <h2 className="text-2xl font-black uppercase italic tracking-tighter mb-4">Asset Not Found</h2>
-        <Link href="/marketplace" className="btn btn-primary btn-sm rounded-xl">
-          Back to Marketplace
-        </Link>
-      </div>
+      <PageStatus
+        code="404"
+        variant="404"
+        title="Asset not found"
+        description="This asset does not exist on Vaultic Trust or may have been removed."
+        actions={[
+          { label: "Marketplace", href: "/marketplace", primary: true },
+          { label: "Go home", href: "/" },
+        ]}
+      />
     );
   }
 
@@ -83,7 +108,7 @@ export default function AssetDetailsPage() {
   return (
     <div className="flex flex-col grow pb-20">
       <section className="bg-base-200/50 border-b border-base-300 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 relative z-10">
+        <div className="relative z-10 mx-auto max-w-7xl px-3 py-12 sm:px-4 md:py-16">
           <Link
             href="/marketplace"
             className="btn btn-ghost btn-sm gap-2 mb-8 -ml-2 rounded-xl text-xs uppercase tracking-widest font-bold opacity-50 hover:opacity-100 transition-opacity"
@@ -99,18 +124,15 @@ export default function AssetDetailsPage() {
                   <BuildingOffice2Icon className="h-7 w-7 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-5xl font-black text-base-content uppercase tracking-tighter italic leading-none">
-                    {asset.asset_name}
-                  </h1>
-                  <p className="text-xs text-primary font-bold uppercase tracking-[0.3em] mt-2">
+                  <h1 className="page-title text-4xl leading-tight sm:text-5xl">{asset.asset_name}</h1>
+                  <p className="mt-2 text-sm text-base-content/60">
                     {asset.asset_code} · {asset.asset_category}
                   </p>
                 </div>
               </div>
-              <p className="text-base-content/60 leading-relaxed text-sm">
-                This {asset.asset_category.toLowerCase()} asset is tokenized on Stellar as an RWA (Real World Asset).
-                Fractional ownership allows for global liquidity while maintaining strict regulatory compliance through
-                Soroban smart contracts.
+              <p className="text-sm leading-relaxed text-base-content/60">
+                Tokenized {asset.asset_category.toLowerCase()} asset on Stellar. Shares are issued as native assets
+                after admin review and KYC checks.
               </p>
             </div>
 
@@ -134,7 +156,7 @@ export default function AssetDetailsPage() {
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent skew-x-[-20deg] translate-x-1/4" />
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 py-12 w-full">
+      <section className="mx-auto w-full max-w-7xl px-3 py-12 sm:px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,11 +244,10 @@ export default function AssetDetailsPage() {
                 <ShieldCheckIcon className="h-8 w-8" />
               </div>
               <div>
-                <h4 className="font-black uppercase tracking-tight text-xl mb-1">Soroban-Guarded Compliance</h4>
-                <p className="text-xs text-base-content/50 leading-relaxed max-w-lg">
-                  This asset utilizes the Vaultic Trust protocol for automated KYC enforcement and dividend
-                  distribution. Tokens can only be held by verified investors, meeting cross-border regulatory standards
-                  for tokenized real economy assets.
+                <h4 className="mb-1 text-xl font-semibold">On-chain compliance</h4>
+                <p className="max-w-lg text-xs leading-relaxed text-base-content/50">
+                  This asset uses Vaultic contracts for KYC checks and dividend distribution. Only verified investors
+                  can hold shares.
                 </p>
               </div>
             </div>

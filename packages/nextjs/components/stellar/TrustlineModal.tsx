@@ -85,8 +85,8 @@ export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, 
             {renderStatusIcon()}
           </div>
 
-          <h3 className="text-3xl font-black text-base-content uppercase tracking-tighter italic">
-            {checking ? "Verifying..." : hasTrustline ? "Verified" : "Trustline"}
+          <h3 className="text-2xl font-semibold text-base-content">
+            {checking ? "Checking..." : hasTrustline ? "Trustline ready" : "Add trustline"}
           </h3>
 
           <p className="py-4 text-sm text-base-content/70">{renderStatusText()}</p>
@@ -95,10 +95,10 @@ export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, 
             <div className="flex flex-col w-full gap-4 mt-6">
               <button
                 onClick={handleAddTrustline}
-                className={`btn btn-primary btn-lg w-full gap-3 stellar-glow shadow-lg shadow-primary/20 rounded-2xl font-black uppercase tracking-widest text-xs ${busy ? "loading" : ""}`}
+                className={`btn btn-primary btn-lg stellar-glow w-full gap-3 rounded-2xl shadow-lg shadow-primary/20 ${busy ? "loading" : ""}`}
                 disabled={busy}
               >
-                {busy ? "Authenticating..." : "Approve Trustline"}
+                {busy ? "Submitting..." : "Approve trustline"}
                 {!busy && <ShieldCheckIcon className="h-5 w-5" />}
               </button>
               <button

@@ -22,7 +22,7 @@ import { VaulticLoader } from "~~/components/VaulticLoader";
 import { TokenizeModal } from "~~/components/modals/TokenizeModal";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { ADMIN_ADDRESSES, PROTOCOL_METADATA } from "~~/scaffold.config";
+import { ADMIN_ADDRESSES, getExplorerTxUrl } from "~~/scaffold.config";
 import { decryptFileAsAdmin } from "~~/services/stellar/cryptoService";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
@@ -151,7 +151,7 @@ function AssetRow({
               disabled={isApproving}
             >
               {isApproving ? (
-                <span className="loading loading-spinner loading-xs" />
+                <span className="loading loading-bars loading-xs" />
               ) : (
                 <CheckCircleIcon className="h-4 w-4" />
               )}
@@ -324,7 +324,7 @@ export default function AdminPage() {
         <div className="flex flex-col gap-1">
           <p className="font-bold">Asset approved! Status → Active</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -356,7 +356,7 @@ export default function AdminPage() {
         <div className="flex flex-col gap-1">
           <p className="font-bold">Protocol fees swept to treasury</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -443,7 +443,7 @@ export default function AdminPage() {
         <div className="flex flex-col gap-1">
           <p className="font-bold">KYC Status updated!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -520,13 +520,11 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col grow min-h-screen">
-      <section className="px-4 py-8 max-w-6xl mx-auto w-full">
+      <section className="mx-auto w-full max-w-6xl px-3 py-8 sm:px-4">
         <div className="flex items-center gap-3 mb-2">
           <div>
-            <h1 className="text-2xl font-bold uppercase tracking-tight">Admin Dashboard</h1>
-            <p className="text-xs text-base-content/50 uppercase tracking-widest">
-              Vaultic Trust · Compliance &amp; Registry Control
-            </p>
+            <h1 className="text-2xl font-semibold">Admin dashboard</h1>
+            <p className="text-sm text-base-content/50">Compliance and registry control</p>
           </div>
         </div>
         <p className="text-sm text-base-content/60 mb-6 mt-1">
@@ -552,9 +550,7 @@ export default function AdminPage() {
               <p className="font-bold">Soroban Contracts Not Deployed</p>
               <p className="text-sm">
                 Run{" "}
-                <code className="bg-base-300 px-1.5 py-0.5 rounded text-xs">
-                  packages/soroban-contracts/deploy-testnet.sh
-                </code>{" "}
+                <code className="bg-base-300 px-1.5 py-0.5 rounded text-xs">packages/soroban-contracts/deploy.sh</code>{" "}
                 to deploy, then update{" "}
                 <code className="bg-base-300 px-1.5 py-0.5 rounded text-xs">scaffold.config.ts</code>.
               </p>
@@ -671,7 +667,7 @@ export default function AdminPage() {
                     disabled={isSweeping}
                   >
                     {isSweeping ? (
-                      <span className="loading loading-spinner loading-xs" />
+                      <span className="loading loading-bars loading-xs" />
                     ) : (
                       <BanknotesIcon className="h-4 w-4" />
                     )}
@@ -682,7 +678,7 @@ export default function AdminPage() {
                     <span className="text-xs text-base-content/40 font-mono">
                       Registry:{" "}
                       <span className="text-primary">
-                        {contracts.registry ? shortenStellarAddress(contracts.registry, 6) : "–"}
+                        {contracts.registry ? shortenStellarAddress(contracts.registry, 6) : "N/A"}
                       </span>
                     </span>
                   </div>
@@ -732,10 +728,8 @@ export default function AdminPage() {
                       <IdentificationIcon className="h-7 w-7 text-primary" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black uppercase tracking-tight">Compliance Management</h2>
-                      <p className="text-xs text-base-content/40 uppercase tracking-widest font-bold">
-                        User Registry Control
-                      </p>
+                      <h2 className="text-2xl font-semibold">Compliance management</h2>
+                      <p className="text-sm text-base-content/50">User registry</p>
                     </div>
                   </div>
                   <p className="text-sm text-base-content/60 mb-6">
@@ -755,7 +749,7 @@ export default function AdminPage() {
                       onClick={handleSearchUser}
                       disabled={isSearchingUser}
                     >
-                      {isSearchingUser ? <span className="loading loading-spinner loading-xs" /> : "Lookup User"}
+                      {isSearchingUser ? <span className="loading loading-bars loading-xs" /> : "Lookup User"}
                     </button>
                   </div>
 
@@ -800,7 +794,7 @@ export default function AdminPage() {
                           {foundUser.metadata_uri && (
                             <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
                               <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">
-                                Identity Processing (Zero-Knowledge)
+                                Encrypted identity review
                               </p>
                               <div className="flex flex-col gap-3">
                                 <div>
@@ -818,13 +812,13 @@ export default function AdminPage() {
                                       <p className="text-[9px] uppercase tracking-widest text-base-content/40 mb-0.5">
                                         Full Name
                                       </p>
-                                      <p className="text-xs font-bold">{kycApplicantMeta.fullName ?? "—"}</p>
+                                      <p className="text-xs font-bold">{kycApplicantMeta.fullName ?? "N/A"}</p>
                                     </div>
                                     <div className="bg-base-200 rounded-lg p-2">
                                       <p className="text-[9px] uppercase tracking-widest text-base-content/40 mb-0.5">
                                         Country
                                       </p>
-                                      <p className="text-xs font-bold">{kycApplicantMeta.country ?? "—"}</p>
+                                      <p className="text-xs font-bold">{kycApplicantMeta.country ?? "N/A"}</p>
                                     </div>
                                     {kycApplicantMeta.submittedAt && (
                                       <div className="bg-base-200 rounded-lg p-2 col-span-2">
@@ -854,7 +848,7 @@ export default function AdminPage() {
                                       disabled={isDecrypting || !adminOrgKey}
                                     >
                                       {isDecrypting ? (
-                                        <span className="loading loading-spinner loading-xs" />
+                                        <span className="loading loading-bars loading-xs" />
                                       ) : (
                                         "Decrypt & View PII"
                                       )}
@@ -1001,11 +995,10 @@ export default function AdminPage() {
                   <div className="flex gap-4">
                     <UserGroupIcon className="h-6 w-6 text-primary shrink-0" />
                     <div>
-                      <h3 className="font-bold text-primary mb-1">Hybrid KYC Architecture</h3>
+                      <h3 className="font-semibold text-primary mb-1">KYC on Stellar</h3>
                       <p className="text-sm text-base-content/70">
-                        This system uses an on-chain registry to store compliance flags. Privacy is maintained by
-                        keeping PII off-chain, while the Soroban contracts can atomically enforce investment gating
-                        using these flags.
+                        Compliance flags live on-chain in the User Registry. Personal data stays off-chain and
+                        encrypted; contracts enforce investment gating from those flags.
                       </p>
                     </div>
                   </div>
@@ -1020,17 +1013,15 @@ export default function AdminPage() {
                         <ShieldCheckIcon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-black italic uppercase tracking-tight">On-Chain Governance</h3>
-                        <p className="text-[10px] text-base-content/40 uppercase tracking-widest font-bold">
-                          Permissioned Address Registry
-                        </p>
+                        <h3 className="text-xl font-semibold italic">On-chain governance</h3>
+                        <p className="text-sm text-base-content/50">Admin wallet registry</p>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <div className="bg-base-200/50 rounded-2xl p-4 border border-base-300">
                         <p className="text-[10px] uppercase font-black tracking-widest text-base-content/40 mb-3">
-                          Authorized Administrative Nodes
+                          Admin wallets
                         </p>
                         <div className="space-y-2">
                           {onChainAdmins.length === 0 ? (
@@ -1075,9 +1066,9 @@ export default function AdminPage() {
                         <button
                           onClick={handleAddAdmin}
                           disabled={isUpdatingAdmins || !newAdminAddr}
-                          className="btn btn-primary rounded-xl px-6 font-black uppercase tracking-widest text-[10px]"
+                          className="btn btn-primary rounded-xl px-6 text-sm"
                         >
-                          {isUpdatingAdmins ? <span className="loading loading-spinner loading-xs" /> : "Authorize"}
+                          {isUpdatingAdmins ? <span className="loading loading-bars loading-xs" /> : "Authorize"}
                         </button>
                       </div>
                     </div>

@@ -14,11 +14,9 @@ export const KycStatusBanner = ({ kycRecord }: KycStatusBannerProps) => {
 
   if (status === "Verified") {
     return (
-      <div className="flex items-center gap-2 mb-8 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 w-fit">
+      <div className="mb-8 flex w-fit items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2">
         <ShieldCheckIcon className="h-4 w-4 text-emerald-500" />
-        <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-500">
-          Verified Investor Profile
-        </span>
+        <span className="text-sm font-medium text-emerald-600">Verified investor</span>
       </div>
     );
   }
@@ -30,34 +28,34 @@ export const KycStatusBanner = ({ kycRecord }: KycStatusBannerProps) => {
 
   return (
     <div
-      className={`alert mb-10 shadow-lg border animate-in fade-in slide-in-from-top-4 ${
+      className={`alert mb-10 animate-in fade-in slide-in-from-top-4 border shadow-lg ${
         isPending ? "alert-warning bg-yellow-500/5 border-yellow-500/30" : "alert-error bg-red-500/5 border-red-500/30"
       }`}
     >
       {isPending ? <ClockIcon className="h-6 w-6 text-yellow-500" /> : <ExclamationCircleIcon className="h-6 w-6" />}
       <div className="flex-1">
-        <p className="font-bold">
+        <p className="font-semibold">
           {isPending
-            ? "Verification Pending"
+            ? "Verification pending"
             : isRejected
-              ? "Verification Rejected"
+              ? "Verification rejected"
               : isSuspended
-                ? "Account Suspended"
-                : "Identity Verification Required"}
+                ? "Account suspended"
+                : "Verification required"}
         </p>
         <p className="text-sm text-base-content/70">
           {isPending
-            ? "Your KYC application is being reviewed by the Vaultic compliance team."
+            ? "An admin is reviewing your submission."
             : isRejected
-              ? "Your application was rejected. Please contact support or resubmit."
+              ? "Contact support or submit a new application."
               : isSuspended
-                ? "Your account has been suspended for compliance reasons."
-                : "To participate in RWA tokenization, you must first complete your identity verification."}
+                ? "Your account is suspended for compliance reasons."
+                : "Complete identity verification before you invest."}
         </p>
       </div>
       {isNone && (
         <Link href="/investor/kyc" className="btn btn-primary btn-sm rounded-xl">
-          Verify Identity
+          Verify identity
         </Link>
       )}
     </div>

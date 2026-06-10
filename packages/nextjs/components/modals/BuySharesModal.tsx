@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BanknotesIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { getExplorerTxUrl } from "~~/scaffold.config";
 import { fetchQuotePurchase, purchaseShares } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
@@ -68,7 +68,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
         <div className="flex flex-col gap-1">
           <p className="font-bold">Investment Successful!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -103,8 +103,8 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
       <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="bg-base-200/50 p-6 border-b border-base-300 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tighter italic">Invest</h2>
-            <p className="text-[10px] text-base-content/40 uppercase tracking-widest font-bold">
+            <h2 className="text-xl font-semibold">Invest</h2>
+            <p className="text-sm text-base-content/50">
               {asset.asset_name} · {asset.asset_code}
             </p>
           </div>
@@ -116,11 +116,9 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
         <div className="p-8 space-y-6">
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold uppercase tracking-widest text-[10px] opacity-50">
-                Number of Shares
-              </span>
-              <span className="label-text-alt font-bold text-primary italic text-[10px]">
-                {availableShares.toLocaleString()} Available
+              <span className="label-text text-sm font-medium text-base-content/60">Number of shares</span>
+              <span className="label-text-alt text-sm font-medium text-primary">
+                {availableShares.toLocaleString()} available
               </span>
             </label>
             <div className="relative">
@@ -134,56 +132,49 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
                 onChange={e => setSharesAmount(e.target.value)}
                 disabled={isPurchasing}
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest opacity-30">
-                Shares
-              </div>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-base-content/40">Shares</div>
             </div>
           </div>
 
           <div className="bg-base-200/50 rounded-2xl p-6 border border-base-300 space-y-3">
             <div className="flex justify-between items-center text-xs">
-              <span className="opacity-50 font-bold uppercase tracking-widest">Price per Share</span>
+              <span className="text-xs text-base-content/50">Price per share</span>
               <span className="font-mono">{(Number(asset.price_per_share) / 1e7).toFixed(2)} USDC</span>
             </div>
 
             <div className="flex justify-between items-center text-xs">
-              <span className="opacity-50 font-bold uppercase tracking-widest">Protocol Fee</span>
+              <span className="text-xs text-base-content/50">Protocol fee</span>
               <span className="font-mono text-warning">{isQuoting ? "..." : `${feeUsdc.toFixed(2)} USDC`}</span>
             </div>
 
             <div className="h-px bg-base-300 my-1" />
 
             <div className="flex justify-between items-center">
-              <span className="text-sm font-black uppercase tracking-tighter italic">Total Cost</span>
-              <span className="text-xl font-black text-primary">
+              <span className="text-sm font-semibold">Total cost</span>
+              <span className="text-xl font-semibold text-primary">
                 {isQuoting ? (
                   <span className="loading loading-bars loading-xs" />
                 ) : (
                   `$${totalUsdc.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                 )}
-                <span className="text-[10px] ml-1 opacity-50 not-italic">USDC</span>
+                <span className="ml-1 text-sm text-base-content/50">USDC</span>
               </span>
             </div>
           </div>
 
           <div className="flex items-start gap-3 bg-primary/5 p-4 rounded-xl border border-primary/10">
             <BanknotesIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-            <p className="text-[10px] text-primary/70 leading-relaxed font-medium capitalize">
-              Your investment will be processed on-chain. ensure you have established a trustline for both USDC and{" "}
-              {asset.asset_code} before proceeding.
+            <p className="text-xs leading-relaxed text-primary/80">
+              This purchase runs on-chain. Add trustlines for USDC and {asset.asset_code} before you confirm.
             </p>
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button
-              className="btn btn-ghost flex-1 rounded-2xl font-bold uppercase tracking-widest text-[10px]"
-              onClick={onClose}
-              disabled={isPurchasing}
-            >
+            <button className="btn btn-ghost flex-1 rounded-2xl" onClick={onClose} disabled={isPurchasing}>
               Cancel
             </button>
             <button
-              className="btn btn-primary flex-[2] rounded-2xl gap-3 shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-xs"
+              className="btn btn-primary flex-[2] gap-3 rounded-2xl shadow-lg shadow-primary/20"
               onClick={handlePurchase}
               disabled={isPurchasing || isQuoting || !quote || Number(sharesAmount) > availableShares}
             >

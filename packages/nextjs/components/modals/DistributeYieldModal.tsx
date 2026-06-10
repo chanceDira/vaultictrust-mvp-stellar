@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { BanknotesIcon, CurrencyDollarIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { getExplorerTxUrl } from "~~/scaffold.config";
 import { depositYield, getContractIds, increaseAllowance } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
@@ -57,7 +57,7 @@ export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, public
         <div className="flex flex-col gap-1">
           <p className="font-bold">Yield Distributed!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -84,8 +84,8 @@ export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, public
       <div className="bg-base-100 border border-base-300 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="bg-base-200/50 p-6 border-b border-base-300 flex justify-between items-center text-error">
           <div>
-            <h2 className="text-xl font-black uppercase tracking-tighter italic">Distribute Yield</h2>
-            <p className="text-[10px] text-base-content/40 uppercase tracking-widest font-bold">
+            <h2 className="text-xl font-semibold">Distribute yield</h2>
+            <p className="text-sm text-base-content/50">
               {asset.asset_name} · {asset.asset_code}
             </p>
           </div>
@@ -139,7 +139,7 @@ export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, public
               Cancel
             </button>
             <button
-              className="btn btn-primary flex-[2] rounded-2xl gap-3 shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-xs"
+              className="btn btn-primary flex-[2] gap-3 rounded-2xl shadow-lg shadow-primary/20"
               onClick={handleDistribute}
               disabled={isProcessing || !usdcAmount}
             >

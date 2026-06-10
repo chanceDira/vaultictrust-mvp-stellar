@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ArrowTopRightOnSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { getExplorerTxUrl } from "~~/scaffold.config";
 import { tokenizeAsset } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/scaffold-eth";
@@ -79,7 +79,7 @@ export function TokenizeModal({
         <div className="flex flex-col gap-1">
           <p className="font-bold">{asset.asset_name} Initialized!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -103,10 +103,8 @@ export function TokenizeModal({
       <div className="bg-base-100 border border-base-300 rounded-2xl w-full max-w-3xl shadow-2xl overflow-y-auto max-h-[95vh]">
         <div className="flex justify-between items-start p-8 pb-6 border-b border-base-300">
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-tighter italic">Tokenize Asset</h2>
-            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold mt-1">
-              Initiate RWA Fractionalization
-            </p>
+            <h2 className="page-title text-2xl">Tokenize asset</h2>
+            <p className="section-label mt-1">Start fractional issuance</p>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-circle btn-sm ml-4 shrink-0" disabled={loading}>
             <XMarkIcon className="h-5 w-5" />
@@ -129,12 +127,12 @@ export function TokenizeModal({
               </div>
               <div>
                 <p className="text-xs text-base-content/40 uppercase tracking-widest">Category</p>
-                <p className="font-semibold text-sm mt-0.5">{asset.asset_category ?? "—"}</p>
+                <p className="font-semibold text-sm mt-0.5">{asset.asset_category ?? "N/A"}</p>
               </div>
               <div>
                 <p className="text-xs text-base-content/40 uppercase tracking-widest">Registered Valuation</p>
                 <p className="font-semibold text-sm mt-0.5 text-primary">
-                  {registrationValuationUsdc > 0 ? `$${registrationValuationUsdc.toLocaleString()} USDC` : "—"}
+                  {registrationValuationUsdc > 0 ? `$${registrationValuationUsdc.toLocaleString()} USDC` : "N/A"}
                 </p>
               </div>
             </div>
@@ -262,15 +260,11 @@ export function TokenizeModal({
         </div>
 
         <div className="flex gap-4 p-8 pt-4">
-          <button
-            className="btn btn-ghost flex-1 rounded-2xl font-black uppercase tracking-widest text-[10px]"
-            onClick={onClose}
-            disabled={loading}
-          >
+          <button className="btn btn-ghost flex-1 rounded-2xl" onClick={onClose} disabled={loading}>
             Cancel
           </button>
           <button
-            className="btn btn-primary flex-1 rounded-2xl gap-3 stellar-glow shadow-lg shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
+            className="btn btn-primary stellar-glow flex-1 gap-3 rounded-2xl shadow-lg shadow-primary/20"
             onClick={handleSubmit}
             disabled={loading || priceStroops <= 0n || totalSharesNum <= 0 || !isIssuerValid}
           >

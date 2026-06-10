@@ -13,8 +13,10 @@ const VaulticApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <div className={`flex flex-col min-h-screen premium-gradient transition-colors duration-500`}>
-        <GlobalKycBanner />
-        <Header />
+        <div className="sticky top-0 z-30 pt-2 backdrop-blur-md sm:pt-2.5">
+          <GlobalKycBanner />
+          <Header />
+        </div>
         <main className="relative flex flex-col flex-1">{children}</main>
         <Footer />
       </div>

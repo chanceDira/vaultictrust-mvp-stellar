@@ -7,18 +7,15 @@ import {
   ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
   BanknotesIcon,
-  ChartBarIcon,
   CheckBadgeIcon,
-  ClockIcon,
   CubeIcon,
-  WalletIcon,
 } from "@heroicons/react/24/outline";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
-import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
+import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
 import { useStellarHoldings } from "~~/hooks/stellar/useStellarHoldings";
-import { PROTOCOL_METADATA } from "~~/scaffold.config";
+import { getExplorerAssetUrl, getExplorerTxUrl } from "~~/scaffold.config";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   claimAllYield,
@@ -195,7 +192,7 @@ export default function InvestorPage() {
         <div className="flex flex-col gap-1">
           <p className="font-bold">Yield claimed!</p>
           <a
-            href={PROTOCOL_METADATA.EXPLORER_TX_URL(hash)}
+            href={getExplorerTxUrl(hash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-primary hover:underline flex items-center gap-1"
@@ -216,39 +213,27 @@ export default function InvestorPage() {
 
   return (
     <div className="flex flex-col grow min-h-screen">
-      <section className="px-4 py-8 md:py-12 max-w-5xl mx-auto w-full">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
-            <ChartBarIcon className="h-6 w-6 text-primary" />
+      <section className="mx-auto w-full max-w-5xl px-3 py-8 sm:px-4 md:py-12">
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="page-title">Investment portfolio</h1>
+            {isConnected && !isKycLoading && (
+              <KycStatusBadge
+                status={typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag}
+              />
+            )}
           </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-black text-base-content uppercase tracking-tighter">Investment Portfolio</h1>
-              {isConnected && !isKycLoading && (
-                <KycStatusBadge
-                  status={typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag}
-                />
-              )}
-            </div>
-            <p className="text-[10px] text-base-content/40 uppercase tracking-[0.2em] font-bold">
-              Manage Holdings & Claim Yield
-            </p>
-          </div>
+          <p className="section-label mt-1">Holdings and dividend claims</p>
         </div>
-        <p className="text-base-content/70 mb-8 max-w-2xl leading-relaxed">
-          Track your fractional real-world asset positions and manage automated yield distributions. Your dashboard for
-          liquidity in the African real economy.
+        <p className="page-subtitle mb-8 max-w-2xl">
+          View fractional positions, portfolio value, and claim USDC yield from tokenized assets.
         </p>
 
         {!isConnected ? (
-          <div className="rounded-3xl border border-dashed border-base-300 p-12 text-center bg-base-100 shadow-sm">
-            <WalletIcon className="h-16 w-16 text-base-content/20 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-base-content mb-2">Connect Your Wallet</h2>
-            <p className="text-base-content/60 mb-8 max-w-sm mx-auto">
-              Connect Freighter to view your tokenized holdings and claim accumulated dividends.
-            </p>
-            <StellarConnectButton />
-          </div>
+          <ConnectWalletPrompt
+            title="Connect your wallet"
+            description="Connect Freighter to view holdings and claim dividends tied to your Stellar address."
+          />
         ) : (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -258,7 +243,7 @@ export default function InvestorPage() {
                   <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets Held</span>
                 </div>
                 <p className="text-5xl font-black italic text-base-content leading-none">{enrichedHoldings.length}</p>
-                <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2">On-Chain Positions</p>
+                <p className="mt-2 text-sm text-primary/80">On-chain positions</p>
               </div>
 
               <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 md:col-span-2 flex flex-col justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -267,7 +252,7 @@ export default function InvestorPage() {
                     <BanknotesIcon className="h-4 w-4" />
                     <span className="text-[10px] uppercase tracking-[0.2em] font-black">Portfolio Valuation</span>
                   </div>
-                  {isYieldLoading && <span className="loading loading-spinner loading-xs text-primary" />}
+                  {isYieldLoading && <span className="loading loading-bars loading-xs text-primary" />}
                 </div>
                 <div className="flex items-end justify-between mt-3">
                   <p className="text-4xl font-black text-success italic leading-none">
@@ -298,11 +283,11 @@ export default function InvestorPage() {
                     disabled={isHoldingsLoading}
                   >
                     {isHoldingsLoading ? (
-                      <span className="loading loading-spinner loading-[10px]" />
+                      <span className="loading loading-bars loading-[10px]" />
                     ) : (
                       <ArrowPathIcon className="h-2.5 w-2.5" />
                     )}
-                    Sync Ledger
+                    Refresh
                   </button>
                 </div>
 
@@ -374,7 +359,7 @@ export default function InvestorPage() {
                               </p>
                               {holding.assetIssuer && (
                                 <a
-                                  href={`https://stellar.expert/explorer/testnet/asset/${holding.assetCode}-${holding.assetIssuer}`}
+                                  href={getExplorerAssetUrl(holding.assetCode, holding.assetIssuer)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-[9px] text-primary hover:underline flex items-center justify-end gap-1 mt-1 opacity-60"
@@ -392,9 +377,7 @@ export default function InvestorPage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
-                  <ClockIcon className="h-4 w-4" /> Payout Schedule
-                </h3>
+                <h3 className="text-sm font-semibold text-base-content">Dividends</h3>
                 <div className="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm">
                   <p className="font-bold text-base-content mb-4 text-sm">Accumulated Dividends</p>
 
@@ -439,7 +422,7 @@ export default function InvestorPage() {
                       ownership percentage.
                     </p>
                     <button
-                      className="btn btn-primary btn-md w-full gap-2 rounded-2xl shadow-lg shadow-primary/20 stellar-glow font-black uppercase tracking-widest"
+                      className="btn btn-primary btn-md stellar-glow w-full gap-2 rounded-2xl shadow-lg shadow-primary/20"
                       disabled={
                         yields.length === 0 ||
                         isClaiming ||
@@ -449,7 +432,7 @@ export default function InvestorPage() {
                       onClick={e => yields.length > 0 && handleClaimYield(e, yields[0].assetId, "All Assets")}
                     >
                       {isClaiming ? (
-                        <span className="loading loading-spinner loading-xs" />
+                        <span className="loading loading-bars loading-xs" />
                       ) : (
                         <BanknotesIcon className="h-5 w-5" />
                       )}
