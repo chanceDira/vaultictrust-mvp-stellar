@@ -8,7 +8,7 @@ import { BrandLogo } from "~~/components/BrandLogo";
 import { SwitchTheme } from "~~/components/SwitchTheme";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { useOutsideClick } from "~~/hooks/scaffold-eth/useOutsideClick";
+import { useOutsideClick } from "~~/hooks/vaultic/useOutsideClick";
 import { ADMIN_ADDRESSES } from "~~/scaffold.config";
 
 type HeaderMenuLink = {

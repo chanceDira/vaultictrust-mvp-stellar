@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { NextPage } from "next";
 import { DocArticleFooter, DocArticleHeader } from "~~/components/ui/DocArticleHeader";
-import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
+import { getMetadata } from "~~/utils/vaultic/getMetadata";
 
 export const metadata = getMetadata({
   title: "Litepaper",

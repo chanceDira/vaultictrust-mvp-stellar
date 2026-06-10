@@ -22,7 +22,7 @@ import {
   purchaseWholeAsset,
 } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 export default function MarketplacePage() {
   const { isConnected, publicKey, connect } = useStellarWallet();

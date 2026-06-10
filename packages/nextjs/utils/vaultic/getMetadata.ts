@@ -51,6 +51,7 @@ export const getMetadata = ({
           type: "image/jpeg",
         },
       ],
+      shortcut: "/favicon.ico",
     },
   };
 };

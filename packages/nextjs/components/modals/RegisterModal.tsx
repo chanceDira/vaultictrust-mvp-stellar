@@ -11,7 +11,7 @@ import {
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { registerAsset } from "~~/services/stellar/sorobanService";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 export function RegisterModal({
   onClose,

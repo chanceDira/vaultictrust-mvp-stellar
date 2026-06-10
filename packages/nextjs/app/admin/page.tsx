@@ -41,7 +41,7 @@ import {
   sweepFees,
 } from "~~/services/stellar/sorobanService";
 import { AssetStateKey, OnChainAsset, UserTab } from "~~/types/stellar";
-import { notification } from "~~/utils/scaffold-eth";
+import { notification } from "~~/utils/vaultic";
 
 const STATE_CONFIG: Record<AssetStateKey, { label: string; color: string; icon: React.ElementType }> = {
   Pending: { label: "Pending", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20", icon: ClockIcon },
@@ -472,23 +472,10 @@ export default function AdminPage() {
     try {
       const cid = foundUser.metadata_uri;
       const cidClean = cid.replace("ipfs://", "");
-      let ipfsPayload: any;
-
-      try {
-        const gatewayUrl = `https://ipfs.io/ipfs/${cidClean}`;
-        const response = await fetch(gatewayUrl);
-        if (!response.ok) throw new Error(`Gateway returned ${response.status}`);
-        ipfsPayload = await response.json();
-      } catch {
-        const mockKey = `vltc_mock_${cid}`;
-        const mockData = localStorage.getItem(mockKey);
-        if (mockData) {
-          console.warn("[ADMIN] IPFS Fetch failed, loading from local mock cache:", mockKey);
-          ipfsPayload = JSON.parse(mockData);
-        } else {
-          throw new Error("Unable to retrieve document from IPFS or local cache. Ensure the file is pinned.");
-        }
-      }
+      const gatewayUrl = `https://ipfs.io/ipfs/${cidClean}`;
+      const response = await fetch(gatewayUrl);
+      if (!response.ok) throw new Error(`Gateway returned ${response.status}`);
+      const ipfsPayload: any = await response.json();
 
       const encryptedData = ipfsPayload?.encryptedDocument ?? ipfsPayload;
       if (ipfsPayload?.applicant) {
