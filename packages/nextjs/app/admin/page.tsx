@@ -25,6 +25,7 @@ import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ADMIN_ADDRESSES, getExplorerTxUrl } from "~~/scaffold.config";
 import { decryptFileAsAdmin } from "~~/services/stellar/cryptoService";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
+import { fetchFromIpfs, toIpfsGatewayUrl } from "~~/services/stellar/ipfsService";
 import {
   approveAsset,
   fetchAdmins,
@@ -115,7 +116,7 @@ function AssetRow({
 
           {asset.metadata_uri && (
             <a
-              href={asset.metadata_uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")}
+              href={toIpfsGatewayUrl(asset.metadata_uri)}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-primary/70 hover:text-primary mt-1.5 inline-block underline underline-offset-2 break-all"
@@ -470,12 +471,7 @@ export default function AdminPage() {
     setIsDecrypting(true);
     const notifId = notification.loading("Decrypting document via Vaultic Org Key...");
     try {
-      const cid = foundUser.metadata_uri;
-      const cidClean = cid.replace("ipfs://", "");
-      const gatewayUrl = `https://ipfs.io/ipfs/${cidClean}`;
-      const response = await fetch(gatewayUrl);
-      if (!response.ok) throw new Error(`Gateway returned ${response.status}`);
-      const ipfsPayload: any = await response.json();
+      const ipfsPayload: any = await fetchFromIpfs(foundUser.metadata_uri);
 
       const encryptedData = ipfsPayload?.encryptedDocument ?? ipfsPayload;
       if (ipfsPayload?.applicant) {
