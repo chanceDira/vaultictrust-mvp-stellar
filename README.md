@@ -1,4 +1,4 @@
-# Vaultic Trust — Stellar Edition
+# VTrust Africa — Stellar Edition
 
 **Tokenize Africa's real economy.** Compliant RWA tokenization for Rwanda and Africa. Fractionalize real estate, commodities, carbon credits, and infrastructure into programmable, liquid digital assets on the **Stellar Network**.
 
@@ -23,7 +23,7 @@ Contract IDs are also configured in `packages/nextjs/scaffold.config.ts`.
 
 ## Architecture
 
-Vaultic Trust uses a Stellar-native hybrid model:
+VTrust Africa uses a Stellar-native hybrid model:
 
 - **Soroban contracts** for KYC gating, asset lifecycle, investment pools, and dividends.
 - **Native Stellar assets** for fractional shares (trustlines, not custom token contracts).
@@ -111,6 +111,6 @@ Yield rounds and pro-rata USDC claims for shareholders.
 
 ---
 
-Vaultic Trust — tokenizing Africa's real economy with trust, transparency, and traceability on Stellar.
+VTrust Africa — tokenizing Africa's real economy with trust, transparency, and traceability on Stellar.
 
 @ChanceDira && @0xJonaseb11

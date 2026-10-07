@@ -98,7 +98,7 @@ const Home: NextPage = () => {
               Tokenize Africa&apos;s <span className="text-primary">Real Economy</span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-base-content/80 sm:mt-8 sm:text-lg lg:max-w-4xl">
-              Vaultic Trust is the compliant RWA tokenization layer for Rwanda and Africa. Fractionalize real estate,
+              VTrust Africa is the compliant RWA tokenization layer for Rwanda and Africa. Fractionalize real estate,
               commodities, carbon credits, and infrastructure into programmable, liquid digital assets, backed by
               verifiable proofs and powered by <span className="font-semibold text-primary">Stellar</span>.
             </p>

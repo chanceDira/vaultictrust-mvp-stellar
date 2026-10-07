@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════════╗
-║              VAULTIC TRUST — STELLAR DEPLOYMENT              ║
+║              VTrust Africa — STELLAR DEPLOYMENT              ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ Session Date: 2026-04-20                                     ║
 ║ Network:      Stellar Testnet                                ║

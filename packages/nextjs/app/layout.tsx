@@ -11,7 +11,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata = getMetadata({
-  title: "Vaultic Trust",
+  title: "VTrust Africa",
   description:
     "Tokenize and invest in real-world assets on Stellar. RWA platform for Rwanda and Africa with on-chain registration and KYC.",
 });

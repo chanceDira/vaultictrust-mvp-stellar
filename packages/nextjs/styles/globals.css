@@ -14,7 +14,7 @@
     dark --prefersdark;
 }
 
-/* ─── Vaultic Trust — Stellar Light Theme ─────────────────────────────────── */
+/* ─── VTrust Africa — Stellar Light Theme ─────────────────────────────────── */
 @plugin "daisyui/theme" {
   name: "light";
 
@@ -46,7 +46,7 @@
   --tt-tailw: 6px;
 }
 
-/* ─── Vaultic Trust — Stellar Dark Theme ──────────────────────────────────── */
+/* ─── VTrust Africa — Stellar Dark Theme ──────────────────────────────────── */
 @plugin "daisyui/theme" {
   name: "dark";
 

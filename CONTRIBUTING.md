@@ -1,10 +1,10 @@
-# Contributing to Vaultic Trust
+# Contributing to VTrust Africa
 
-Thank you for helping improve Vaultic Trust. This guide covers how we work on the repo and what we expect in contributions.
+Thank you for helping improve VTrust Africa. This guide covers how we work on the repo and what we expect in contributions.
 
 ## About the project
 
-Vaultic Trust is a real-world asset tokenization platform for Rwanda and Africa, built on Stellar with Soroban smart contracts and a Next.js frontend.
+VTrust Africa is a real-world asset tokenization platform for Rwanda and Africa, built on Stellar with Soroban smart contracts and a Next.js frontend.
 
 Read the [README](README.md) for architecture, deployment, and local setup.
 
@@ -64,4 +64,4 @@ Soroban contracts live in `packages/soroban-contracts/`. See the README for depl
 
 ## Questions
 
-For product, partnership, or support inquiries, use the contact email on the app's Support page (`/support`) or visit [vaultictrust.com](https://vaultictrust.com).
+For product, partnership, or support inquiries, use the contact email on the app's Support page (`/support`) or visit [vtrust.africa](https://vtrust.africa).

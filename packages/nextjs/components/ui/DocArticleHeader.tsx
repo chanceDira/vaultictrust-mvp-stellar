@@ -9,7 +9,7 @@ type DocArticleHeaderProps = {
 export function DocArticleHeader({ title, meta }: DocArticleHeaderProps) {
   return (
     <div className="mb-6">
-      <p className="text-sm font-medium text-primary">Vaultic Trust</p>
+      <p className="text-sm font-medium text-primary">VTrust Africa</p>
       <h1 className="page-title mt-1">{title}</h1>
       {meta && <p className="mt-1 text-sm text-base-content/50">{meta}</p>}
     </div>

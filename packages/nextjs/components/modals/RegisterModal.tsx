@@ -77,7 +77,7 @@ export function RegisterModal({
           currency: "USDC",
           assetCode: code.toUpperCase(),
           createdAt: new Date().toISOString(),
-          platform: "Vaultic Trust v1",
+          platform: "VTrust Africa v1",
         },
         `metadata_${code.toUpperCase()}.json`,
       );

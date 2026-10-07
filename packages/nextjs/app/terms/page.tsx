@@ -6,7 +6,7 @@ import { getMetadata } from "~~/utils/vaultic/getMetadata";
 export const metadata = getMetadata({
   title: "Terms of Service",
   description:
-    "Terms of Service for Vaultic Trust. How transactions work, wallet confirmations, and your rights when using the platform.",
+    "Terms of Service for VTrust Africa. How transactions work, wallet confirmations, and your rights when using the platform.",
 });
 
 const TermsPage: NextPage = () => {
@@ -16,7 +16,7 @@ const TermsPage: NextPage = () => {
         <DocArticleHeader title="Terms of Service" meta="Last updated: April 2026" />
 
         <p className="text-base leading-relaxed text-base-content/85">
-          By using Vaultic Trust (&quot;Platform&quot;, &quot;we&quot;, &quot;us&quot;) you agree to these terms. The
+          By using VTrust Africa (&quot;Platform&quot;, &quot;we&quot;, &quot;us&quot;) you agree to these terms. The
           Platform is a decentralized application for tokenizing real-world assets on the{" "}
           <strong>Stellar Network</strong>. You are responsible for compliance with local laws and for the security of
           your wallet.
@@ -24,7 +24,7 @@ const TermsPage: NextPage = () => {
 
         <h2 className="mt-10 text-xl font-semibold text-base-content">1. How the Platform Works</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
-          Vaultic Trust connects asset owners with investors. Asset owners list real-world assets and choose whole-asset
+          VTrust Africa connects asset owners with investors. Asset owners list real-world assets and choose whole-asset
           sale or fractional tokenization using Stellar native assets. Investors browse the marketplace and purchase
           whole assets or shares. Ownership and funding progress are recorded on-chain. Payments use a designated
           payment token (for example, USDC on Stellar). Material state changes run through Soroban smart contracts or

@@ -6,7 +6,7 @@ import { getMetadata } from "~~/utils/vaultic/getMetadata";
 export const metadata = getMetadata({
   title: "Litepaper",
   description:
-    "Vaultic Trust litepaper: RWA tokenization for Rwanda and Africa on Stellar. Real estate, commodities, and infrastructure.",
+    "VTrust Africa litepaper: RWA tokenization for Rwanda and Africa on Stellar. Real estate, commodities, and infrastructure.",
 });
 
 const LitepaperPage: NextPage = () => {
@@ -17,7 +17,7 @@ const LitepaperPage: NextPage = () => {
 
         <div className="prose prose-neutral mt-4 max-w-none">
           <p className="text-base leading-relaxed text-base-content/85">
-            Vaultic Trust is a Real World Asset (RWA) tokenization platform for Rwanda and Africa. This document
+            VTrust Africa is a Real World Asset (RWA) tokenization platform for Rwanda and Africa. This document
             outlines the vision, architecture, and roadmap for listing and fractionalizing assets with on-chain records,
             powered by the <strong>Stellar Network</strong>.
           </p>
@@ -89,8 +89,8 @@ const LitepaperPage: NextPage = () => {
           </ul>
           <p className="mt-4 text-base leading-relaxed text-base-content/85">
             See{" "}
-            <a href="https://vaultictrust.com" target="_blank" rel="noreferrer" className="link link-primary">
-              vaultictrust.com
+            <a href="https://vtrust.africa" target="_blank" rel="noreferrer" className="link link-primary">
+              vtrust.africa
             </a>{" "}
             for updates.
           </p>

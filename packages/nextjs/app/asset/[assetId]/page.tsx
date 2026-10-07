@@ -92,7 +92,7 @@ export default function AssetDetailsPage() {
         code="404"
         variant="404"
         title="Asset not found"
-        description="This asset does not exist on Vaultic Trust or may have been removed."
+        description="This asset does not exist on VTrust Africa or may have been removed."
         actions={[
           { label: "Marketplace", href: "/marketplace", primary: true },
           { label: "Go home", href: "/" },

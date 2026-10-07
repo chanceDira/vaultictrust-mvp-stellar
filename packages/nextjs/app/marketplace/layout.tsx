@@ -2,7 +2,7 @@ import { getMetadata } from "~~/utils/vaultic/getMetadata";
 
 export const metadata = getMetadata({
   title: "Marketplace",
-  description: "Browse tokenized real-world assets and invest on Vaultic Trust.",
+  description: "Browse tokenized real-world assets and invest on VTrust Africa.",
 });
 
 export default function MarketplaceLayout({ children }: { children: React.ReactNode }) {

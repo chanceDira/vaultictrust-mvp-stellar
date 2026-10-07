@@ -107,7 +107,7 @@ export function FeaturedAssetsShowcase() {
           <span className="live-showcase__live-dot" aria-hidden />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Live marketplace</p>
-            <p className="mt-0.5 text-sm text-base-content/55">Approved listings from Vaultic Trust</p>
+            <p className="mt-0.5 text-sm text-base-content/55">Approved listings from VTrust Africa</p>
           </div>
         </div>
         <Link

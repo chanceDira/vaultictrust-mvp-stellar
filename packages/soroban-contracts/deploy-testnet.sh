@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Vaultic Trust — Soroban Testnet Deployment Script
+# VTrust Africa — Soroban Testnet Deployment Script
 # =============================================================================
 # Prerequisites:
 #   1. Install stellar CLI:  cargo install --locked stellar-cli --features opt
@@ -31,7 +31,7 @@ CONFIG_TS="$CONTRACT_DIR/../nextjs/scaffold.config.ts"
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║   Vaultic Trust — Soroban Testnet Deployment     ║"
+echo "║   VTrust Africa — Soroban Testnet Deployment     ║"
 echo "╚══════════════════════════════════════════════════╝"
 
 # ---------------------------------------------------------------------------- #

@@ -5,7 +5,7 @@ import { getMetadata } from "~~/utils/vaultic/getMetadata";
 
 export const metadata = getMetadata({
   title: "Support",
-  description: "Help with Vaultic Trust. FAQ, transaction flows, wallet setup, and how to contact the team.",
+  description: "Help with VTrust Africa. FAQ, transaction flows, wallet setup, and how to contact the team.",
 });
 
 const SUPPORT_LINKS = [
@@ -28,8 +28,8 @@ const FAQ = [
     a: "Approve the trustline prompt first, wait for it to confirm, then submit the purchase. Keep at least 2 to 3 XLM in your wallet to cover network reserves for new trustlines.",
   },
   {
-    q: "Which network does Vaultic Trust use?",
-    a: "Vaultic Trust runs on the Stellar network. Connect Freighter and approve transactions when prompted.",
+    q: "Which network does VTrust Africa use?",
+    a: "VTrust Africa runs on the Stellar network. Connect Freighter and approve transactions when prompted.",
   },
   {
     q: "Do I need to create an account?",
@@ -84,8 +84,8 @@ const SupportPage: NextPage = () => {
             chancedesire60@gmail.com
           </a>
           . You can also find updates on{" "}
-          <a href="https://vaultictrust.com" target="_blank" rel="noreferrer" className="link link-primary">
-            vaultictrust.com
+          <a href="https://vtrust.africa" target="_blank" rel="noreferrer" className="link link-primary">
+            vtrust.africa
           </a>
           . We do not provide support through unofficial accounts. Verify links before sharing wallet details.
         </p>

@@ -54,7 +54,7 @@ export const Footer = () => {
       <div className="border-t border-base-300/60 bg-base-100/40">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8 lg:px-12">
           <p className="text-center text-xs text-base-content/45 sm:text-left">
-            © {new Date().getFullYear()} Vaultic Trust ·{" "}
+            © {new Date().getFullYear()} VTrust Africa ·{" "}
             <a
               href="https://stellar.org"
               target="_blank"

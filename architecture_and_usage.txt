@@ -1,10 +1,10 @@
-VAULTIC TRUST — STELLAR EDITION
+VTrust Africa — STELLAR EDITION
 SYSTEM ARCHITECTURE & USAGE GUIDE
 ================================================================================
 
 1. INTRODUCTION
 --------------------------------------------------------------------------------
-Vaultic Trust is a Real-World Asset (RWA) tokenization platform designed for the
+VTrust Africa is a Real-World Asset (RWA) tokenization platform designed for the
 Stellar Network. It enables the fractionalization of assets such as real estate,
 commodities, and carbon credits into liquid, programmable digital tokens.
 
@@ -35,7 +35,7 @@ The system is built using modern, industry-standard technologies:
 
 3. SYSTEM ARCHITECTURE
 --------------------------------------------------------------------------------
-Vaultic Trust uses a "Hybrid Native" architecture. This means we combine the 
+VTrust Africa uses a "Hybrid Native" architecture. This means we combine the 
 best of both worlds on Stellar:
 
 A. Stellar Native Assets (The Token Layer):
@@ -97,7 +97,7 @@ The system includes several "Hardened" features for production reliability:
 - Success-First Polling: Prioritizes ledger finality over transient API warnings.
 
 --------------------------------------------------------------------------------
-Vaultic Trust — Empowering Africa's Financial Future.
+VTrust Africa — Empowering Africa's Financial Future.
 
 ---------------------
 @0xJonaseb11

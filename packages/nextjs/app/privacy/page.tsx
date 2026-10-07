@@ -6,7 +6,7 @@ import { getMetadata } from "~~/utils/vaultic/getMetadata";
 export const metadata = getMetadata({
   title: "Privacy Policy",
   description:
-    "Privacy Policy for Vaultic Trust. How we handle wallet connections, chain data, and your privacy when using the platform.",
+    "Privacy Policy for VTrust Africa. How we handle wallet connections, chain data, and your privacy when using the platform.",
 });
 
 const PrivacyPage: NextPage = () => {
@@ -16,13 +16,13 @@ const PrivacyPage: NextPage = () => {
         <DocArticleHeader title="Privacy Policy" meta="Last updated: April 2026" />
 
         <p className="text-base leading-relaxed text-base-content/85">
-          Vaultic Trust (&quot;we&quot;, &quot;us&quot;) respects your privacy. This policy describes how we handle
-          information in connection with the Vaultic Trust web application and related services.
+          VTrust Africa (&quot;we&quot;, &quot;us&quot;) respects your privacy. This policy describes how we handle
+          information in connection with the VTrust Africa web application and related services.
         </p>
 
         <h2 className="mt-10 text-xl font-semibold text-base-content">1. Decentralized and on-chain nature</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
-          Vaultic Trust is a decentralized application. Asset ownership, tokenization status, and investment data are
+          VTrust Africa is a decentralized application. Asset ownership, tokenization status, and investment data are
           recorded on public blockchains, including the <strong>Stellar Network</strong>. Once a transaction is
           confirmed, the data it writes is public and persistent. We do not control the blockchain or third-party
           wallets. We provide an interface to interact with Soroban smart contracts and native Stellar assets.

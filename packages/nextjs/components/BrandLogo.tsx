@@ -82,7 +82,7 @@ export function BrandLogo({
       className={`inline-flex min-w-0 max-w-full shrink overflow-hidden transition-opacity hover:opacity-90 ${
         compact ? "max-[374px]:shrink-0 max-[374px]:overflow-visible" : ""
       }`}
-      aria-label="Vaultic Trust home"
+      aria-label="VTrust Africa home"
     >
       {content}
     </Link>
