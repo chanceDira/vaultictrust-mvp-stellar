@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -38,11 +39,14 @@ export function BrandLogo({
 }: BrandLogoProps) {
   const height = logoHeights[size];
   const wordmarkClass = compact ? compactWordmarkScale[size] : wordmarkScale[size];
+  const { resolvedTheme } = useTheme();
+
+  const isDarkMode = resolvedTheme === "dark";
 
   const content = (
     <div className={`flex min-w-0 items-center gap-1.5 sm:gap-3 ${compact ? "max-[374px]:gap-0" : ""} ${className}`}>
       <Image
-        src="/logo.jpeg"
+        src={isDarkMode ? "/logo-dark.jpeg" : "/logo.jpeg"}
         alt=""
         width={height}
         height={height}
@@ -63,7 +67,7 @@ export function BrandLogo({
                 compact ? "max-[374px]:overflow-visible max-[374px]:text-clip" : "truncate"
               }`}
             >
-              Vaultic<span className="brand-trust">Trust</span>
+              VTRUST<span className="brand-trust">AFRICA</span>
             </span>
           )}
           {showTagline && (
