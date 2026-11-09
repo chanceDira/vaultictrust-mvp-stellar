@@ -1,10 +1,10 @@
 import { getNetworkPassphrase, getSorobanRpcUrl } from "./horizonClient";
+import type { SignedTransaction } from "@stellar/freighter-api";
 import {
   Address,
   Asset,
   BASE_FEE,
   Contract,
-  Keypair,
   Operation,
   TransactionBuilder,
   nativeToScVal,
@@ -12,17 +12,22 @@ import {
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
-import type { SignedTransaction } from "@stellar/freighter-api";
-import type { HorizonAssetBalance } from "~~/types/horizon";
 import vaulticConfig, { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
+import type { HorizonAssetBalance } from "~~/types/horizon";
 
 let _rpcServer: rpc.Server | null = null;
 
 type TxGuard = { begin: () => boolean; end: () => void };
 let _legacyLock = false;
 let _txGuard: TxGuard = {
-  begin: () => { if (_legacyLock) return false; _legacyLock = true; return true; },
-  end: () => { _legacyLock = false; },
+  begin: () => {
+    if (_legacyLock) return false;
+    _legacyLock = true;
+    return true;
+  },
+  end: () => {
+    _legacyLock = false;
+  },
 };
 
 export function setTxGuard(guard: TxGuard) {
@@ -61,13 +66,13 @@ export async function callContract({
   const networkPassphrase = getNetworkPassphrase();
   const contract = new Contract(contractId);
 
-  const acquired = _txGuard.begin(); if (!acquired) {
+  const acquired = _txGuard.begin();
+  if (!acquired) {
     throw new Error("a transaction is already in-flight");
   }
 
   const RELIABLE_FEE = "1000";
 
-  
   try {
     const account = await server.getAccount(callerPublicKey);
 
@@ -143,8 +148,7 @@ export async function callContract({
       try {
         const rawResult = (pollResult as rpc.Api.GetSuccessfulTransactionResponse).returnValue;
         if (rawResult) result = rawResult;
-      } catch (e) {
-      }
+      } catch (e) {}
       return { result, hash: response.hash };
     }
 
@@ -164,7 +168,8 @@ export async function callContract({
 }
 
 export async function setupUsdcTrustline(callerPublicKey: string) {
-  const acquired = _txGuard.begin(); if (!acquired) {
+  const acquired = _txGuard.begin();
+  if (!acquired) {
     throw new Error("a transaction is already in-flight");
   }
 
@@ -173,7 +178,6 @@ export async function setupUsdcTrustline(callerPublicKey: string) {
   const networkPassphrase = getNetworkPassphrase();
 
   const RELIABLE_FEE = "1000";
-  
 
   try {
     const account = await horizon.loadAccount(callerPublicKey);
@@ -217,7 +221,9 @@ export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{
     const account = await horizon.loadAccount(publicKey);
 
     const usdc = account.balances.find(
-      (b) => (b as HorizonAssetBalance).asset_code === TESTNET_USDC_ASSET.code && (b as HorizonAssetBalance).asset_issuer === TESTNET_USDC_ASSET.issuer,
+      b =>
+        (b as HorizonAssetBalance).asset_code === TESTNET_USDC_ASSET.code &&
+        (b as HorizonAssetBalance).asset_issuer === TESTNET_USDC_ASSET.issuer,
     ) as HorizonAssetBalance | undefined;
 
     if (!usdc) {
@@ -320,6 +326,8 @@ const ERROR_MAP: Record<string, string> = {
   "Error(Contract, #1)": "Protocol State Conflict: Action currently restricted.",
 };
 
+const SIM_SOURCE_ACCOUNT_ID = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+
 async function simulateReadCall({
   contractId,
   method,
@@ -332,17 +340,16 @@ async function simulateReadCall({
   const server = getRpcServer();
   const networkPassphrase = getNetworkPassphrase();
 
-  const dummyKeypair = Keypair.random();
   type SdkAccount = ConstructorParameters<typeof TransactionBuilder>[0];
-  const dummyAccount = await server.getAccount(dummyKeypair.publicKey()).catch(() => ({
-    accountId: () => dummyKeypair.publicKey(),
+  const simSource: SdkAccount = {
+    accountId: () => SIM_SOURCE_ACCOUNT_ID,
     sequenceNumber: () => "0",
     incrementSequenceNumber: () => {},
     sequence: "0",
-  }) as unknown as SdkAccount);
+  } as unknown as SdkAccount;
 
   const contract = new Contract(contractId);
-  const tx = new TransactionBuilder(dummyAccount, {
+  const tx = new TransactionBuilder(simSource, {
     fee: BASE_FEE,
     networkPassphrase,
   })
@@ -357,7 +364,7 @@ async function simulateReadCall({
 
   try {
     return (simResult as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
-  } catch (xdrErr: any) {
+  } catch {
     return null;
   }
 }
