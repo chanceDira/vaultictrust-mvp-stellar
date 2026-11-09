@@ -96,5 +96,5 @@ jobs:
 
       - name: Verify lockfile consistency
         run: |
-          yarn install --immutable --immutable-cache
+          yarn install --immutable
           git diff --exit-code yarn.lock || (echo "yarn.lock out of sync" && exit 1)

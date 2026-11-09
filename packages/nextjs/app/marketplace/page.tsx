@@ -12,7 +12,7 @@ import {
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
-import { useAssets, useTotalAssets, PAGE_SIZE } from "~~/hooks/vaultic/useAssets";
+import { PAGE_SIZE, useAssets, useTotalAssets } from "~~/hooks/vaultic/useAssets";
 import { useChainData } from "~~/hooks/vaultic/useChainData";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { getContractIds, purchaseWholeAsset } from "~~/services/stellar/sorobanService";

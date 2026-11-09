@@ -31,11 +31,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
     return pendingOps.current.has(operationId);
   }, []);
 
-  return (
-    <TransactionContext.Provider value={{ beginTx, endTx, isTxPending }}>
-      {children}
-    </TransactionContext.Provider>
-  );
+  return <TransactionContext.Provider value={{ beginTx, endTx, isTxPending }}>{children}</TransactionContext.Provider>;
 }
 
 export function useTransaction() {
