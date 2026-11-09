@@ -5,7 +5,6 @@ use soroban_sdk::{
     vec,
 };
 
-
 mod registry {
     soroban_sdk::contractimport!(
         file = "../../target/wasm32-unknown-unknown/release/vaultic_asset_registry.wasm"
@@ -18,33 +17,28 @@ mod user_registry {
     );
 }
 
-
-/* @notice Per-asset investment pool state for the current offering round.
- * @notice Hybrid model: USDC payments tracked on-contract, RWA distribution via Native Stellar Asset.
- */
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct AssetInvestmentPool {
-    /* @notice Total fractional shares issued (matches native asset supply). */
+    
     pub total_shares: i128,
-    /* @notice Shares sold in current round. */
+    
     pub sold_shares: i128,
-    /* @notice USDC price per share (7 decimal places). */
+    
     pub price_per_share: i128,
-    /* @notice Max shares an investor can hold (0 = uncapped). */
+    
     pub investor_cap: i128,
-    /* @notice Stellar Native Asset issuer account for the RWA token. */
+    
     pub rwa_issuer: Address,
-    /* @notice Stellar Native Asset code (e.g. "VTGOLD"). */
+    
     pub rwa_asset_code: soroban_sdk::String,
-    /* @notice Whether this offering round is fully subscribed. */
+    
     pub is_fully_subscribed: bool,
-    /* @notice Net proceeds collected from investors (after fee deduction). */
+    
     pub proceeds_collected: i128,
-    /* @notice Net proceeds already withdrawn by asset owner. */
+    
     pub proceeds_withdrawn: i128,
 }
-
 
 #[contracttype]
 pub enum DataKey {
@@ -60,7 +54,6 @@ pub enum DataKey {
     InvestorList(u32),
 }
 
-
 #[contract]
 pub struct VaulticInvestmentManager;
 
@@ -69,15 +62,7 @@ const BPS_DENOMINATOR: i128 = 10_000;
 #[contractimpl]
 impl VaulticInvestmentManager {
 
-    /* @notice Initializes the investment manager. Must be called exactly once.
-     * @param env The Soroban environment.
-     * @param admins A vector of administrative addresses.
-     * @param registry The address of the Vaultic Asset Registry contract.
-     * @param user_registry The address of the Vaultic User Registry contract.
-     * @param payment_token The USDC token contract address.
-     * @param fee_treasury The address where protocol fees are collected.
-     * @param protocol_fee_bps The protocol fee in basis points (e.g., 250 for 2.5%).
-     */
+    
     pub fn initialize(
         env: Env,
         admins: Vec<Address>,
@@ -105,7 +90,6 @@ impl VaulticInvestmentManager {
         env.storage().instance().set(&DataKey::AccumulatedFees, &0i128);
     }
 
-
     pub fn set_protocol_fee(env: Env, caller: Address, new_fee_bps: i128) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
@@ -127,11 +111,7 @@ impl VaulticInvestmentManager {
         env.storage().instance().set(&DataKey::FeeTreasury, &new_treasury);
     }
 
-    /* @notice Transfers administrative power to a new set of addresses. Admin only.
-     * @param env The Soroban environment.
-     * @param caller The address of the current administrator.
-     * @param new_admins The new vector of administrative addresses.
-     */
+    
     pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -145,11 +125,7 @@ impl VaulticInvestmentManager {
         env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    /* @notice Upgrades the contract WASM. Admin only.
-     * @param env The Soroban environment.
-     * @param caller The address of the administrator.
-     * @param new_wasm_hash The hash of the new WASM binary.
-     */
+    
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
@@ -159,21 +135,11 @@ impl VaulticInvestmentManager {
         env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 
-
     pub fn get_admins(env: Env) -> Vec<Address> {
         env.storage().instance().get(&DataKey::Admins).expect("not initialized")
     }
 
-    /* @notice Opens an investment pool for a FRACTIONAL asset. Admin only.
-     * @param env The Soroban environment.
-     * @param caller The administrator opening the pool.
-     * @param asset_id The ID of the asset from the Registry.
-     * @param total_shares The total number of shares to offer.
-     * @param price_per_share The price per share in USDC (7 decimal precision).
-     * @param investor_cap The maximum number of shares per investor (0 for uncapped).
-     * @param rwa_issuer The Stellar issuer account address for the native asset.
-     * @param rwa_asset_code The Stellar asset code (e.g. VTGOLD).
-     */
+    
     pub fn tokenize_asset(
         env: Env,
         caller: Address,
@@ -235,13 +201,7 @@ impl VaulticInvestmentManager {
         env.events().publish((symbol_short!("tokenized"), asset_id, rwa_issuer), total_shares);
     }
 
-
-    /* @notice Purchases fractional shares of an asset using USDC.
-     * @param env The Soroban environment.
-     * @param investor The address of the investor.
-     * @param asset_id The ID of the asset pool.
-     * @param share_amount The number of shares to purchase.
-     */
+    
     pub fn purchase_shares(env: Env, investor: Address, asset_id: u32, share_amount: i128) {
         investor.require_auth();
 
@@ -359,12 +319,7 @@ impl VaulticInvestmentManager {
         );
     }
 
-
-    /* @notice Purchases a WHOLE_OWNERSHIP asset for its full valuation.
-     * @param env The Soroban environment.
-     * @param buyer The address of the buyer.
-     * @param asset_id The ID of the asset record.
-     */
+    
     pub fn purchase_whole_asset(env: Env, buyer: Address, asset_id: u32) {
         buyer.require_auth();
 
@@ -424,11 +379,7 @@ impl VaulticInvestmentManager {
         );
     }
 
-
-    /* @notice Withdraws accumulated net proceeds to the registered asset owner.
-     * @param env The Soroban environment.
-     * @param asset_id The ID of the asset pool.
-     */
+    
     pub fn withdraw_proceeds(env: Env, asset_id: u32) {
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
         let registry_client = registry::Client::new(&env, &registry_addr);
@@ -460,10 +411,7 @@ impl VaulticInvestmentManager {
         );
     }
 
-    /* @notice Sweeps accumulated protocol fees to the fee treasury. Admin only.
-     * @param env The Soroban environment.
-     * @param caller The administrator sweeping the fees.
-     */
+    
     pub fn sweep_fees(env: Env, caller: Address) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
@@ -485,7 +433,6 @@ impl VaulticInvestmentManager {
 
         env.events().publish((symbol_short!("sweep"),), fees);
     }
-
 
     pub fn relist_asset(
         env: Env,
@@ -511,7 +458,6 @@ impl VaulticInvestmentManager {
         if caller != asset.asset_owner {
             panic!("not asset owner");
         }
-
 
         env.authorize_as_current_contract(vec![
             &env,
@@ -555,7 +501,6 @@ impl VaulticInvestmentManager {
         );
     }
 
-
     pub fn get_pool(env: Env, asset_id: u32) -> AssetInvestmentPool {
         env.storage().persistent().get(&DataKey::Pool(asset_id)).expect("not found")
     }
@@ -595,5 +540,202 @@ impl VaulticInvestmentManager {
 
     pub fn accumulated_fees(env: Env) -> i128 {
         env.storage().instance().get(&DataKey::AccumulatedFees).unwrap_or(0)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use soroban_sdk::{
+        testutils::Address as _,
+        Env, String,
+    };
+
+    #[contract]
+    struct MockUserRegistry;
+    #[contractimpl]
+    impl MockUserRegistry {
+        pub fn is_verified(_env: Env, _user: Address) -> bool {
+            true
+        }
+    }
+
+    #[contract]
+    struct MockAssetRegistry;
+    #[contractimpl]
+    impl MockAssetRegistry {
+        pub fn record_tokenization(_env: Env, _asset_id: u32, _rwa_issuer: Address, _total_shares: i128, _price_per_share: i128) {}
+        pub fn record_shares_sold(_env: Env, _asset_id: u32, _share_amount: i128) {}
+        pub fn close_asset(_env: Env, _asset_id: u32, _caller: Address) {}
+        pub fn relist_asset(_env: Env, _asset_id: u32, _valuation: i128, _metadata_uri: String) {}
+        pub fn get_relist_count(_env: Env, _asset_id: u32) -> u32 { 1 }
+    }
+
+    #[contract]
+    struct MockToken;
+    #[contractimpl]
+    impl MockToken {
+        pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: i128) {}
+        pub fn balance(_env: Env, _addr: Address) -> i128 { 1_000_000_000_i128 }
+    }
+
+    fn setup(env: &Env) -> (VaulticInvestmentManagerClient, Address, Address, Address, Address) {
+        env.mock_all_auths();
+        let admin = Address::generate(env);
+        let treasury = Address::generate(env);
+
+        let registry_id = env.register_contract(None, MockAssetRegistry);
+        let ur_id = env.register_contract(None, MockUserRegistry);
+        let token_id = env.register_contract(None, MockToken);
+
+        let im_id = env.register_contract(None, VaulticInvestmentManager);
+        let client = VaulticInvestmentManagerClient::new(env, &im_id);
+        client.initialize(
+            &soroban_sdk::vec![env, admin.clone()],
+            &registry_id,
+            &ur_id,
+            &token_id,
+            &treasury,
+            &250i128,
+        );
+        (client, admin, registry_id, ur_id, token_id)
+    }
+
+    fn open_pool(client: &VaulticInvestmentManagerClient, env: &Env, admin: &Address, asset_id: u32, total_shares: i128, price: i128, cap: i128) {
+        let issuer = Address::generate(env);
+        client.tokenize_asset(
+            admin,
+            &asset_id,
+            &total_shares,
+            &price,
+            &cap,
+            &issuer,
+            &String::from_str(env, "VTGOLD"),
+        );
+    }
+
+    #[test]
+    fn test_initialize_stores_state() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        let admins = client.get_admins();
+        assert_eq!(admins.len(), 1);
+        assert_eq!(admins.get(0).unwrap(), admin);
+        assert_eq!(client.accumulated_fees(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "already initialized")]
+    fn test_double_initialize_panics() {
+        let env = Env::default();
+        let (client, admin, reg, ur, tok) = setup(&env);
+        let treasury = Address::generate(&env);
+        client.initialize(
+            &soroban_sdk::vec![&env, admin],
+            &reg,
+            &ur,
+            &tok,
+            &treasury,
+            &100i128,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "fee exceeds max (10%)")]
+    fn test_fee_exceeds_max_on_initialize() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let admin = Address::generate(&env);
+        let treasury = Address::generate(&env);
+        let reg = env.register_contract(None, MockAssetRegistry);
+        let ur = env.register_contract(None, MockUserRegistry);
+        let tok = env.register_contract(None, MockToken);
+        let im = env.register_contract(None, VaulticInvestmentManager);
+        let client = VaulticInvestmentManagerClient::new(&env, &im);
+        client.initialize(
+            &soroban_sdk::vec![&env, admin],
+            &reg,
+            &ur,
+            &tok,
+            &treasury,
+            &1_001i128,
+        );
+    }
+
+    #[test]
+    fn test_fee_math_quote_purchase() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 10_000, 100_0000000i128, 0);
+
+        let (gross, fee, net) = client.quote_purchase(&1u32, &1i128);
+        assert_eq!(gross, 100_0000000i128);
+        assert_eq!(fee, 25_000000i128);
+        assert_eq!(net, 975_000000i128);
+    }
+
+    #[test]
+    fn test_available_shares_decrements_on_purchase() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &100i128);
+        assert_eq!(client.available_shares(&1u32), 900i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "insufficient shares available")]
+    fn test_over_subscription_panics() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 500, 10_0000000i128, 0);
+
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &501i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "investor cap exceeded")]
+    fn test_investor_cap_enforcement() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 10_000, 10_0000000i128, 100);
+
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &101i128);
+    }
+
+    #[test]
+    fn test_fully_subscribed_flag_set_on_last_share() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 10, 10_0000000i128, 0);
+
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &10i128);
+        let pool = client.get_pool(&1u32);
+        assert!(pool.is_fully_subscribed);
+    }
+
+    #[test]
+    fn test_accumulated_fees_after_purchase() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 10_000, 100_0000000i128, 0);
+
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &1i128);
+        assert_eq!(client.accumulated_fees(), 25_000000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "not an admin")]
+    fn test_set_protocol_fee_non_admin_panics() {
+        let env = Env::default();
+        let (client, _, _, _, _) = setup(&env);
+        let stranger = Address::generate(&env);
+        client.set_protocol_fee(&stranger, &100i128);
     }
 }
