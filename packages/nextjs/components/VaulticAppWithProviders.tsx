@@ -1,17 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "react-hot-toast";
 import { Footer } from "~~/components/Footer";
 import { Header } from "~~/components/Header";
 import { GlobalKycBanner } from "~~/components/stellar/GlobalKycBanner";
 import { StellarWalletProvider } from "~~/components/stellar/StellarWalletProvider";
+import { TransactionProvider, useTransaction } from "~~/components/stellar/TransactionContext";
+import { setTxGuard } from "~~/services/stellar/sorobanService";
+
+function TxGuardBridge() {
+  const { beginTx, endTx } = useTransaction();
+
+  useEffect(() => {
+    setTxGuard({
+      begin: () => beginTx("global"),
+      end: () => endTx("global"),
+    });
+  }, [beginTx, endTx]);
+
+  return null;
+}
 
 const VaulticApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
-      <div className={`flex flex-col min-h-screen premium-gradient transition-colors duration-500`}>
+      <div className="flex flex-col min-h-screen premium-gradient transition-colors duration-500">
         <div className="sticky top-0 z-30 pt-2 backdrop-blur-md sm:pt-2.5">
           <GlobalKycBanner />
           <Header />
@@ -25,18 +40,13 @@ const VaulticApp = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const VaulticAppWithProviders = ({ children }: { children: React.ReactNode }) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
   return (
     <StellarWalletProvider>
-      <ProgressBar height="3px" color="#7c3aed" options={{ showSpinner: false }} />
-      <VaulticApp>{children}</VaulticApp>
+      <TransactionProvider>
+        <TxGuardBridge />
+        <ProgressBar height="3px" color="#7c3aed" options={{ showSpinner: false }} />
+        <VaulticApp>{children}</VaulticApp>
+      </TransactionProvider>
     </StellarWalletProvider>
   );
 };

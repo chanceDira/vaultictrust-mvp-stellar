@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nextjs:
+    name: Next.js lint, types, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Lint
+        run: yarn next:lint --max-warnings=0
+
+      - name: Type check
+        run: yarn next:check-types
+
+      - name: Build
+        run: yarn next:build
+        env:
+          NEXT_PUBLIC_STELLAR_NETWORK: testnet
+
+  soroban:
+    name: Soroban contracts build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            packages/soroban-contracts/target
+          key: cargo-${{ hashFiles('packages/soroban-contracts/Cargo.lock') }}
+          restore-keys: cargo-
+
+      - name: Run contract tests
+        working-directory: packages/soroban-contracts
+        run: cargo test --workspace
+
+      - name: Build all contracts
+        working-directory: packages/soroban-contracts
+        run: cargo build --workspace --release --target wasm32-unknown-unknown
