@@ -10,6 +10,9 @@ const CLIENT_ENV: EnvSpec[] = [
 
 export function validateEnv() {
   const isServer = typeof window === "undefined";
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+  if (isBuildPhase) return;
+
   const errors: string[] = [];
   const specs = isServer ? [...SERVER_ENV, ...CLIENT_ENV] : CLIENT_ENV;
 
