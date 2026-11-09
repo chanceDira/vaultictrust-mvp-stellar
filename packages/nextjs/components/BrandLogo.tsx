@@ -1,6 +1,6 @@
-import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 
 type BrandLogoProps = {
   showTagline?: boolean;

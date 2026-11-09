@@ -12,7 +12,7 @@ import {
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
-import { useAssets, useTotalAssets, PAGE_SIZE } from "~~/hooks/vaultic/useAssets";
+import { PAGE_SIZE, useAssets, useTotalAssets } from "~~/hooks/vaultic/useAssets";
 import { useChainData } from "~~/hooks/vaultic/useChainData";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { getContractIds, purchaseWholeAsset } from "~~/services/stellar/sorobanService";
@@ -35,7 +35,7 @@ export default function MarketplacePage() {
   const { kycRecord, usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const kycStatus = typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag;
+  const kycStatus = (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) ?? "None";
 
   const stats = {
     totalAssets: total,

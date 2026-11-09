@@ -39,7 +39,10 @@ export async function POST(req: NextRequest) {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    return NextResponse.json({ error: (err as Record<string, string>).error ?? "pinata upload failed" }, { status: 502 });
+    return NextResponse.json(
+      { error: (err as Record<string, string>).error ?? "pinata upload failed" },
+      { status: 502 },
+    );
   }
 
   const result = await response.json();

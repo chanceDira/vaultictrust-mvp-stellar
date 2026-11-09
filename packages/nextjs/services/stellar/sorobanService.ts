@@ -776,7 +776,7 @@ export async function fetchTotalFees(): Promise<bigint> {
   return result ? ((safeScValToNative(result) as bigint) ?? 0n) : 0n;
 }
 
-export async function fetchUserRecord(userAddress: string): Promise<any> {
+export async function fetchUserRecord(userAddress: string): Promise<import("~~/types/stellar").UserRecord | null> {
   const { userRegistry } = getContractIds();
   if (!userRegistry) return null;
 
