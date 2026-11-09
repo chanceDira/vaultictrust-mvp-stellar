@@ -240,7 +240,7 @@ export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{
   }
 }
 
-function parseSorobanError(result: any): string | null {
+export function parseSorobanError(result: any): string | null {
   if (!result) return null;
 
   const errorStr = result.error?.toString() || "";

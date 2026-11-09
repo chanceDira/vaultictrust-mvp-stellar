@@ -13,13 +13,15 @@
     "lint": "yarn next:lint",
     "next:build": "yarn workspace @vaultic/nextjs build",
     "next:check-types": "yarn workspace @vaultic/nextjs check-types",
+    "next:test": "yarn workspace @vaultic/nextjs test",
     "next:format": "yarn workspace @vaultic/nextjs format",
     "next:lint": "yarn workspace @vaultic/nextjs lint",
     "next:serve": "yarn workspace @vaultic/nextjs serve",
     "precommit": "lint-staged",
     "start": "yarn workspace @vaultic/nextjs dev",
     "vercel": "yarn workspace @vaultic/nextjs vercel",
-    "vercel:login": "yarn workspace @vaultic/nextjs vercel:login"
+    "vercel:login": "yarn workspace @vaultic/nextjs vercel:login",
+    "next:test": "yarn workspace @vaultic/nextjs test"
   },
   "devDependencies": {
     "husky": "~9.1.6",

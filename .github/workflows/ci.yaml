@@ -32,6 +32,9 @@ jobs:
       - name: Type check
         run: yarn next:check-types
 
+      - name: Unit tests
+        run: yarn next:test
+
       - name: Build
         run: yarn next:build
         env:

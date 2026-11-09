@@ -27,6 +27,9 @@ target
 .next
 .cache
 
+# soroban test snapshots
+test_snapshots/
+
 # cli
 dist
 
