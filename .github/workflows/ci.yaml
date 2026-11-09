@@ -58,14 +58,15 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            packages/soroban-contracts/target
+            packages/soroban-contracts/target/release
+            packages/soroban-contracts/target/wasm32-unknown-unknown/release
           key: cargo-${{ hashFiles('packages/soroban-contracts/Cargo.lock') }}
           restore-keys: cargo-
-
-      - name: Run contract tests
-        working-directory: packages/soroban-contracts
-        run: cargo test --workspace
 
       - name: Build all contracts
         working-directory: packages/soroban-contracts
         run: cargo build --workspace --release --target wasm32-unknown-unknown
+
+      - name: Run contract tests
+        working-directory: packages/soroban-contracts
+        run: cargo test --workspace
