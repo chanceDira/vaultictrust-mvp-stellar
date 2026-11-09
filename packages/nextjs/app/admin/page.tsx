@@ -7,6 +7,7 @@ import { AdminComplianceTab } from "./components/AdminComplianceTab";
 import { AdminGovernanceTab } from "./components/AdminGovernanceTab";
 import { AdminStatsPanel } from "./components/AdminStatsPanel";
 import { ExclamationTriangleIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ADMIN_ADDRESSES } from "~~/scaffold.config";
@@ -118,9 +119,15 @@ export default function AdminPage() {
               ))}
             </div>
 
-            {activeTab === "assets" && <AdminAssetsTab publicKey={publicKey} />}
-            {activeTab === "compliance" && <AdminComplianceTab publicKey={publicKey} />}
-            {activeTab === "governance" && <AdminGovernanceTab publicKey={publicKey} />}
+            <RpcErrorBoundary label="assets panel">
+              {activeTab === "assets" && <AdminAssetsTab publicKey={publicKey} />}
+            </RpcErrorBoundary>
+            <RpcErrorBoundary label="compliance panel">
+              {activeTab === "compliance" && <AdminComplianceTab publicKey={publicKey} />}
+            </RpcErrorBoundary>
+            <RpcErrorBoundary label="governance panel">
+              {activeTab === "governance" && <AdminGovernanceTab publicKey={publicKey} />}
+            </RpcErrorBoundary>
           </>
         )}
       </section>

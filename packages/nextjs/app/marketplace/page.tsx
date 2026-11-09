@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRightIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { AssetCard } from "~~/components/marketplace/AssetCard";
 import { KycStatusBanner } from "~~/components/marketplace/KycStatusBanner";
 import {
@@ -131,27 +132,29 @@ export default function MarketplacePage() {
           </>
         )}
 
-        {isLoading ? (
-          <MarketplaceLoading />
-        ) : assets.length === 0 && isDeployed ? (
-          <div className="rounded-2xl border border-dashed border-base-300 p-16 text-center bg-base-100 italic text-base-content/50">
-            No active opportunities at this time.
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            {assets.map(asset => (
-              <AssetCard
-                key={asset.asset_id}
-                asset={asset}
-                isConnected={isConnected}
-                isPurchasing={isPurchasing}
-                kycStatus={kycStatus}
-                onInvestClick={handleInvestClick}
-                selectedAssetId={selectedAsset?.asset_id}
-              />
-            ))}
-          </div>
-        )}
+        <RpcErrorBoundary label="asset list">
+          {isLoading ? (
+            <MarketplaceLoading />
+          ) : assets.length === 0 && isDeployed ? (
+            <div className="rounded-2xl border border-dashed border-base-300 p-16 text-center bg-base-100 italic text-base-content/50">
+              No active opportunities at this time.
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              {assets.map(asset => (
+                <AssetCard
+                  key={asset.asset_id}
+                  asset={asset}
+                  isConnected={isConnected}
+                  isPurchasing={isPurchasing}
+                  kycStatus={kycStatus}
+                  onInvestClick={handleInvestClick}
+                  selectedAssetId={selectedAsset?.asset_id}
+                />
+              ))}
+            </div>
+          )}
+        </RpcErrorBoundary>
 
         {totalPages > 1 && (
           <div className="mt-10 flex items-center justify-center gap-3">
