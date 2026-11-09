@@ -1,4 +1,13 @@
 export type AssetStateKey = "Pending" | "Active" | "Tokenized" | "Closed" | "Relisted";
+export type KycStatusTag = "None" | "Pending" | "Verified" | "Rejected" | "Suspended";
+
+export type UserRecord = {
+  address: string;
+  status: { tag: KycStatusTag };
+  metadata_uri?: string;
+  commitment?: number[];
+  updated_at: bigint;
+};
 export type OwnershipModelKey = "WholeOwnership" | "Fractional";
 export type UserTab = "assets" | "compliance" | "governance";
 

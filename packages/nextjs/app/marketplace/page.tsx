@@ -35,7 +35,7 @@ export default function MarketplacePage() {
   const { kycRecord, usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const kycStatus = typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag;
+  const kycStatus = (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) ?? "None";
 
   const stats = {
     totalAssets: total,
