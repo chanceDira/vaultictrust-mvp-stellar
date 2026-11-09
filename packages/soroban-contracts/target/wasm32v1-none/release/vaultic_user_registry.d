@@ -1,1 +1,0 @@
-/Users/0xjonaseb11/Documents/COLLABORATION/VAULTIC-STELLAR/packages/soroban-contracts/target/wasm32v1-none/release/vaultic_user_registry.wasm: /Users/0xjonaseb11/Documents/COLLABORATION/VAULTIC-STELLAR/packages/soroban-contracts/contracts/user-registry/src/lib.rs
