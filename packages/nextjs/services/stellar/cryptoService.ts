@@ -6,7 +6,7 @@ function ed2curve_public_convert(edPublic: Uint8Array): Uint8Array {
 }
 
 async function ed2curve_secret_convert_async(edSeed: Uint8Array): Promise<Uint8Array> {
-  const hashBuffer = await crypto.subtle.digest("SHA-512", edSeed as any);
+  const hashBuffer = await crypto.subtle.digest("SHA-512", edSeed as unknown as BufferSource);
   const scalar = new Uint8Array(hashBuffer.slice(0, 32));
   scalar[0] &= 248;
   scalar[31] &= 127;
@@ -28,7 +28,7 @@ export async function encryptFileForAdmin(file: File, adminPublicKeyStr: string)
 
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
   const encryptedFileBuffer = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: iv as any },
+    { name: "AES-GCM", iv: iv as unknown as Uint8Array },
     aesKey,
     fileBuffer,
   );
@@ -74,16 +74,16 @@ export async function decryptFileAsAdmin(data: EncryptedData, adminSecretKeyStr:
 
   const aesKey = await globalThis.crypto.subtle.importKey(
     "raw",
-    decryptedAesKeyRaw as any,
+    decryptedAesKeyRaw as unknown as BufferSource,
     { name: "AES-GCM" },
     false,
     ["decrypt"],
   );
 
   const decryptedFile = await globalThis.crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64ToBuffer(data.iv) as any },
+    { name: "AES-GCM", iv: base64ToBuffer(data.iv) as unknown as Uint8Array },
     aesKey,
-    base64ToBuffer(data.ciphertext) as any,
+    base64ToBuffer(data.ciphertext) as unknown as BufferSource,
   );
 
   return decryptedFile;

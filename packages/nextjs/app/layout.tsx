@@ -2,7 +2,9 @@ import { Montserrat } from "next/font/google";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 import { VaulticAppWithProviders } from "~~/components/VaulticAppWithProviders";
 import "~~/styles/globals.css";
-import { getMetadata } from "~~/utils/vaultic/getMetadata";
+import { getMetadata, validateEnv } from "~~/utils/vaultic";
+
+validateEnv();
 
 const montserrat = Montserrat({
   subsets: ["latin"],

@@ -12,11 +12,22 @@ import {
   scValToNative,
   xdr,
 } from "@stellar/stellar-sdk";
+import type { SignedTransaction } from "@stellar/freighter-api";
+import type { HorizonAssetBalance } from "~~/types/horizon";
 import vaulticConfig, { TESTNET_USDC_ASSET, TESTNET_USDC_CONTRACT, deployedSorobanContracts } from "~~/scaffold.config";
 
 let _rpcServer: rpc.Server | null = null;
 
-let isTransactionPending = false;
+type TxGuard = { begin: () => boolean; end: () => void };
+let _legacyLock = false;
+let _txGuard: TxGuard = {
+  begin: () => { if (_legacyLock) return false; _legacyLock = true; return true; },
+  end: () => { _legacyLock = false; },
+};
+
+export function setTxGuard(guard: TxGuard) {
+  _txGuard = guard;
+}
 
 function getRpcServer(): rpc.Server {
   if (!_rpcServer) {
@@ -50,14 +61,13 @@ export async function callContract({
   const networkPassphrase = getNetworkPassphrase();
   const contract = new Contract(contractId);
 
-  if (isTransactionPending) {
-    console.error("[soroban] Transaction aborted: Another signing request is already in-flight.");
-    throw new Error("A transaction is already in-flight. Please finish the current request in your wallet.");
+  const acquired = _txGuard.begin(); if (!acquired) {
+    throw new Error("a transaction is already in-flight");
   }
 
   const RELIABLE_FEE = "1000";
 
-  isTransactionPending = true;
+  
   try {
     const account = await server.getAccount(callerPublicKey);
 
@@ -81,7 +91,7 @@ export async function callContract({
     const signedResult = await signTransaction(preparedTx.toXDR(), {
       networkPassphrase,
     });
-    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as SignedTransaction).signedTxXdr;
 
     const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
     const response = await server.sendTransaction(submittedTx);
@@ -110,12 +120,6 @@ export async function callContract({
       pollResult = await server.getTransaction(response.hash);
     } catch (xdrErr: any) {
       if (isXdrDecodeError(xdrErr)) {
-        console.warn(
-          "[soroban] XDR decode error on initial poll (tx submitted successfully). Returning success. hash:",
-          response.hash,
-          "| error:",
-          xdrErr.message,
-        );
         return { result: null, hash: response.hash };
       }
       throw xdrErr;
@@ -127,12 +131,6 @@ export async function callContract({
         pollResult = await server.getTransaction(response.hash);
       } catch (xdrErr: any) {
         if (isXdrDecodeError(xdrErr)) {
-          console.warn(
-            "[soroban] XDR decode error during poll loop (tx submitted). Returning success. hash:",
-            response.hash,
-            "| attempt:",
-            pollAttempts,
-          );
           return { result: null, hash: response.hash };
         }
         throw xdrErr;
@@ -143,10 +141,9 @@ export async function callContract({
     if (pollResult?.status === rpc.Api.GetTransactionStatus.SUCCESS) {
       let result = null;
       try {
-        const rawResult = (pollResult as any).returnValue;
+        const rawResult = (pollResult as rpc.Api.GetSuccessfulTransactionResponse).returnValue;
         if (rawResult) result = rawResult;
       } catch (e) {
-        console.warn("[soroban] Executed successfully, but failed to decode return value:", e);
       }
       return { result, hash: response.hash };
     }
@@ -159,17 +156,16 @@ export async function callContract({
     throw new Error(
       `Transaction did not finalize (Status: ${pollResult?.status ?? "timeout"}). Check explorer for hash: ${response.hash}`,
     );
-  } catch (e: any) {
-    console.error("[soroban] callContract execution failed:", e.message);
+  } catch (e: unknown) {
     throw e;
   } finally {
-    isTransactionPending = false;
+    _txGuard.end();
   }
 }
 
 export async function setupUsdcTrustline(callerPublicKey: string) {
-  if (isTransactionPending) {
-    throw new Error("A transaction is already in-flight. Please finish the current request in your wallet.");
+  const acquired = _txGuard.begin(); if (!acquired) {
+    throw new Error("a transaction is already in-flight");
   }
 
   const { getHorizonServer } = await import("./horizonClient");
@@ -177,7 +173,7 @@ export async function setupUsdcTrustline(callerPublicKey: string) {
   const networkPassphrase = getNetworkPassphrase();
 
   const RELIABLE_FEE = "1000";
-  isTransactionPending = true;
+  
 
   try {
     const account = await horizon.loadAccount(callerPublicKey);
@@ -200,14 +196,13 @@ export async function setupUsdcTrustline(callerPublicKey: string) {
       networkPassphrase,
     });
 
-    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as any).signedTxXdr;
+    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as SignedTransaction).signedTxXdr;
     const response = await horizon.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
     return response;
-  } catch (e: any) {
-    console.error("[horizon] setupUsdcTrustline failed:", e.message);
+  } catch (e: unknown) {
     throw e;
   } finally {
-    isTransactionPending = false;
+    _txGuard.end();
   }
 }
 
@@ -222,8 +217,8 @@ export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{
     const account = await horizon.loadAccount(publicKey);
 
     const usdc = account.balances.find(
-      (b: any) => b.asset_code === TESTNET_USDC_ASSET.code && b.asset_issuer === TESTNET_USDC_ASSET.issuer,
-    );
+      (b) => (b as HorizonAssetBalance).asset_code === TESTNET_USDC_ASSET.code && (b as HorizonAssetBalance).asset_issuer === TESTNET_USDC_ASSET.issuer,
+    ) as HorizonAssetBalance | undefined;
 
     if (!usdc) {
       return { hasTrustline: false, isAuthorized: false, balance: "0" };
@@ -231,11 +226,10 @@ export async function fetchUsdcTrustlineStatus(publicKey: string): Promise<{
 
     return {
       hasTrustline: true,
-      isAuthorized: (usdc as any).is_authorized !== false,
-      balance: (usdc as any).balance || "0",
+      isAuthorized: (usdc as HorizonAssetBalance).is_authorized !== false,
+      balance: (usdc as HorizonAssetBalance).balance || "0",
     };
   } catch (e) {
-    console.error("[soroban] Error fetching trustline status:", e);
     return { hasTrustline: false, isAuthorized: false, balance: "0" };
   }
 }
@@ -339,15 +333,16 @@ async function simulateReadCall({
   const networkPassphrase = getNetworkPassphrase();
 
   const dummyKeypair = Keypair.random();
+  type SdkAccount = ConstructorParameters<typeof TransactionBuilder>[0];
   const dummyAccount = await server.getAccount(dummyKeypair.publicKey()).catch(() => ({
     accountId: () => dummyKeypair.publicKey(),
     sequenceNumber: () => "0",
     incrementSequenceNumber: () => {},
     sequence: "0",
-  }));
+  }) as unknown as SdkAccount);
 
   const contract = new Contract(contractId);
-  const tx = new TransactionBuilder(dummyAccount as any, {
+  const tx = new TransactionBuilder(dummyAccount, {
     fee: BASE_FEE,
     networkPassphrase,
   })
@@ -363,7 +358,6 @@ async function simulateReadCall({
   try {
     return (simResult as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
   } catch (xdrErr: any) {
-    console.warn("[soroban] simulateReadCall retval XDR decode error (safe fallback):", xdrErr?.message);
     return null;
   }
 }
@@ -373,7 +367,6 @@ function safeScValToNative(val: xdr.ScVal | null | undefined): any {
   try {
     return scValToNative(val);
   } catch (e: any) {
-    console.warn("[soroban] safeScValToNative: XDR decode error caught (returning null):", e?.message);
     return null;
   }
 }
@@ -804,7 +797,7 @@ export async function fetchAdmins() {
     method: "get_admins",
     args: [],
   });
-  return result ? ((safeScValToNative(result) as any[]) ?? []) : [];
+  return result ? ((safeScValToNative(result) as string[]) ?? []) : [];
 }
 
 export async function setAdmins(newAdmins: string[], callerPublicKey: string) {
@@ -941,7 +934,6 @@ export async function fetchKycSubmissions(): Promise<string[]> {
 
     return Array.from(userSet);
   } catch (err) {
-    console.error("[soroban] fetchKycSubmissions error:", err);
     return [];
   }
 }

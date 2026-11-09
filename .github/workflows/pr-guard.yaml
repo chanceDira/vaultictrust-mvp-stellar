@@ -1,0 +1,40 @@
+name: PR Guard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  no-next-public-secrets:
+    name: Block NEXT_PUBLIC_ secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for exposed secrets
+        run: |
+          if grep -rE "NEXT_PUBLIC_(PINATA_JWT|SECRET|PRIVATE|API_KEY|TOKEN)=" \
+            --include="*.ts" --include="*.tsx" --include="*.js" --include="*.env*" \
+            packages/; then
+            echo "NEXT_PUBLIC_ secret found — move to a server-only env var"
+            exit 1
+          fi
+
+  lint-pr-title:
+    name: PR title format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check conventional commit format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$PR_TITLE" | grep -Eq \
+            "^(feat|fix|chore|refactor|docs|test|perf|ci|build|revert)(\(.+\))?: .{3,}" \
+            || (echo "PR title must follow: type: description" && exit 1)
