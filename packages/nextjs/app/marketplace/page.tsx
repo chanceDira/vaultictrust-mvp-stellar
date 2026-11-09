@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowRightIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { AssetCard } from "~~/components/marketplace/AssetCard";
 import { KycStatusBanner } from "~~/components/marketplace/KycStatusBanner";
@@ -12,119 +12,52 @@ import {
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
+import { useAssets, useTotalAssets, PAGE_SIZE } from "~~/hooks/vaultic/useAssets";
+import { useChainData } from "~~/hooks/vaultic/useChainData";
 import { getExplorerTxUrl } from "~~/scaffold.config";
-import {
-  fetchAsset,
-  fetchTotalAssets,
-  fetchUsdcTrustlineStatus,
-  fetchUserRecord,
-  getContractIds,
-  purchaseWholeAsset,
-} from "~~/services/stellar/sorobanService";
-import { OnChainAsset } from "~~/types/stellar";
+import { getContractIds, purchaseWholeAsset } from "~~/services/stellar/sorobanService";
+import type { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/vaultic";
 
 export default function MarketplacePage() {
   const { isConnected, publicKey, connect } = useStellarWallet();
-  const [assets, setAssets] = useState<OnChainAsset[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
   const [selectedAsset, setSelectedAsset] = useState<OnChainAsset | null>(null);
   const [isTrustlineModalOpen, setIsTrustlineModalOpen] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const [kycRecord, setKycRecord] = useState<any>(null);
-  const [usdcStatus, setUsdcStatus] = useState<{
-    hasTrustline: boolean;
-    isAuthorized: boolean;
-    balance: string;
-  } | null>(null);
+  const contracts = getContractIds();
+  const isDeployed = !!contracts.registry;
+
+  const { assets, isLoading, refresh: refreshAssets } = useAssets(pageIndex);
+  const total = useTotalAssets();
+  const { kycRecord, usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const kycStatus = typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag;
 
   const stats = {
-    totalAssets: assets.length,
+    totalAssets: total,
     tvl: assets
       .reduce((acc, curr) => acc + Number(curr.valuation || 0n) / 1e7, 0)
       .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
   };
-
-  const contracts = getContractIds();
-  const isDeployed = !!contracts.registry;
-
-  const loadAssets = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const total = await fetchTotalAssets();
-      const indices = Array.from({ length: total }, (_, i) => i + 1);
-
-      const results = await Promise.all(
-        indices.map(async i => {
-          const asset = await fetchAsset(i);
-          if (asset && (asset.state.tag === "Active" || asset.state.tag === "Tokenized")) {
-            return asset as OnChainAsset;
-          }
-          return null;
-        }),
-      );
-
-      const activeAssets = results.filter((asset): asset is OnChainAsset => asset !== null);
-      setAssets(activeAssets.reverse());
-    } catch (e: any) {
-      console.error("Failed to load assets:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const loadKyc = useCallback(async () => {
-    if (!publicKey || !isDeployed) return;
-    try {
-      const record = await fetchUserRecord(publicKey);
-      setKycRecord(record);
-    } catch (e) {
-      console.error("KYC load error", e);
-    }
-  }, [publicKey, isDeployed]);
-
-  const checkUsdc = useCallback(async () => {
-    if (!publicKey) return;
-    const status = await fetchUsdcTrustlineStatus(publicKey);
-    setUsdcStatus(status);
-  }, [publicKey]);
-
-  useEffect(() => {
-    if (isDeployed) {
-      loadAssets();
-    }
-  }, [isDeployed, loadAssets]);
-
-  useEffect(() => {
-    if (isConnected && isDeployed && publicKey) {
-      loadKyc();
-      checkUsdc();
-    } else {
-      setKycRecord(null);
-      setUsdcStatus(null);
-    }
-  }, [isConnected, isDeployed, publicKey, loadKyc, checkUsdc]);
 
   const handleInvestClick = async (asset: OnChainAsset) => {
     if (!publicKey) {
       await connect();
       return;
     }
-
     if (asset.asset_owner === publicKey) {
       notification.error("Owners cannot purchase their own assets.");
       return;
     }
-
     if (asset.model.tag === "Fractional" && asset.state.tag === "Active") {
       notification.info("This asset is being tokenized. Please check back soon.");
       return;
     }
-
     setSelectedAsset(asset);
-
     if (asset.model.tag === "Fractional") {
       setIsTrustlineModalOpen(true);
     } else {
@@ -133,9 +66,8 @@ export default function MarketplacePage() {
   };
 
   const handleInvestmentSuccess = async (assetOverride?: OnChainAsset) => {
-    const asset = assetOverride || selectedAsset;
+    const asset = assetOverride ?? selectedAsset;
     if (!asset || !publicKey) return;
-
     setIsTrustlineModalOpen(false);
 
     if (asset.model.tag === "Fractional") {
@@ -144,23 +76,13 @@ export default function MarketplacePage() {
     }
 
     setIsPurchasing(true);
-
-    const isWhole = asset.model.tag === "WholeOwnership";
-    const actionLabel = isWhole ? "processing your whole-asset purchase" : "processing your fractional investment";
-    const notificationId = notification.loading(`${actionLabel} for ${asset.asset_name}...`);
+    const notifId = notification.loading(`processing purchase for ${asset.asset_name}...`);
 
     try {
-      const { hash } = await purchaseWholeAsset(
-        {
-          buyer: publicKey,
-          assetId: asset.asset_id,
-        },
-        publicKey,
-      );
-
+      const { hash } = await purchaseWholeAsset({ buyer: publicKey, assetId: asset.asset_id }, publicKey);
       notification.success(
         <div className="flex flex-col gap-1">
-          <p className="font-bold uppercase tracking-tight text-xs">Purchase Successful!</p>
+          <p className="font-bold uppercase tracking-tight text-xs">Purchase successful!</p>
           <a
             href={getExplorerTxUrl(hash)}
             target="_blank"
@@ -171,25 +93,21 @@ export default function MarketplacePage() {
           </a>
         </div>,
       );
-
-      await loadAssets();
+      await refreshAssets();
       setSelectedAsset(null);
-    } catch (e: any) {
-      console.error("Investment failed", e);
-      notification.error(`Investment failed: ${e.message || "Unknown error"}`);
+    } catch (e: unknown) {
+      notification.error(`Investment failed: ${e instanceof Error ? e.message : "unknown error"}`);
     } finally {
       setIsPurchasing(false);
-      notification.remove(notificationId);
+      notification.remove(notifId);
     }
   };
 
   const handlePurchaseComplete = async () => {
     setIsBuyModalOpen(false);
     setSelectedAsset(null);
-    await loadAssets();
+    await refreshAssets();
   };
-
-  const kycStatus = typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag;
 
   return (
     <div className="flex flex-col grow">
@@ -200,16 +118,14 @@ export default function MarketplacePage() {
           <div className="alert alert-info shadow-lg mb-10 border-blue-500/30 bg-blue-500/5">
             <InformationCircleIcon className="h-6 w-6 shrink-0" />
             <div>
-              <p className="font-bold">Wait for Registry Deployment</p>
-              <p className="text-sm text-base-content/70">
-                The Vaultic on-chain registry is currently being synchronized.
-              </p>
+              <p className="font-bold">Registry not deployed</p>
+              <p className="text-sm text-base-content/70">The on-chain registry is being synchronized.</p>
             </div>
           </div>
         ) : (
           <>
             {isConnected && publicKey && usdcStatus && (!usdcStatus.hasTrustline || !usdcStatus.isAuthorized) && (
-              <WalletPreparationBanner publicKey={publicKey} onSuccess={checkUsdc} />
+              <WalletPreparationBanner publicKey={publicKey} onSuccess={refreshUsdc} />
             )}
             <KycStatusBanner kycRecord={kycRecord} />
           </>
@@ -234,6 +150,28 @@ export default function MarketplacePage() {
                 selectedAssetId={selectedAsset?.asset_id}
               />
             ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-3">
+            <button
+              className="btn btn-outline btn-sm rounded-xl"
+              disabled={pageIndex === 0}
+              onClick={() => setPageIndex(p => p - 1)}
+            >
+              Previous
+            </button>
+            <span className="text-sm text-base-content/50">
+              {pageIndex + 1} / {totalPages}
+            </span>
+            <button
+              className="btn btn-outline btn-sm rounded-xl"
+              disabled={pageIndex >= totalPages - 1}
+              onClick={() => setPageIndex(p => p + 1)}
+            >
+              Next
+            </button>
           </div>
         )}
       </section>
