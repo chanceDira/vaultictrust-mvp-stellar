@@ -5,8 +5,6 @@ use soroban_sdk::{
 
 
 #[contracttype]
-
-#[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AssetState {
     Pending = 0,
@@ -14,6 +12,8 @@ pub enum AssetState {
     Tokenized = 2,
     Closed = 3,
     Relisted = 4,
+    Archived = 5,
+    Burned = 6,
 }
 
 #[contracttype]
@@ -39,7 +39,7 @@ pub struct AssetRecord {
     pub price_per_share: i128,
     pub sold_shares: i128,
     
-    /* @notice Stellar Native Asset Code (e.g. VTGOLD) */
+    /* @notice Stellar Native Asset Code */
     pub asset_code: String,
 
     /* @notice Stellar Native Asset Issuer (set upon tokenization) */
@@ -339,8 +339,8 @@ impl VaulticAssetRegistry {
 
         let mut record: AssetRecord = env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found");
 
-        if record.state == AssetState::Pending || record.state == AssetState::Closed {
-            panic!("invalid transition: cannot close a Pending or already Closed asset");
+        if matches!(record.state, AssetState::Pending | AssetState::Closed | AssetState::Archived | AssetState::Burned) {
+            panic!("invalid transition: cannot close asset in current state");
         }
 
         record.state = AssetState::Closed;
@@ -514,6 +514,91 @@ impl VaulticAssetRegistry {
     }
 
 
+    /* @notice Hides an asset from the marketplace without removing it. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The administrator calling the function.
+     * @param asset_id The ID of the asset to archive.
+     */
+    pub fn archive_asset(env: Env, caller: Address, asset_id: u32) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+
+        let mut record: AssetRecord = env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found");
+
+        if record.state == AssetState::Archived {
+            panic!("already archived");
+        }
+        if record.state == AssetState::Burned {
+            panic!("invalid transition: burned assets cannot be archived");
+        }
+
+        record.state = AssetState::Archived;
+        env.storage().persistent().set(&DataKey::Asset(asset_id), &record);
+        env.events().publish((symbol_short!("arch_ast"), asset_id), caller);
+    }
+
+    /* @notice Permanently removes a Pending or Archived asset from storage. Admin only.
+     * @param env The Soroban environment.
+     * @param caller The administrator calling the function.
+     * @param asset_id The ID of the asset to delete.
+     */
+    pub fn delete_asset(env: Env, caller: Address, asset_id: u32) {
+        caller.require_auth();
+        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+
+        let record: AssetRecord = env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found");
+
+        if record.state != AssetState::Pending && record.state != AssetState::Archived {
+            panic!("invalid transition: only Pending or Archived assets can be deleted");
+        }
+
+        env.storage().persistent().remove(&DataKey::Asset(asset_id));
+
+        let mut owner_assets: Vec<u32> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::OwnerAssets(record.asset_owner.clone()))
+            .unwrap_or(Vec::new(&env));
+        let mut updated = Vec::new(&env);
+        for id in owner_assets.iter() {
+            if id != asset_id {
+                updated.push_back(id);
+            }
+        }
+        owner_assets = updated;
+        env.storage().persistent().set(&DataKey::OwnerAssets(record.asset_owner.clone()), &owner_assets);
+
+        env.events().publish((symbol_short!("del_ast"), asset_id), caller);
+    }
+
+    /* @notice Permanently retires a Fractional asset's token supply. Tokenizer only.
+     * @param env The Soroban environment.
+     * @param asset_id The ID of the Fractional asset to burn.
+     */
+    pub fn burn_asset(env: Env, asset_id: u32) {
+        let tokenizer: Address = env.storage().instance().get(&DataKey::Tokenizer).expect("not initialized");
+        tokenizer.require_auth();
+
+        let mut record: AssetRecord = env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found");
+
+        if record.model != OwnershipModel::Fractional {
+            panic!("model mismatch: burn only applies to Fractional assets");
+        }
+        if record.state != AssetState::Tokenized && record.state != AssetState::Closed {
+            panic!("invalid transition: must be Tokenized or Closed to burn");
+        }
+
+        record.state = AssetState::Burned;
+        env.storage().persistent().set(&DataKey::Asset(asset_id), &record);
+        env.events().publish((symbol_short!("burn_ast"), asset_id), record.asset_owner);
+    }
+
     pub fn get_asset(env: Env, asset_id: u32) -> AssetRecord {
         env.storage().persistent().get(&DataKey::Asset(asset_id)).expect("not found")
     }
@@ -546,15 +631,34 @@ impl VaulticAssetRegistry {
 #[cfg(test)]
 mod test {
     use super::*;
-    use soroban_sdk::testutils::{Address as _};
+    use soroban_sdk::testutils::Address as _;
 
     fn setup_registry(env: &Env) -> (VaulticAssetRegistryClient, Address, Address) {
         let admin = Address::generate(env);
         let tokenizer = Address::generate(env);
         let contract_id = env.register_contract(None, VaulticAssetRegistry);
         let client = VaulticAssetRegistryClient::new(env, &contract_id);
-        client.initialize(&admin, &tokenizer);
+        let admins = Vec::from_array(env, [admin.clone()]);
+        client.initialize(&admins, &tokenizer);
         (client, admin, tokenizer)
+    }
+
+    fn register_pending(
+        env: &Env,
+        client: &VaulticAssetRegistryClient,
+        admin: &Address,
+        owner: &Address,
+    ) -> u32 {
+        client.register_asset(
+            owner,
+            admin,
+            &String::from_str(env, "Test Asset"),
+            &String::from_str(env, "Real Estate"),
+            &String::from_str(env, "VTTEST"),
+            &String::from_str(env, "ipfs://QmTest"),
+            &500_000i128,
+            &OwnershipModel::WholeOwnership,
+        )
     }
 
     #[test]
@@ -568,20 +672,23 @@ mod test {
     #[should_panic(expected = "already initialized")]
     fn test_double_initialize() {
         let env = Env::default();
+        env.mock_all_auths();
         let (client, admin, tokenizer) = setup_registry(&env);
-        client.initialize(&admin, &tokenizer);
+        let admins = Vec::from_array(&env, [admin.clone()]);
+        client.initialize(&admins, &tokenizer);
     }
 
     #[test]
     fn test_full_lifecycle_fractional() {
         let env = Env::default();
         env.mock_all_auths();
-        let (client, _, tokenizer) = setup_registry(&env);
+        let (client, admin, tokenizer) = setup_registry(&env);
         let owner = Address::generate(&env);
         let issuer = Address::generate(&env);
 
         let asset_id = client.register_asset(
             &owner,
+            &admin,
             &String::from_str(&env, "Gold Mine Shares"),
             &String::from_str(&env, "Mining"),
             &String::from_str(&env, "VTGOLD"),
@@ -592,7 +699,7 @@ mod test {
         assert_eq!(asset_id, 1);
         assert!(matches!(client.get_asset(&asset_id).state, AssetState::Pending));
 
-        client.approve_asset(&asset_id);
+        client.approve_asset(&admin, &asset_id);
         assert!(matches!(client.get_asset(&asset_id).state, AssetState::Active));
 
         client.record_tokenization(&asset_id, &issuer, &10_000i128, &100i128);
@@ -624,12 +731,13 @@ mod test {
     fn test_transfer_ownership() {
         let env = Env::default();
         env.mock_all_auths();
-        let (client, _, _) = setup_registry(&env);
+        let (client, admin, _) = setup_registry(&env);
         let owner = Address::generate(&env);
         let new_owner = Address::generate(&env);
 
         let asset_id = client.register_asset(
             &owner,
+            &admin,
             &String::from_str(&env, "Plot A"),
             &String::from_str(&env, "Real Estate"),
             &String::from_str(&env, "VTPLT"),
@@ -641,5 +749,180 @@ mod test {
         client.transfer_asset_ownership(&asset_id, &new_owner);
         let record = client.get_asset(&asset_id);
         assert_eq!(record.asset_owner, new_owner);
+    }
+
+    #[test]
+    fn test_archive_pending_asset() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+
+        client.archive_asset(&admin, &asset_id);
+        assert!(matches!(client.get_asset(&asset_id).state, AssetState::Archived));
+    }
+
+    #[test]
+    fn test_archive_active_asset() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+        client.approve_asset(&admin, &asset_id);
+
+        client.archive_asset(&admin, &asset_id);
+        assert!(matches!(client.get_asset(&asset_id).state, AssetState::Archived));
+    }
+
+    #[test]
+    #[should_panic(expected = "already archived")]
+    fn test_archive_already_archived_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+        client.archive_asset(&admin, &asset_id);
+        client.archive_asset(&admin, &asset_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid transition: burned assets cannot be archived")]
+    fn test_archive_burned_asset_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let issuer = Address::generate(&env);
+
+        let asset_id = client.register_asset(
+            &owner,
+            &admin,
+            &String::from_str(&env, "Gold Fund"),
+            &String::from_str(&env, "Mining"),
+            &String::from_str(&env, "VTGOLD"),
+            &String::from_str(&env, "ipfs://QmGold"),
+            &1_000_000i128,
+            &OwnershipModel::Fractional,
+        );
+        client.approve_asset(&admin, &asset_id);
+        client.record_tokenization(&asset_id, &issuer, &10_000i128, &100i128);
+        client.burn_asset(&asset_id);
+        client.archive_asset(&admin, &asset_id);
+    }
+
+    #[test]
+    fn test_delete_pending_asset_removes_storage() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+
+        client.delete_asset(&admin, &asset_id);
+
+        let owner_assets = client.get_assets_by_owner(&owner);
+        assert!(!owner_assets.contains(&asset_id));
+    }
+
+    #[test]
+    fn test_delete_archived_asset() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+        client.archive_asset(&admin, &asset_id);
+
+        client.delete_asset(&admin, &asset_id);
+
+        let owner_assets = client.get_assets_by_owner(&owner);
+        assert!(!owner_assets.contains(&asset_id));
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid transition: only Pending or Archived assets can be deleted")]
+    fn test_delete_active_asset_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+        client.approve_asset(&admin, &asset_id);
+        client.delete_asset(&admin, &asset_id);
+    }
+
+    #[test]
+    fn test_burn_fractional_tokenized_asset() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let issuer = Address::generate(&env);
+
+        let asset_id = client.register_asset(
+            &owner,
+            &admin,
+            &String::from_str(&env, "Silver Fund"),
+            &String::from_str(&env, "Mining"),
+            &String::from_str(&env, "VTSILV"),
+            &String::from_str(&env, "ipfs://QmSilv"),
+            &2_000_000i128,
+            &OwnershipModel::Fractional,
+        );
+        client.approve_asset(&admin, &asset_id);
+        client.record_tokenization(&asset_id, &issuer, &5_000i128, &400i128);
+
+        client.burn_asset(&asset_id);
+        assert!(matches!(client.get_asset(&asset_id).state, AssetState::Burned));
+    }
+
+    #[test]
+    #[should_panic(expected = "model mismatch: burn only applies to Fractional assets")]
+    fn test_burn_whole_ownership_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, tokenizer) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+        client.approve_asset(&admin, &asset_id);
+        client.close_asset(&asset_id, &tokenizer);
+        client.burn_asset(&asset_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid transition: must be Tokenized or Closed to burn")]
+    fn test_burn_pending_fractional_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+
+        let asset_id = client.register_asset(
+            &owner,
+            &admin,
+            &String::from_str(&env, "Copper Fund"),
+            &String::from_str(&env, "Mining"),
+            &String::from_str(&env, "VTCOPP"),
+            &String::from_str(&env, "ipfs://QmCopp"),
+            &500_000i128,
+            &OwnershipModel::Fractional,
+        );
+        client.burn_asset(&asset_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid transition: cannot close asset in current state")]
+    fn test_close_archived_asset_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, tokenizer) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        let asset_id = register_pending(&env, &client, &admin, &owner);
+        client.approve_asset(&admin, &asset_id);
+        client.archive_asset(&admin, &asset_id);
+        client.close_asset(&asset_id, &tokenizer);
     }
 }

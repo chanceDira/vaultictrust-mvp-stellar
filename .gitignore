@@ -49,3 +49,6 @@ STELLAR_DEPLOYMENT_EXPLAINER.md
 KYC_SYSTEM_SPEC.md
 VAULTIC_ORG_CREDENTIALS.txt
 docs/
+# playwright
+packages/nextjs/test-results/
+packages/nextjs/playwright-report/

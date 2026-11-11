@@ -302,6 +302,12 @@ const ERROR_MAP: Record<string, string> = {
   "not an admin": "Unauthorized: Admin privileges required.",
   "not authorized": "Action not permitted for your wallet address.",
   "not found": "Target record not found on-chain.",
+  "already archived": "Asset is already archived.",
+  "invalid transition: burned assets cannot be archived": "Burned assets cannot be archived.",
+  "invalid transition: only pending or archived assets can be deleted": "Only Pending or Archived assets can be deleted.",
+  "invalid transition: must be tokenized or closed to burn": "Asset must be Tokenized or Closed before burning.",
+  "model mismatch: burn only applies to fractional assets": "Burn only applies to Fractional assets.",
+  "invalid transition: cannot close asset in current state": "Asset cannot be closed from its current state.",
   "no investment pool": "Staging complete. Waiting for tokenization to open.",
   "investor not kyc verified": "KYC Required: Please verify your identity first.",
   "investor cap exceeded": "Investment limit reached for this asset.",
@@ -521,6 +527,42 @@ export async function registerAsset(
       nativeToScVal(params.valuation, { type: "i128" }),
       nativeToScVal(params.model === "Fractional" ? 1 : 0, { type: "u32" }),
     ],
+    callerPublicKey,
+  });
+}
+
+export async function archiveAsset(assetId: number, callerPublicKey: string) {
+  const { registry } = getContractIds();
+  if (!registry) throw new Error("registry contract not deployed");
+
+  return callContract({
+    contractId: registry,
+    method: "archive_asset",
+    args: [new Address(callerPublicKey).toScVal(), nativeToScVal(assetId, { type: "u32" })],
+    callerPublicKey,
+  });
+}
+
+export async function deleteAsset(assetId: number, callerPublicKey: string) {
+  const { registry } = getContractIds();
+  if (!registry) throw new Error("registry contract not deployed");
+
+  return callContract({
+    contractId: registry,
+    method: "delete_asset",
+    args: [new Address(callerPublicKey).toScVal(), nativeToScVal(assetId, { type: "u32" })],
+    callerPublicKey,
+  });
+}
+
+export async function burnAsset(assetId: number, callerPublicKey: string) {
+  const { registry } = getContractIds();
+  if (!registry) throw new Error("registry contract not deployed");
+
+  return callContract({
+    contractId: registry,
+    method: "burn_asset",
+    args: [nativeToScVal(assetId, { type: "u32" })],
     callerPublicKey,
   });
 }

@@ -20,8 +20,7 @@
     "precommit": "lint-staged",
     "start": "yarn workspace @vaultic/nextjs dev",
     "vercel": "yarn workspace @vaultic/nextjs vercel",
-    "vercel:login": "yarn workspace @vaultic/nextjs vercel:login",
-    "next:test": "yarn workspace @vaultic/nextjs test"
+    "vercel:login": "yarn workspace @vaultic/nextjs vercel:login"
   },
   "devDependencies": {
     "husky": "~9.1.6",

@@ -51,7 +51,7 @@ export const AssetCard = ({
     (isConnected && asset.model.tag === "Fractional" && asset.state.tag === "Active") || isPurchasing || needsKyc;
 
   return (
-    <div className="group rounded-3xl border border-base-300 bg-base-100/50 p-6 shadow-xl shadow-primary/5 backdrop-blur-md transition-all hover:border-primary/50 md:p-10">
+    <div data-testid="asset-card" className="group rounded-3xl border border-base-300 bg-base-100/50 p-6 shadow-xl shadow-primary/5 backdrop-blur-md transition-all hover:border-primary/50 md:p-10">
       <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
         <div className="flex items-start gap-6">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary shadow-inner transition-colors group-hover:bg-primary/10">

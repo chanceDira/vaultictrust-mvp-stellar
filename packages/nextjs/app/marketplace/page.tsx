@@ -157,8 +157,9 @@ export default function MarketplacePage() {
         </RpcErrorBoundary>
 
         {totalPages > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-3">
+          <div data-testid="pagination" className="mt-10 flex items-center justify-center gap-3">
             <button
+              data-testid="pagination-prev"
               className="btn btn-outline btn-sm rounded-xl"
               disabled={pageIndex === 0}
               onClick={() => setPageIndex(p => p - 1)}
@@ -169,6 +170,7 @@ export default function MarketplacePage() {
               {pageIndex + 1} / {totalPages}
             </span>
             <button
+              data-testid="pagination-next"
               className="btn btn-outline btn-sm rounded-xl"
               disabled={pageIndex >= totalPages - 1}
               onClick={() => setPageIndex(p => p + 1)}
