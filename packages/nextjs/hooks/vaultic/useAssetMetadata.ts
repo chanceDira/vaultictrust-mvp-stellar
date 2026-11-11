@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { loadAssetMetadata, type AssetMetadata } from "~~/services/stellar/assetMetadata";
+import { type AssetMetadata, loadAssetMetadata } from "~~/services/stellar/assetMetadata";
 
 type AssetMetadataState = {
   metadata: AssetMetadata | null;

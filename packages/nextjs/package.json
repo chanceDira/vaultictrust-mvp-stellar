@@ -18,8 +18,8 @@
     "vercel:login": "vercel login"
   },
   "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "2.8.0",
     "@heroicons/react": "~2.1.5",
-    "@stellar/freighter-api": "latest",
     "@stellar/stellar-sdk": "latest",
     "daisyui": "5.0.9",
     "next": "~15.2.8",

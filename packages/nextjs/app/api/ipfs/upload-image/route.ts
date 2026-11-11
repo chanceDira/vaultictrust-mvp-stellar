@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAssetPhotoMime, MAX_ASSET_PHOTO_BYTES } from "~~/utils/vaultic/assetPhoto";
+import { MAX_ASSET_PHOTO_BYTES, isAssetPhotoMime } from "~~/utils/vaultic/assetPhoto";
 
 const PINATA_JWT = process.env.PINATA_JWT;
 const PINATA_FILE_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";

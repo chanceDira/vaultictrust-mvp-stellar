@@ -12,23 +12,24 @@ export default function KycPage() {
 
   return (
     <div className="flex min-h-screen grow flex-col">
-      <section className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
+      <section className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
         <button
+          type="button"
           onClick={() => router.back()}
-          className="group mb-10 flex items-center gap-2 text-sm text-base-content/50 transition-all hover:text-primary"
+          className="btn btn-ghost btn-sm mb-8 gap-2 rounded-xl font-semibold"
         >
-          <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          <ChevronLeftIcon className="h-4 w-4" />
           Back
         </button>
 
         {!isConnected ? (
           <ConnectWalletPrompt
             title="Connect your wallet"
-            description="Connect Freighter to start identity verification."
+            description="Connect a Stellar wallet to start identity verification."
           />
         ) : (
-          <div className="animate-in fade-in zoom-in-95 duration-700">
-            <div className="mb-8 text-center">
+          <div>
+            <div className="mb-8 text-center md:text-left">
               <h1 className="page-title">Verify your identity</h1>
               <p className="page-subtitle mx-auto mt-3 max-w-lg">
                 Your documents are encrypted in the browser before they leave it. The chain stores a reference, not the

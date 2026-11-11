@@ -6,24 +6,24 @@ import { AdminAssetsTab } from "./components/AdminAssetsTab";
 import { AdminComplianceTab } from "./components/AdminComplianceTab";
 import { AdminGovernanceTab } from "./components/AdminGovernanceTab";
 import { AdminStatsPanel } from "./components/AdminStatsPanel";
-import { ExclamationTriangleIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
-import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
+import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
 import { ADMIN_ADDRESSES } from "~~/scaffold.config";
 import { getContractIds } from "~~/services/stellar/sorobanService";
 import { UserTab } from "~~/types/stellar";
 
 const TABS: { key: UserTab; label: string }[] = [
-  { key: "assets", label: "Asset Management" },
-  { key: "compliance", label: "Compliance & Users" },
+  { key: "assets", label: "Assets" },
+  { key: "compliance", label: "Compliance" },
   { key: "governance", label: "Governance" },
 ];
 
 function NotAuthorized() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-base-200/30 rounded-3xl border border-dashed border-base-content/10 mx-4">
-      <div className="w-20 h-20 bg-error/10 text-error rounded-full flex items-center justify-center mb-6">
+    <div className="mx-auto my-12 w-full max-w-lg rounded-2xl border border-dashed border-base-300 bg-base-100 p-8 text-center shadow-sm sm:p-10">
+      <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-error/10 text-error">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-10 w-10"
@@ -39,13 +39,12 @@ function NotAuthorized() {
           />
         </svg>
       </div>
-      <h1 className="text-3xl font-bold mb-2">Access Denied</h1>
-      <p className="text-base-content/60 max-w-md mb-8">
-        This portal is restricted to authorized administrators. Your current wallet address does not have the required
-        permissions.
+      <h1 className="page-title mb-2">Access denied</h1>
+      <p className="mx-auto mb-8 max-w-md text-sm font-medium text-base-content/70">
+        This page is limited to VTrust Africa admin wallets. The wallet you connected does not have that role.
       </p>
-      <Link href="/" className="btn btn-primary rounded-full px-8 shadow-lg shadow-primary/20">
-        Return to Home
+      <Link href="/" className="btn btn-primary btn-sm rounded-xl px-6">
+        Back to home
       </Link>
     </div>
   );
@@ -63,32 +62,27 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col grow min-h-screen">
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-        <div className="mb-6 text-center md:text-left">
-          <h1 className="page-title text-2xl sm:text-3xl">Admin dashboard</h1>
-          <p className="section-label mt-1">Compliance and registry control</p>
-          <p className="page-subtitle mx-auto mt-3 max-w-2xl md:mx-0">
+      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+        <div className="mb-10 text-center md:text-left">
+          <h1 className="page-title">Admin dashboard</h1>
+          <p className="page-subtitle mx-auto mt-2 max-w-2xl md:mx-0">
             Review submissions, turn approved assets into shares, and collect fees. Only VTrust Africa wallets can open
             this page.
           </p>
         </div>
 
         {!isConnected && (
-          <div className="rounded-2xl border border-dashed border-base-300 p-8 text-center bg-base-100 mb-6">
-            <WalletIcon className="h-12 w-12 text-base-content/20 mx-auto mb-3" />
-            <p className="font-bold mb-1">Connect your Admin Wallet</p>
-            <p className="text-sm text-base-content/60 mb-5">
-              Only VTrust Africa wallets can use these controls.
-            </p>
-            <StellarConnectButton />
-          </div>
+          <ConnectWalletPrompt
+            title="Connect your wallet"
+            description="Only VTrust Africa admin wallets can use these controls."
+          />
         )}
 
         {isConnected && !isDeployed && (
           <div className="alert alert-warning mb-6">
             <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
             <div>
-              <p className="font-bold">Soroban Contracts Not Deployed</p>
+              <p className="font-semibold">Contracts are not deployed</p>
               <p className="text-sm">
                 Run{" "}
                 <code className="bg-base-300 px-1.5 py-0.5 rounded text-xs">packages/soroban-contracts/deploy.sh</code>{" "}
@@ -107,10 +101,10 @@ export default function AdminPage() {
               {TABS.map(tab => (
                 <button
                   key={tab.key}
-                  className={`shrink-0 whitespace-nowrap pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
+                  className={`shrink-0 whitespace-nowrap border-b-2 pb-3 text-sm font-semibold transition-colors ${
                     activeTab === tab.key
-                      ? "border-b-2 border-primary text-primary"
-                      : "text-base-content/40 hover:text-base-content/60"
+                      ? "border-primary text-base-content"
+                      : "border-transparent text-base-content/55 hover:text-base-content"
                   }`}
                   onClick={() => setActiveTab(tab.key)}
                 >

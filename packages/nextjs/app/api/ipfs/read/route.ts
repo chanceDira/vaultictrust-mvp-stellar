@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const IPFS_GATEWAYS = [
-  "https://gateway.pinata.cloud/ipfs/",
-  "https://dweb.link/ipfs/",
-  "https://ipfs.io/ipfs/",
-];
+const IPFS_GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/"];
 
 const CID_PATTERN = /^(?:Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{20,128})$/;
 

@@ -1,6 +1,6 @@
-import { BASE_FEE, Contract, TransactionBuilder, rpc, xdr } from "@stellar/stellar-sdk";
 import { getNetworkPassphrase } from "./horizonClient";
 import { getRpcServer } from "./sorobanRpc";
+import { BASE_FEE, Contract, TransactionBuilder, rpc, xdr } from "@stellar/stellar-sdk";
 
 const SIM_SOURCE_ACCOUNT_ID = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 

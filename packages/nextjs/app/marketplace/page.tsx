@@ -4,7 +4,6 @@ import { useState } from "react";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { AssetCard } from "~~/components/marketplace/AssetCard";
-import { KycStatusBanner } from "~~/components/marketplace/KycStatusBanner";
 import {
   MarketplaceHeader,
   MarketplaceLoading,
@@ -24,7 +23,7 @@ export default function MarketplacePage() {
 
   const { assets, isLoading } = useAssets(pageIndex);
   const total = useTotalAssets();
-  const { kycRecord, usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
+  const { usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -37,7 +36,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="flex flex-col grow">
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
         <MarketplaceHeader stats={stats} />
 
         {!isDeployed ? (
@@ -48,14 +47,9 @@ export default function MarketplacePage() {
               <p className="text-sm text-base-content/70">The on-chain registry is being synchronized.</p>
             </div>
           </div>
-        ) : (
-          <>
-            {isConnected && publicKey && usdcStatus && (!usdcStatus.hasTrustline || !usdcStatus.isAuthorized) && (
-              <WalletPreparationBanner publicKey={publicKey} onSuccess={refreshUsdc} />
-            )}
-            <KycStatusBanner kycRecord={kycRecord} />
-          </>
-        )}
+        ) : isConnected && publicKey && usdcStatus && (!usdcStatus.hasTrustline || !usdcStatus.isAuthorized) ? (
+          <WalletPreparationBanner publicKey={publicKey} onSuccess={refreshUsdc} />
+        ) : null}
 
         <RpcErrorBoundary label="asset list">
           {isLoading ? (
@@ -65,7 +59,7 @@ export default function MarketplacePage() {
               No listings are open right now.
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {assets.map(asset => (
                 <AssetCard key={asset.asset_id} asset={asset} />
               ))}

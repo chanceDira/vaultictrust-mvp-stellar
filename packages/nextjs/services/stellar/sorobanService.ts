@@ -27,13 +27,7 @@ export {
   increaseAllowance,
   fetchTotalFees,
 } from "./investmentCalls";
-export {
-  fetchYieldRound,
-  fetchClaimableYield,
-  fetchYieldRoundCount,
-  depositYield,
-  claimAllYield,
-} from "./yieldCalls";
+export { fetchYieldRound, fetchClaimableYield, fetchYieldRoundCount, depositYield, claimAllYield } from "./yieldCalls";
 export {
   fetchUserRecord,
   fetchAdmins,

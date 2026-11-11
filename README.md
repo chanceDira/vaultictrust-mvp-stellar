@@ -54,7 +54,7 @@ VTrust Africa uses a Stellar-native hybrid model:
 ### Requirements
 - Node.js (>= v20.x)
 - Stellar CLI (v26.0.0+)
-- Freighter wallet (browser extension)
+- A Stellar wallet (browser extension or mobile app)
 - Rust/Cargo (for contract development)
 
 ### Install

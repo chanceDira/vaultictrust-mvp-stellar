@@ -1,5 +1,5 @@
-import { xdr } from "@stellar/stellar-sdk";
 import { safeScValToNative } from "./sorobanDecode";
+import { xdr } from "@stellar/stellar-sdk";
 
 const ERROR_MAP: Record<string, string> = {
   "already initialized": "Protocol already initialized.",
@@ -8,7 +8,8 @@ const ERROR_MAP: Record<string, string> = {
   "not found": "Target record not found on-chain.",
   "already archived": "Asset is already archived.",
   "invalid transition: burned assets cannot be archived": "Burned assets cannot be archived.",
-  "invalid transition: only pending or archived assets can be deleted": "Only Pending or Archived assets can be deleted.",
+  "invalid transition: only pending or archived assets can be deleted":
+    "Only Pending or Archived assets can be deleted.",
   "invalid transition: must be tokenized or closed to burn": "Asset must be Tokenized or Closed before burning.",
   "model mismatch: burn only applies to fractional assets": "Burn only applies to Fractional assets.",
   "invalid transition: cannot close asset in current state": "Asset cannot be closed from its current state.",

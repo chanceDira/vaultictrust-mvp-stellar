@@ -10,7 +10,7 @@ type ConnectWalletPromptProps = {
 
 export function ConnectWalletPrompt({
   title = "Connect your wallet",
-  description = "Connect Freighter to sign transactions and view your holdings on Stellar.",
+  description = "Connect a Stellar wallet to sign transactions and view your holdings.",
 }: ConnectWalletPromptProps) {
   return (
     <EmptyState

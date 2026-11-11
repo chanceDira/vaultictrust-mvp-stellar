@@ -4,7 +4,7 @@ import { ChevronDownIcon, WalletIcon } from "@heroicons/react/24/outline";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 
 export const StellarConnectButton = () => {
-  const { publicKey, isConnected, isLoading, isFreighterInstalled, connect, disconnect } = useStellarWallet();
+  const { publicKey, isConnected, isLoading, connect, disconnect } = useStellarWallet();
 
   const shortKey = publicKey ? `${publicKey.slice(0, 6)}...${publicKey.slice(-4)}` : null;
   const mobileKey = publicKey ? `${publicKey.slice(0, 4)}...${publicKey.slice(-3)}` : null;
@@ -59,18 +59,9 @@ export const StellarConnectButton = () => {
       className="btn btn-primary btn-xs min-h-8 min-w-[5.5rem] px-2.5 sm:btn-sm sm:min-h-9 sm:min-w-[8.5rem] sm:gap-2 sm:px-4"
       onClick={connect}
     >
-      {!isFreighterInstalled ? (
-        <>
-          <span className="sm:hidden">Install</span>
-          <span className="hidden sm:inline">Install Freighter</span>
-        </>
-      ) : (
-        <>
-          <WalletIcon className="h-4 w-4 sm:hidden" />
-          <span className="sm:hidden">Connect</span>
-          <span className="hidden sm:inline">Connect Wallet</span>
-        </>
-      )}
+      <WalletIcon className="h-4 w-4 sm:hidden" />
+      <span className="sm:hidden">Connect</span>
+      <span className="hidden sm:inline">Connect wallet</span>
     </button>
   );
 };

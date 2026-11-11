@@ -2,24 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  ArrowTopRightOnSquareIcon,
-  BanknotesIcon,
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  PlusIcon,
-  SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowTopRightOnSquareIcon, BanknotesIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { DistributeYieldModal } from "~~/components/modals/DistributeYieldModal";
 import { RegisterModal } from "~~/components/modals/RegisterModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
+import { CopyAddress } from "~~/components/ui/CopyAddress";
 import { getExplorerAssetUrl, getExplorerTxUrl } from "~~/scaffold.config";
-import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   fetchAsset,
   fetchAssetsByOwner,
@@ -27,21 +17,14 @@ import {
   getContractIds,
   withdrawProceeds,
 } from "~~/services/stellar/sorobanService";
-import { OnChainAsset } from "~~/types/stellar";
+import { type AssetStateKey, OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/vaultic";
+import { listingStatusLabel } from "~~/utils/vaultic/listingLabels";
 
 interface EnrichedOwnerAsset extends OnChainAsset {
   withdrawable: bigint;
   fundingProgress: number;
 }
-
-const STATE_STYLE: Record<string, { label: string; badge: string }> = {
-  Pending: { label: "Pending Review", badge: "badge-warning" },
-  Active: { label: "Listed", badge: "badge-success" },
-  Tokenized: { label: "Tokenized", badge: "badge-primary" },
-  Closed: { label: "Closed", badge: "badge-error" },
-  Relisted: { label: "Relisted", badge: "badge-info" },
-};
 
 export default function OwnerPage() {
   const { isConnected, publicKey } = useStellarWallet();
@@ -134,87 +117,68 @@ export default function OwnerPage() {
   const stateTag = (asset: EnrichedOwnerAsset) => asset.state?.tag ?? (asset.state as unknown as string);
 
   return (
-    <div className="flex flex-col grow pb-20 min-h-screen">
-      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-12">
-        <div className="mb-4 text-center md:text-left">
+    <div className="flex grow flex-col">
+      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+        <div className="mb-10 text-center md:text-left">
           <h1 className="page-title">Owner dashboard</h1>
-          <p className="section-label mt-1">Register and manage your assets</p>
+          <p className="page-subtitle mt-2">Send an asset for review, then pay investors in USDC when you are ready.</p>
         </div>
-        <p className="page-subtitle mx-auto mb-6 max-w-2xl text-center md:mx-0 md:text-left">
-          Send an asset for review, then pay investors in USDC when you are ready.
-        </p>
 
         {!isConnected ? (
           <ConnectWalletPrompt
             title="Connect your wallet"
-            description="Connect Freighter to register assets and manage listings tied to your Stellar address."
+            description="Connect a Stellar wallet to register assets and manage listings tied to your address."
           />
         ) : (
           <div className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="flex items-center gap-3 bg-base-100 px-4 py-2.5 rounded-2xl border border-base-300 shadow-sm">
-                <div className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px] shadow-success" />
-                <span className="text-xs font-mono font-bold text-base-content/60">
-                  {shortenStellarAddress(publicKey ?? "", 10)}
-                </span>
-              </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {publicKey ? (
+                <div className="w-full max-w-sm rounded-2xl border border-base-300 bg-base-100 px-4 py-3 shadow-sm">
+                  <CopyAddress label="Your wallet" address={publicKey} />
+                </div>
+              ) : null}
               <button
+                type="button"
                 onClick={() => setIsRegisterModalOpen(true)}
-                className="btn btn-primary btn-md stellar-glow w-full gap-2 rounded-2xl px-8 shadow-lg shadow-primary/20 md:w-auto"
+                className="btn btn-primary btn-sm w-full gap-2 rounded-xl sm:w-auto"
               >
-                <PlusIcon className="h-5 w-5" />
+                <PlusIcon className="h-4 w-4" />
                 Register asset
               </button>
             </div>
 
             {assets.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex items-center gap-2 text-base-content/40 mb-2">
-                    <BuildingOffice2Icon className="h-4 w-4" />
-                    <span className="text-xs font-semibold text-base-content/60">Total assets</span>
-                  </div>
-                  <p className="text-4xl font-bold leading-none text-base-content">{assets.length}</p>
-                  <p className="mt-2 text-sm text-base-content/50">Registered</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+                  <p className="text-xs font-medium text-base-content/55">Total assets</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums">{assets.length}</p>
+                  <p className="mt-1 text-sm font-medium text-base-content/60">Registered</p>
                 </div>
-
-                <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <div className="flex items-center gap-2 text-base-content/40 mb-2">
-                    <BanknotesIcon className="h-4 w-4" />
-                    <span className="text-xs font-semibold text-base-content/60">Total raised</span>
-                  </div>
-                  <p className="text-3xl font-bold leading-none text-success">
-                    {totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                    <span className="text-xs font-semibold text-base-content/60">USDC</span>
+                <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+                  <p className="text-xs font-medium text-base-content/55">Total raised</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums text-success">
+                    {totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span className="ml-2 text-sm font-semibold text-base-content/60">USDC</span>
                   </p>
-                  <p className="mt-2 text-sm text-base-content/50">Across all rounds</p>
+                  <p className="mt-1 text-sm font-medium text-base-content/60">Across all rounds</p>
                 </div>
-
-                <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <div className="flex items-center gap-2 text-base-content/40 mb-2">
-                    <SparklesIcon className="h-4 w-4" />
-                    <span className="text-xs font-semibold text-base-content/60">Shares for sale</span>
-                  </div>
-                  <div className="flex items-end gap-3">
-                    <p className="text-4xl font-bold leading-none text-base-content">{tokenizedCount}</p>
-                    {pendingCount > 0 && (
-                      <span className="badge badge-warning badge-sm font-bold mb-1">{pendingCount} Pending</span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm text-base-content/50">Tokenized listings</p>
+                <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+                  <p className="text-xs font-medium text-base-content/55">Shares for sale</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums">{tokenizedCount}</p>
+                  <p className="mt-1 text-sm font-medium text-base-content/60">
+                    {pendingCount > 0 ? `${pendingCount} waiting for review` : "Live listings"}
+                  </p>
                 </div>
               </div>
             )}
 
-            <div className="space-y-3">
-              <h2 className="section-label flex items-center gap-2">
-                <SparklesIcon className="h-4 w-4" /> Your registrations
-              </h2>
+            <div className="space-y-4">
+              <h2 className="text-sm font-semibold text-base-content">Your registrations</h2>
 
               {isLoading ? (
                 <VaulticLoader />
               ) : assets.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-base-300 bg-base-100/50 p-8 text-center font-medium text-base-content/70">
+                <div className="rounded-2xl border border-dashed border-base-300 bg-base-100 p-8 text-center text-sm font-medium text-base-content/70 sm:p-10">
                   You haven&apos;t registered any assets yet.
                   <button
                     onClick={() => setIsRegisterModalOpen(true)}
@@ -227,7 +191,6 @@ export default function OwnerPage() {
                 <div className="space-y-4">
                   {assets.map(asset => {
                     const tag = stateTag(asset);
-                    const style = STATE_STYLE[tag] ?? { label: tag, badge: "badge-ghost" };
                     const isTokenized = tag === "Tokenized" || tag === "Relisted";
                     const isWithdrawing = withdrawingId === asset.asset_id;
                     const withdrawableUsdc = Number(asset.withdrawable) / 1e7;
@@ -235,57 +198,39 @@ export default function OwnerPage() {
                     return (
                       <div
                         key={asset.asset_id}
-                        className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 md:p-8 shadow-xl shadow-primary/5 hover:border-primary/40 transition-all group"
+                        className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm sm:p-6"
                       >
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                          <div className="flex items-start gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 group-hover:bg-primary/10 transition-colors shrink-0">
-                              <BuildingOffice2Icon className="h-6 w-6" />
+                          <div className="min-w-0">
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                              <p className="text-base font-semibold text-base-content">{asset.asset_name}</p>
+                              <span className="rounded-md bg-base-200 px-2 py-0.5 text-xs font-semibold text-base-content/70">
+                                {listingStatusLabel(tag as AssetStateKey)}
+                              </span>
+                              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                {asset.asset_code}
+                              </span>
                             </div>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <p className="font-bold text-lg text-base-content">{asset.asset_name}</p>
-                                <span className={`badge badge-sm font-bold uppercase tracking-tighter ${style.badge}`}>
-                                  {style.label}
+                            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-base-content/40">
+                              <span>{asset.asset_category}</span>
+                              <span>
+                                Valuation:{" "}
+                                <span className="text-base-content/70 font-semibold">
+                                  ${(Number(asset.valuation) / 1e7).toLocaleString()} USDC
                                 </span>
-                                <span className="font-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                                  {asset.asset_code}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-base-content/40">
-                                <span>{asset.asset_category}</span>
-                                <span>
-                                  Valuation:{" "}
-                                  <span className="text-base-content/70 font-semibold">
-                                    ${(Number(asset.valuation) / 1e7).toLocaleString()} USDC
-                                  </span>
-                                </span>
-                                <a
-                                  href={getExplorerAssetUrl(asset.asset_code, asset.issuer ?? "")}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline flex items-center gap-1 opacity-70 hover:opacity-100"
-                                >
-                                  Explorer <ArrowTopRightOnSquareIcon className="h-2.5 w-2.5" />
-                                </a>
-                              </div>
+                              </span>
+                              <a
+                                href={getExplorerAssetUrl(asset.asset_code, asset.issuer ?? "")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline flex items-center gap-1 opacity-70 hover:opacity-100"
+                              >
+                                Explorer <ArrowTopRightOnSquareIcon className="h-2.5 w-2.5" />
+                              </a>
                             </div>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 shrink-0">
-                            {tag === "Pending" && (
-                              <div className="flex items-center gap-1.5 text-warning text-xs font-bold uppercase tracking-widest bg-warning/10 px-3 py-1.5 rounded-xl border border-warning/20">
-                                <ClockIcon className="h-3.5 w-3.5" /> Awaiting Admin Review
-                              </div>
-                            )}
-                            {tag === "Active" && (
-                              <div className="flex items-center gap-1.5 text-success text-xs font-bold uppercase tracking-widest bg-success/10 px-3 py-1.5 rounded-xl border border-success/20">
-                                <CheckCircleIcon className="h-3.5 w-3.5" />
-                                {asset.model?.tag === "WholeOwnership"
-                                  ? "Listed on Marketplace"
-                                  : "Ready for Tokenization"}
-                              </div>
-                            )}
                             {isTokenized && (
                               <>
                                 <button
@@ -296,13 +241,13 @@ export default function OwnerPage() {
                                   className="btn btn-primary btn-sm gap-2 rounded-xl"
                                 >
                                   <BanknotesIcon className="h-4 w-4" />
-                                  Distribute Yield
+                                  Distribute yield
                                 </button>
                                 <Link
                                   href={`/asset/${asset.asset_id}`}
                                   className="btn btn-primary btn-outline btn-sm gap-2 rounded-xl"
                                 >
-                                  View Page <ArrowRightIcon className="h-3 w-3" />
+                                  View listing <ArrowRightIcon className="h-3 w-3" />
                                 </Link>
                               </>
                             )}
@@ -313,9 +258,7 @@ export default function OwnerPage() {
                           <div className="mt-6 pt-6 border-t border-base-200 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                               <div className="flex justify-between items-end mb-2">
-                                <span className="text-xs font-bold text-base-content/40 uppercase tracking-widest">
-                                  Funding Progress
-                                </span>
+                                <span className="text-xs font-medium text-base-content/55">Funding progress</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-mono text-base-content/70">
                                     {asset.sold_shares?.toString() ?? "0"} / {asset.total_shares?.toString() ?? "0"}{" "}
@@ -324,13 +267,13 @@ export default function OwnerPage() {
                                   <span className="text-sm font-bold text-primary">{asset.fundingProgress}%</span>
                                 </div>
                               </div>
-                              <div className="h-3 w-full bg-base-200 rounded-full overflow-hidden shadow-inner border border-base-300/50 p-0.5">
+                              <div className="h-1.5 overflow-hidden rounded-full bg-base-200">
                                 <div
-                                  className="h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-lg"
+                                  className="h-full rounded-full bg-primary"
                                   style={{ width: `${asset.fundingProgress}%` }}
                                 />
                               </div>
-                              <p className="text-[10px] text-base-content/40 mt-1.5">
+                              <p className="mt-1.5 text-xs text-base-content/50">
                                 Price per share:{" "}
                                 <span className="font-semibold text-base-content/60">
                                   ${(Number(asset.price_per_share ?? 0n) / 1e7).toFixed(2)} USDC
@@ -340,9 +283,7 @@ export default function OwnerPage() {
 
                             <div className="bg-base-200/50 rounded-2xl border border-base-300 p-4 flex flex-col justify-between">
                               <div>
-                                <p className="mb-1 text-xs font-semibold text-base-content/60">
-                                  Withdrawable Proceeds
-                                </p>
+                                <p className="mb-1 text-xs font-medium text-base-content/55">Withdrawable proceeds</p>
                                 <p className="text-xl font-bold text-success">
                                   {withdrawableUsdc.toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
@@ -371,19 +312,6 @@ export default function OwnerPage() {
                   })}
                 </div>
               )}
-            </div>
-
-            <div className="rounded-[2.5rem] bg-primary/5 p-10 border border-primary/10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary/5">
-              <div className="h-20 w-20 rounded-3xl bg-base-100 flex items-center justify-center text-primary shrink-0 border border-primary/20 shadow-xl">
-                <DocumentTextIcon className="h-10 w-10" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">Compliance review</h3>
-                <p className="max-w-xl text-sm leading-relaxed text-base-content/60">
-                  Assets are reviewed by admins before listing. Soroban contracts record lifecycle states and investment
-                  activity on Stellar.
-                </p>
-              </div>
             </div>
           </div>
         )}

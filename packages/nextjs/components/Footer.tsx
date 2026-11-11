@@ -35,7 +35,7 @@ function FooterLinkGroup({ title, links }: { title: string; links: { label: stri
 export const Footer = () => {
   return (
     <footer className="mt-auto border-t border-base-300 bg-base-200">
-      <div className="mx-auto max-w-7xl px-3 py-10 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
         <div className="flex flex-col items-center gap-10 text-center lg:flex-row lg:items-start lg:justify-between lg:text-left">
           <div className="flex max-w-sm flex-col items-center lg:items-start">
             <BrandLogo size="lg" showTagline href="/" />

@@ -9,9 +9,9 @@ import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
 import { PageLoading } from "~~/components/ui/PageLoading";
 import { PageStatus } from "~~/components/ui/PageStatus";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
+import { getExplorerTxUrl } from "~~/scaffold.config";
 import { formatListedDate } from "~~/services/stellar/assetMetadata";
 import { fetchAsset, fetchYieldRoundCount, purchaseWholeAsset } from "~~/services/stellar/sorobanService";
-import { getExplorerTxUrl } from "~~/scaffold.config";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/vaultic";
 

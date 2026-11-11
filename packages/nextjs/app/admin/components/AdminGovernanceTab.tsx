@@ -77,9 +77,7 @@ export function AdminGovernanceTab({ publicKey }: Readonly<Props>) {
 
           <div className="space-y-4">
             <div className="bg-base-200/50 rounded-2xl p-4 border border-base-300">
-              <p className="mb-3 text-xs font-semibold text-base-content/60">
-                Admin wallets
-              </p>
+              <p className="mb-3 text-xs font-semibold text-base-content/60">Admin wallets</p>
               <div className="space-y-2">
                 {onChainAdmins.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-base-300 py-8 text-center text-sm font-medium text-base-content/60">

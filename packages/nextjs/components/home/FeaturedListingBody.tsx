@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { CopyAddress } from "~~/components/ui/CopyAddress";
@@ -36,7 +37,9 @@ export function FeaturedListingBody({
   return (
     <>
       {metadata?.imageUrl ? (
-        <img src={metadata.imageUrl} alt="" className="h-56 w-full object-cover sm:h-72" />
+        <div className="relative h-56 w-full sm:h-72">
+          <Image src={metadata.imageUrl} alt="" fill sizes="100vw" className="object-cover" />
+        </div>
       ) : null}
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_17rem] xl:grid-cols-[minmax(0,1fr)_19rem]">
         <div

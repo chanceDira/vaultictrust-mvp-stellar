@@ -24,16 +24,16 @@ const STEPS = [
 const Home: NextPage = () => {
   return (
     <div className="flex min-h-0 flex-col">
-      <section className="px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
-        <div className="mx-auto w-full max-w-3xl text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">
+      <section className="px-5 py-16 sm:px-8 sm:py-24 lg:px-12">
+        <div className="mx-auto w-full max-w-4xl text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-base-content sm:text-5xl">
             Own a share of a real asset
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base font-semibold leading-relaxed text-base-content/85 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-relaxed text-base-content/85 sm:text-lg">
             VTrust Africa lists real assets from Rwanda and across Africa. Owners submit an asset. After a review,
             investors buy shares with a Stellar wallet.
           </p>
-          <div className="mt-6 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:justify-center">
+          <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:justify-center">
             <Link href="/marketplace" className="btn btn-primary btn-lg min-h-12 gap-2 rounded-2xl px-8 font-bold">
               Browse listings
               <ArrowRightIcon className="h-5 w-5 shrink-0" />
@@ -50,18 +50,16 @@ const Home: NextPage = () => {
         </div>
       </section>
 
-      <section className="border-t border-base-300/80 bg-base-200/40 py-8 sm:py-10">
-        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12">
-          <FeaturedAssetsShowcase />
-        </div>
+      <section className="border-y border-base-300/80 bg-base-100">
+        <FeaturedAssetsShowcase />
       </section>
 
-      <section className="py-8 sm:py-12">
+      <section className="py-16 sm:py-20">
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12">
           <h2 className="text-center text-2xl font-bold text-base-content sm:text-3xl">How a listing works</h2>
-          <ol className="mt-6 grid gap-4 md:grid-cols-3">
+          <ol className="mt-10 grid gap-5 md:grid-cols-3">
             {STEPS.map((step, index) => (
-              <li key={step.title} className="rounded-2xl border border-base-300/80 bg-base-100 p-5">
+              <li key={step.title} className="rounded-2xl border border-base-300/80 bg-base-100 p-6">
                 <p className="text-sm font-bold text-primary">{index + 1}</p>
                 <h3 className="mt-2 text-lg font-bold text-base-content">{step.title}</h3>
                 <p className="mt-2 text-sm font-medium leading-relaxed text-base-content/75">{step.description}</p>
@@ -71,7 +69,7 @@ const Home: NextPage = () => {
         </div>
       </section>
 
-      <section className="border-t border-base-300/80 bg-base-200/40 py-8 sm:py-12">
+      <section className="border-t border-base-300/80 bg-base-200/50 py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
           <h2 className="text-2xl font-bold text-base-content sm:text-3xl">Why the shares run on Stellar</h2>
           <p className="mt-3 text-base font-semibold leading-relaxed text-base-content/80">

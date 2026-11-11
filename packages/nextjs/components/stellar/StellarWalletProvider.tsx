@@ -1,96 +1,124 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { getWalletKit, syncWalletKitTheme } from "~~/services/stellar/walletKit";
 
-interface StellarWalletContextValue {
+type StellarWalletContextValue = {
   publicKey: string | null;
   isConnected: boolean;
   isLoading: boolean;
-  isFreighterInstalled: boolean;
   connect: () => Promise<void>;
-  disconnect: () => void;
+  disconnect: () => Promise<void>;
   network: string | null;
-}
+};
 
 const StellarWalletContext = createContext<StellarWalletContextValue>({
   publicKey: null,
   isConnected: false,
   isLoading: false,
-  isFreighterInstalled: false,
   connect: async () => {},
-  disconnect: () => {},
+  disconnect: async () => {},
   network: null,
 });
 
+function applyAddress(
+  address: string | undefined,
+  setPublicKey: (value: string | null) => void,
+  setIsConnected: (value: boolean) => void,
+): void {
+  if (!address) {
+    setPublicKey(null);
+    setIsConnected(false);
+    return;
+  }
+
+  setPublicKey(address);
+  setIsConnected(true);
+}
+
 export const StellarWalletProvider = ({ children }: { children: React.ReactNode }) => {
+  const { resolvedTheme } = useTheme();
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFreighterInstalled, setIsFreighterInstalled] = useState(false);
   const [network, setNetwork] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkFreighter = async () => {
-      try {
-        const freighter = await import("@stellar/freighter-api");
-        const { isConnected: connected } = await freighter.isConnected();
-        setIsFreighterInstalled(connected !== undefined);
+    let stopState = () => {};
+    let stopDisconnect = () => {};
+    let cancelled = false;
 
-        if (connected) {
-          try {
-            const { address } = await freighter.getAddress();
-            if (address) {
-              setPublicKey(address);
-              setIsConnected(true);
-              const { network: net } = await freighter.getNetworkDetails();
-              setNetwork(net ?? null);
-            }
-          } catch {}
-        }
+    const listen = async () => {
+      const kit = await getWalletKit();
+      const { KitEventType } = await import("@creit.tech/stellar-wallets-kit/types");
+      if (cancelled) return;
+
+      try {
+        const { address } = await kit.getAddress();
+        applyAddress(address, setPublicKey, setIsConnected);
       } catch {
-        setIsFreighterInstalled(false);
+        applyAddress(undefined, setPublicKey, setIsConnected);
       }
+
+      stopState = kit.on(KitEventType.STATE_UPDATED, event => {
+        applyAddress(event.payload.address, setPublicKey, setIsConnected);
+        if (event.payload.networkPassphrase) setNetwork(event.payload.networkPassphrase);
+      });
+
+      stopDisconnect = kit.on(KitEventType.DISCONNECT, () => {
+        applyAddress(undefined, setPublicKey, setIsConnected);
+        setNetwork(null);
+      });
     };
 
-    checkFreighter();
+    listen().catch((error: unknown) => {
+      console.error("[Stellar] Wallet kit failed to start:", error);
+    });
+
+    return () => {
+      cancelled = true;
+      stopState();
+      stopDisconnect();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!resolvedTheme) return;
+    syncWalletKitTheme(resolvedTheme === "dark").catch((error: unknown) => {
+      console.error("[Stellar] Wallet kit theme failed:", error);
+    });
+  }, [resolvedTheme]);
 
   const connect = useCallback(async () => {
     setIsLoading(true);
     try {
-      const freighter = await import("@stellar/freighter-api");
-
-      const { isConnected: installed } = await freighter.isConnected();
-      if (!installed) {
-        window.open("https://www.freighter.app/", "_blank");
-        return;
-      }
-
-      const { address } = await freighter.requestAccess();
-      if (address) {
-        setPublicKey(address);
-        setIsConnected(true);
-        setIsFreighterInstalled(true);
-        const { network: net } = await freighter.getNetworkDetails();
-        setNetwork(net ?? null);
-      }
-    } catch (err) {
-      console.error("[Stellar] Connection failed:", err);
+      const kit = await getWalletKit();
+      const { address } = await kit.authModal();
+      applyAddress(address, setPublicKey, setIsConnected);
+    } catch (error: unknown) {
+      const closedByUser =
+        typeof error === "object" && error !== null && "code" in error && (error as { code?: number }).code === -1;
+      if (!closedByUser) console.error("[Stellar] Connection failed:", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const disconnect = useCallback(() => {
-    setPublicKey(null);
-    setIsConnected(false);
-    setNetwork(null);
+  const disconnect = useCallback(async () => {
+    try {
+      const kit = await getWalletKit();
+      await kit.disconnect();
+    } catch (error: unknown) {
+      console.error("[Stellar] Disconnect failed:", error);
+    } finally {
+      applyAddress(undefined, setPublicKey, setIsConnected);
+      setNetwork(null);
+    }
   }, []);
 
   return (
-    <StellarWalletContext.Provider
-      value={{ publicKey, isConnected, isLoading, isFreighterInstalled, connect, disconnect, network }}
-    >
+    <StellarWalletContext.Provider value={{ publicKey, isConnected, isLoading, connect, disconnect, network }}>
       {children}
     </StellarWalletContext.Provider>
   );

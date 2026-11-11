@@ -1,8 +1,8 @@
-import type { SignedTransaction } from "@stellar/freighter-api";
-import { Contract, TransactionBuilder, rpc, xdr } from "@stellar/stellar-sdk";
 import { getNetworkPassphrase } from "./horizonClient";
 import { parseSorobanError } from "./sorobanErrors";
 import { getRpcServer, getTxGuard } from "./sorobanRpc";
+import { signWalletTransaction } from "./walletKit";
+import { Contract, TransactionBuilder, rpc, xdr } from "@stellar/stellar-sdk";
 
 export async function callContract({
   contractId,
@@ -45,11 +45,7 @@ export async function callContract({
 
     const preparedTx = rpc.assembleTransaction(tx, simResult).build();
 
-    const { signTransaction } = await import("@stellar/freighter-api");
-    const signedResult = await signTransaction(preparedTx.toXDR(), {
-      networkPassphrase,
-    });
-    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as SignedTransaction).signedTxXdr;
+    const signedXdr = await signWalletTransaction(preparedTx.toXDR(), callerPublicKey);
 
     const submittedTx = TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
     const response = await server.sendTransaction(submittedTx);
