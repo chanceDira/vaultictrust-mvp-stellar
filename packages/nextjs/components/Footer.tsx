@@ -17,7 +17,7 @@ const legalLinks = [
 
 function FooterLinkGroup({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
-    <div>
+    <div className="text-center lg:text-left">
       <p className="footer-heading">{title}</p>
       <ul className="mt-3 space-y-2">
         {links.map(({ label, href }) => (
@@ -36,10 +36,10 @@ export const Footer = () => {
   return (
     <footer className="mt-auto border-t border-base-300 bg-base-200">
       <div className="mx-auto max-w-7xl px-3 py-10 sm:px-8 lg:px-12">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-sm">
+        <div className="flex flex-col items-center gap-10 text-center lg:flex-row lg:items-start lg:justify-between lg:text-left">
+          <div className="flex max-w-sm flex-col items-center lg:items-start">
             <BrandLogo size="lg" showTagline href="/" />
-            <p className="mt-4 text-sm leading-relaxed text-base-content/60">
+            <p className="mt-4 text-sm font-medium leading-relaxed text-base-content/70">
               Tokenize and invest in real-world assets on Stellar.
             </p>
           </div>

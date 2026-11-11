@@ -44,7 +44,7 @@ const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; c
                 onClick={onClose}
                 className={`${
                   isActive ? "bg-secondary shadow-md" : ""
-                } rounded-full px-3 py-1.5 text-sm hover:bg-secondary hover:shadow-md`}
+                } rounded-full px-3 py-1.5 text-sm font-semibold hover:bg-secondary hover:shadow-md`}
               >
                 {label}
               </Link>
@@ -64,7 +64,7 @@ const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; c
           <Link
             key={href}
             href={href}
-            className={`rounded-full px-2.5 py-1 text-[13px] font-medium transition-colors xl:px-3 xl:text-sm ${
+            className={`rounded-full px-2.5 py-1 text-[13px] font-semibold transition-colors xl:px-3 xl:text-sm ${
               isActive
                 ? "bg-secondary text-base-content shadow-sm"
                 : "text-base-content/70 hover:bg-base-200/80 hover:text-base-content"

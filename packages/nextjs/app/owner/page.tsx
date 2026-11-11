@@ -135,12 +135,12 @@ export default function OwnerPage() {
 
   return (
     <div className="flex flex-col grow pb-20 min-h-screen">
-      <section className="mx-auto w-full max-w-5xl px-3 py-8 sm:px-4 md:py-12">
-        <div className="mb-4">
+      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-12">
+        <div className="mb-4 text-center md:text-left">
           <h1 className="page-title">Owner dashboard</h1>
           <p className="section-label mt-1">Register and manage your assets</p>
         </div>
-        <p className="page-subtitle mb-8 max-w-2xl">
+        <p className="page-subtitle mx-auto mb-8 max-w-2xl text-center md:mx-0 md:text-left">
           Submit assets for review, track tokenization, withdraw USDC proceeds, and distribute yield to investors.
         </p>
 
