@@ -53,9 +53,9 @@ export function AdminStatsPanel({ isDeployed }: Readonly<Props>) {
           <div className="stat-figure text-accent">
             <CubeTransparentIcon className="w-8 h-8" />
           </div>
-          <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Protocol Assets</div>
+          <div className="stat-title text-sm font-semibold">Assets</div>
           <div className="stat-value text-accent">{totalAssets}</div>
-          <div className="stat-desc text-xs mt-1">RWAs in Registry</div>
+          <div className="stat-desc mt-1 text-xs font-medium">Listings in the registry</div>
         </div>
       </div>
     </div>

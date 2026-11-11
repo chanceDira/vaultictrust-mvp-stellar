@@ -21,7 +21,7 @@ const SUPPORT_LINKS = [
 const FAQ = [
   {
     q: "Why do I need a trustline before buying shares?",
-    a: "On Stellar, an account must trust an asset before it can hold that asset. When you invest in a Vaultic asset for the first time, you will be asked to add a trustline in Freighter. This is a one-time step per asset.",
+    a: "On Stellar, a wallet must trust an asset before it can hold it. The first time you buy a VTrust Africa share, Freighter asks you to add that trustline. You do this once per asset.",
   },
   {
     q: 'My transaction failed with "No trustline". What should I do?',
@@ -44,7 +44,7 @@ const FAQ = [
 const SupportPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
-      <article className="mx-auto w-full max-w-3xl px-5 py-12 text-center sm:px-8 sm:py-16 sm:text-left [&_p]:font-semibold">
+      <article className="mx-auto w-full max-w-3xl px-5 py-8 text-center sm:px-8 sm:py-10 sm:text-left [&_p]:font-semibold">
         <DocArticleHeader title="Support" />
 
         <p className="text-base leading-relaxed text-base-content/85">
@@ -52,7 +52,7 @@ const SupportPage: NextPage = () => {
           of Service.
         </p>
 
-        <h2 className="mt-10 text-xl font-semibold text-base-content">Documentation and legal</h2>
+        <h2 className="mt-8 text-xl font-semibold text-base-content">Documentation and legal</h2>
         <ul className="mt-4 space-y-3">
           {SUPPORT_LINKS.map(({ label, href, description }) => (
             <li key={href}>
@@ -67,7 +67,7 @@ const SupportPage: NextPage = () => {
           ))}
         </ul>
 
-        <h2 className="mt-10 text-xl font-semibold text-base-content">Frequently asked questions</h2>
+        <h2 className="mt-8 text-xl font-semibold text-base-content">Frequently asked questions</h2>
         <ul className="mt-4 space-y-6">
           {FAQ.map(({ q, a }, i) => (
             <li key={i} className="rounded-xl border border-base-300/70 bg-base-100 p-4 sm:p-5">
@@ -77,13 +77,13 @@ const SupportPage: NextPage = () => {
           ))}
         </ul>
 
-        <h2 className="mt-10 text-xl font-semibold text-base-content">Contact</h2>
+        <h2 className="mt-8 text-xl font-semibold text-base-content">Contact</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
-          For technical issues, partnerships, or feedback, email us directly at{" "}
+          For a technical problem, a partnership, or feedback, email the team at{" "}
           <a href="mailto:chancedesire60@gmail.com" className="link link-primary">
             chancedesire60@gmail.com
           </a>
-          . You can also find updates on{" "}
+          . That address is the VTrust Africa inbox. You can also read updates on{" "}
           <a href="https://vtrust.africa" target="_blank" rel="noreferrer" className="link link-primary">
             vtrust.africa
           </a>

@@ -1,7 +1,7 @@
 import { VaulticLoader } from "~~/components/VaulticLoader";
 
 export function PageLoading({ label = "Loading" }: { label?: string }) {
-  return <VaulticLoader message={label} className="flex-1 px-4 py-20 sm:py-28" />;
+  return <VaulticLoader message={label} className="flex-1 px-4 py-10 sm:py-14" />;
 }
 
 export function PageSkeleton({ rows = 3 }: { rows?: number }) {

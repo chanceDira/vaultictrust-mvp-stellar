@@ -63,9 +63,9 @@ export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, 
   };
 
   const renderStatusText = () => {
-    if (checking) return `Verifying your Stellar account permissions for ${assetCode}...`;
-    if (hasTrustline) return `You are ready to receive ${assetCode} fractional tokens. Proceeding to investment...`;
-    return `To hold ${assetCode} (RWA) tokens on Stellar, your account must first establish a "Trustline" to the issuer. This is a one-time setup for each asset.`;
+    if (checking) return `Checking whether your wallet can hold ${assetCode}.`;
+    if (hasTrustline) return `Your wallet can hold ${assetCode}. Opening the buy form.`;
+    return `Before your wallet can hold ${assetCode}, it has to trust that asset. You only do this once.`;
   };
 
   if (!isOpen) return null;

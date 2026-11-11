@@ -226,8 +226,8 @@ export default function InvestorPage() {
           </div>
           <p className="section-label mt-1">Holdings and dividend claims</p>
         </div>
-        <p className="page-subtitle mx-auto mb-8 max-w-2xl text-center md:mx-0 md:text-left">
-          View fractional positions, portfolio value, and claim USDC yield from tokenized assets.
+        <p className="page-subtitle mx-auto mb-6 max-w-2xl text-center md:mx-0 md:text-left">
+          See the shares you hold, and claim USDC when an owner pays yield.
         </p>
 
         {!isConnected ? (
@@ -297,7 +297,7 @@ export default function InvestorPage() {
                     <VaulticLoader />
                   ) : enrichedHoldings.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-base-300 p-12 text-center bg-base-100/50">
-                      <p className="text-sm text-base-content/40 italic">You don&apos;t hold any Vaultic assets yet.</p>
+                      <p className="text-sm font-medium text-base-content/70">You do not hold any VTrust Africa shares yet.</p>
                       <Link href="/marketplace" className="btn btn-primary btn-sm mt-4 gap-2">
                         Explore Marketplace
                         <ArrowRightIcon className="h-3 w-3" />

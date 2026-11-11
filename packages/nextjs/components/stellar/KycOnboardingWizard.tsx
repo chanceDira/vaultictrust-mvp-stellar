@@ -127,7 +127,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h3 className="text-2xl font-semibold mb-4">Verify before you invest</h3>
             <p className="text-base-content/60 mb-6 leading-relaxed">
-              Vaultic requires a one-time identity check before you can buy shares on the marketplace.
+              VTrust Africa asks for a one-time identity check before you can buy shares.
             </p>
             <div className="space-y-4 mb-8">
               {[
@@ -272,8 +272,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
             <div className="bg-primary/5 rounded-2xl p-4 mb-8 flex gap-3 items-start border border-primary/10">
               <LockClosedIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <p className="text-[10px] text-primary/80 leading-relaxed font-medium">
-                Vaultic uses <span className="font-bold">AES-256-GCM</span> browser-side encryption. Your raw image is
-                converted to a secure payload that only the authorized compliance team can decrypt.
+                VTrust Africa encrypts the file in your browser before upload. Only the review team can open it.
               </p>
             </div>
 
@@ -333,8 +332,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
             </div>
             <h3 className="text-2xl font-bold mb-3 text-base-content">Submitted!</h3>
             <p className="text-base-content/60 mb-8 max-w-xs mx-auto">
-              Your application is now on-chain. The Vaultic compliance team will review your commitment hash and
-              metadata shortly.
+              Your check is submitted. The VTrust Africa team will review it shortly.
             </p>
             <button className="btn btn-success w-full rounded-xl" onClick={onComplete}>
               Back to Dashboard

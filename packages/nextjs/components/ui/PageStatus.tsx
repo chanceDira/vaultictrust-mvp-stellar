@@ -55,7 +55,7 @@ export function PageStatus({
 
   return (
     <section
-      className={`relative flex flex-1 flex-col items-center justify-center px-4 py-16 sm:py-24 ${className}`}
+      className={`relative flex flex-1 flex-col items-center justify-center px-4 py-10 sm:py-14 ${className}`}
       aria-labelledby="page-status-title"
     >
       {code && /^\d+$/.test(code) && (

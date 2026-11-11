@@ -68,7 +68,7 @@ export async function decryptFileAsAdmin(data: EncryptedData, adminSecretKeyStr:
 
   if (!decryptedAesKeyRaw) {
     throw new Error(
-      "Decryption failed: The provided Admin Org Key does not match the key used to encrypt this document. Verify you are using the correct Vaultic Org Secret Key.",
+      "Decryption failed: This key does not match the key that encrypted the document. Check that you are using the VTrust Africa review key.",
     );
   }
 

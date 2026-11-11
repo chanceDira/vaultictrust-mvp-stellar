@@ -3,7 +3,7 @@ import { notification } from "~~/utils/vaultic";
 const IPFS_GATEWAYS = [
   "https://gateway.pinata.cloud/ipfs/",
   "https://dweb.link/ipfs/",
-  "https://cf-ipfs.com/ipfs/",
+  "https://ipfs.io/ipfs/",
 ];
 
 export function toIpfsCid(uriOrCid: string): string {
@@ -16,6 +16,14 @@ export function toIpfsGatewayUrl(uriOrCid: string, gateway = IPFS_GATEWAYS[0]): 
 
 export async function fetchFromIpfs(uriOrCid: string): Promise<unknown> {
   const cid = toIpfsCid(uriOrCid);
+  if (typeof window !== "undefined") {
+    const response = await fetch(`/api/ipfs/read?cid=${encodeURIComponent(cid)}`);
+    if (!response.ok) {
+      throw new Error("failed to fetch IPFS content");
+    }
+    return response.json();
+  }
+
   const errors: string[] = [];
 
   for (const gateway of IPFS_GATEWAYS) {
@@ -55,6 +63,40 @@ export async function uploadToIpfs(data: unknown, fileName: string): Promise<str
     const err = await response.json().catch(() => ({ error: "upload failed" }));
     const message = (err as { error?: string }).error ?? "upload failed";
     notification.error(`IPFS upload failed: ${message}`);
+    throw new Error(message);
+  }
+
+  const result = await response.json();
+  return (result as { cid: string }).cid;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("Could not read the photo"));
+    };
+    reader.onerror = () => reject(new Error("Could not read the photo"));
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function uploadImageToIpfs(file: File): Promise<string> {
+  const dataUrl = await readFileAsDataUrl(file);
+  const response = await fetch("/api/ipfs/upload-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataUrl, fileName: file.name }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: "upload failed" }));
+    const message = (err as { error?: string }).error ?? "upload failed";
+    notification.error(`Photo upload failed: ${message}`);
     throw new Error(message);
   }
 

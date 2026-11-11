@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import React from "react";
 import {
   ArrowTopRightOnSquareIcon,
@@ -9,8 +9,9 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { getExplorerTxUrl } from "~~/scaffold.config";
-import { uploadToIpfs } from "~~/services/stellar/ipfsService";
+import { uploadImageToIpfs, uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { registerAsset } from "~~/services/stellar/sorobanService";
+import { isAssetPhotoMime, MAX_ASSET_PHOTO_BYTES } from "~~/utils/vaultic/assetPhoto";
 import { notification } from "~~/utils/vaultic";
 
 export function RegisterModal({
@@ -27,6 +28,9 @@ export function RegisterModal({
   const [code, setCode] = useState("");
   const [valuationUsdc, setValuationUsdc] = useState("");
   const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [model, setModel] = useState<"Fractional" | "WholeOwnership">("Fractional");
   const [loading, setLoading] = useState(false);
   const isSubmitting = useRef(false);
@@ -35,6 +39,22 @@ export function RegisterModal({
     const parsed = parseFloat(usdc);
     if (isNaN(parsed) || parsed <= 0) return 0n;
     return BigInt(Math.round(parsed * 1e7));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
+
+  const handlePhoto = (file: File | undefined) => {
+    if (!file) return;
+    if (!isAssetPhotoMime(file.type) || file.size > MAX_ASSET_PHOTO_BYTES) {
+      notification.error("Use a JPG, PNG, or WebP photo under 1.2 MB.");
+      return;
+    }
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const valuationStroops = usdcToStroops(valuationUsdc);
@@ -66,18 +86,21 @@ export function RegisterModal({
 
     isSubmitting.current = true;
     setLoading(true);
-    const id = notification.loading(`Uploading metadata and registering ${name}...`);
+    const id = notification.loading(`Uploading the listing and registering ${name}`);
     try {
+      const image = photo ? await uploadImageToIpfs(photo) : undefined;
       const metadataUri = await uploadToIpfs(
         {
           name,
           description,
+          location: location.trim(),
           category,
           valuation: parseFloat(valuationUsdc),
           currency: "USDC",
           assetCode: code.toUpperCase(),
           createdAt: new Date().toISOString(),
           platform: "VTrust Africa v1",
+          ...(image ? { image } : {}),
         },
         `metadata_${code.toUpperCase()}.json`,
       );
@@ -188,7 +211,7 @@ export function RegisterModal({
               </div>
               <label className="label pt-1">
                 <span className="label-text-alt text-base-content/40 uppercase font-bold text-[9px]">
-                  Vaultic Ticker (Pre-fixed with VT)
+                  Share code. It starts with VT.
                 </span>
               </label>
             </div>
@@ -243,16 +266,47 @@ export function RegisterModal({
 
           <div className="form-control w-full">
             <label className="label pb-1">
-              <span className="label-text font-semibold">Description & Location</span>
+              <span className="label-text font-semibold">Place</span>
+              <span className="label-text-alt text-base-content/40">optional</span>
+            </label>
+            <input
+              className="input input-bordered w-full"
+              placeholder="Kigali, Rwanda"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-control w-full">
+            <label className="label pb-1">
+              <span className="label-text font-semibold">Description</span>
               <span className="label-text-alt text-base-content/40">optional</span>
             </label>
             <textarea
               className="textarea textarea-bordered h-24 w-full resize-none"
-              placeholder="e.g. Commercial plot in Nairobi CBD, 0.5 acres, freehold title"
+              placeholder="Commercial plot, 0.5 acres, freehold title"
               value={description}
               onChange={e => setDescription(e.target.value)}
               disabled={loading}
             />
+          </div>
+
+          <div className="form-control w-full">
+            <label className="label pb-1">
+              <span className="label-text font-semibold">Photo</span>
+              <span className="label-text-alt text-base-content/40">optional, under 1.2 MB</span>
+            </label>
+            <input
+              className="file-input file-input-bordered w-full"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={event => handlePhoto(event.target.files?.[0])}
+              disabled={loading}
+            />
+            {photoPreview ? (
+              <img src={photoPreview} alt="" className="mt-3 h-40 w-full rounded-xl object-cover" />
+            ) : null}
           </div>
 
           <div className="form-control w-full">
@@ -303,9 +357,8 @@ export function RegisterModal({
           <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/15 text-sm">
             <InformationCircleIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div className="text-base-content/60 text-xs leading-relaxed">
-              <span className="font-semibold text-base-content/80">After submission</span>, Vaultic admins will review
-              and approve your asset before it becomes available for investment. Asset metadata will be permanently
-              pinned to IPFS.
+              <span className="font-semibold text-base-content/80">After you submit</span>, VTrust Africa reviews the
+              asset before anyone can buy it. The description and photo are stored on IPFS.
             </div>
           </div>
         </div>

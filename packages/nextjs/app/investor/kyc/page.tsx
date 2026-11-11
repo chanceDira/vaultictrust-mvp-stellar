@@ -12,7 +12,7 @@ export default function KycPage() {
 
   return (
     <div className="flex min-h-screen grow flex-col">
-      <section className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 md:py-16">
+      <section className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         <button
           onClick={() => router.back()}
           className="group mb-10 flex items-center gap-2 text-sm text-base-content/50 transition-all hover:text-primary"
@@ -28,18 +28,19 @@ export default function KycPage() {
           />
         ) : (
           <div className="animate-in fade-in zoom-in-95 duration-700">
-            <div className="mb-16 text-center">
-              <h1 className="page-title">Identity verification</h1>
+            <div className="mb-8 text-center">
+              <h1 className="page-title">Verify your identity</h1>
               <p className="page-subtitle mx-auto mt-3 max-w-lg">
-                Submit encrypted documents for KYC review. Only a commitment hash is stored on-chain.
+                Your documents are encrypted in the browser before they leave it. The chain stores a reference, not the
+                file.
               </p>
             </div>
 
             <KycOnboardingWizard publicKey={publicKey || ""} onComplete={() => router.push("/investor")} />
 
             <p className="mx-auto mt-8 max-w-md text-center text-xs text-base-content/50">
-              By submitting, you agree to record a commitment hash on Stellar. Vaultic does not store unencrypted
-              identity documents on our servers.
+              By submitting, you agree that a reference is recorded on Stellar. VTrust Africa does not store the
+              unencrypted document on our servers.
             </p>
           </div>
         )}

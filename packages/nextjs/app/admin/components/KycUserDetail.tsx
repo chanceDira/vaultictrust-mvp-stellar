@@ -112,7 +112,7 @@ export function KycUserDetail({
                   <div className="flex flex-col gap-2">
                     <input
                       type="password"
-                      placeholder="Paste Vaultic Org Private Key to Decrypt"
+                      placeholder="Paste the VTrust Africa review key"
                       className="input input-bordered input-xs w-full text-[10px]"
                       value={adminOrgKey}
                       onChange={e => setAdminOrgKey(e.target.value)}

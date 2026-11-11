@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRightIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { AssetCard } from "~~/components/marketplace/AssetCard";
 import { KycStatusBanner } from "~~/components/marketplace/KycStatusBanner";
@@ -10,33 +10,23 @@ import {
   MarketplaceLoading,
   WalletPreparationBanner,
 } from "~~/components/marketplace/MarketplaceLayout";
-import { BuySharesModal } from "~~/components/modals/BuySharesModal";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
 import { PAGE_SIZE, useAssets, useTotalAssets } from "~~/hooks/vaultic/useAssets";
 import { useChainData } from "~~/hooks/vaultic/useChainData";
-import { getExplorerTxUrl } from "~~/scaffold.config";
-import { getContractIds, purchaseWholeAsset } from "~~/services/stellar/sorobanService";
-import type { OnChainAsset } from "~~/types/stellar";
-import { notification } from "~~/utils/vaultic";
+import { getContractIds } from "~~/services/stellar/sorobanService";
 
 export default function MarketplacePage() {
-  const { isConnected, publicKey, connect } = useStellarWallet();
+  const { isConnected, publicKey } = useStellarWallet();
   const [pageIndex, setPageIndex] = useState(0);
-  const [selectedAsset, setSelectedAsset] = useState<OnChainAsset | null>(null);
-  const [isTrustlineModalOpen, setIsTrustlineModalOpen] = useState(false);
-  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
 
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
-  const { assets, isLoading, refresh: refreshAssets } = useAssets(pageIndex);
+  const { assets, isLoading } = useAssets(pageIndex);
   const total = useTotalAssets();
   const { kycRecord, usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const kycStatus = (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) ?? "None";
 
   const stats = {
     totalAssets: total,
@@ -45,74 +35,9 @@ export default function MarketplacePage() {
       .toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
   };
 
-  const handleInvestClick = async (asset: OnChainAsset) => {
-    if (!publicKey) {
-      await connect();
-      return;
-    }
-    if (asset.asset_owner === publicKey) {
-      notification.error("Owners cannot purchase their own assets.");
-      return;
-    }
-    if (asset.model.tag === "Fractional" && asset.state.tag === "Active") {
-      notification.info("This asset is being tokenized. Please check back soon.");
-      return;
-    }
-    setSelectedAsset(asset);
-    if (asset.model.tag === "Fractional") {
-      setIsTrustlineModalOpen(true);
-    } else {
-      handleInvestmentSuccess(asset);
-    }
-  };
-
-  const handleInvestmentSuccess = async (assetOverride?: OnChainAsset) => {
-    const asset = assetOverride ?? selectedAsset;
-    if (!asset || !publicKey) return;
-    setIsTrustlineModalOpen(false);
-
-    if (asset.model.tag === "Fractional") {
-      setIsBuyModalOpen(true);
-      return;
-    }
-
-    setIsPurchasing(true);
-    const notifId = notification.loading(`processing purchase for ${asset.asset_name}...`);
-
-    try {
-      const { hash } = await purchaseWholeAsset({ buyer: publicKey, assetId: asset.asset_id }, publicKey);
-      notification.success(
-        <div className="flex flex-col gap-1">
-          <p className="font-bold uppercase tracking-tight text-xs">Purchase successful!</p>
-          <a
-            href={getExplorerTxUrl(hash)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-primary hover:underline flex items-center gap-1"
-          >
-            Verify on Stellar Expert <ArrowRightIcon className="h-3 w-3" />
-          </a>
-        </div>,
-      );
-      await refreshAssets();
-      setSelectedAsset(null);
-    } catch (e: unknown) {
-      notification.error(`Investment failed: ${e instanceof Error ? e.message : "unknown error"}`);
-    } finally {
-      setIsPurchasing(false);
-      notification.remove(notifId);
-    }
-  };
-
-  const handlePurchaseComplete = async () => {
-    setIsBuyModalOpen(false);
-    setSelectedAsset(null);
-    await refreshAssets();
-  };
-
   return (
     <div className="flex flex-col grow">
-      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-12">
+      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <MarketplaceHeader stats={stats} />
 
         {!isDeployed ? (
@@ -136,21 +61,13 @@ export default function MarketplacePage() {
           {isLoading ? (
             <MarketplaceLoading />
           ) : assets.length === 0 && isDeployed ? (
-            <div className="rounded-2xl border border-dashed border-base-300 p-16 text-center bg-base-100 italic text-base-content/50">
-              No active opportunities at this time.
+            <div className="rounded-2xl border border-dashed border-base-300 bg-base-100 p-8 text-center text-base-content/70 sm:p-10">
+              No listings are open right now.
             </div>
           ) : (
-            <div className="grid gap-6">
+            <div className="grid gap-4 sm:grid-cols-2">
               {assets.map(asset => (
-                <AssetCard
-                  key={asset.asset_id}
-                  asset={asset}
-                  isConnected={isConnected}
-                  isPurchasing={isPurchasing}
-                  kycStatus={kycStatus}
-                  onInvestClick={handleInvestClick}
-                  selectedAssetId={selectedAsset?.asset_id}
-                />
+                <AssetCard key={asset.asset_id} asset={asset} />
               ))}
             </div>
           )}
@@ -180,26 +97,6 @@ export default function MarketplacePage() {
           </div>
         )}
       </section>
-
-      {selectedAsset && (
-        <>
-          <TrustlineModal
-            isOpen={isTrustlineModalOpen}
-            onClose={() => setIsTrustlineModalOpen(false)}
-            publicKey={publicKey ?? ""}
-            assetCode={selectedAsset.asset_code}
-            issuer={selectedAsset.issuer ?? ""}
-            onSuccess={() => handleInvestmentSuccess()}
-          />
-          <BuySharesModal
-            isOpen={isBuyModalOpen}
-            onClose={() => setIsBuyModalOpen(false)}
-            asset={selectedAsset}
-            publicKey={publicKey ?? ""}
-            onSuccess={handlePurchaseComplete}
-          />
-        </>
-      )}
     </div>
   );
 }
