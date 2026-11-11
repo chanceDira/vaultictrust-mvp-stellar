@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "react-hot-toast";
+import { AssetTicker } from "~~/components/AssetTicker";
 import { Footer } from "~~/components/Footer";
 import { Header } from "~~/components/Header";
 import { GlobalKycBanner } from "~~/components/stellar/GlobalKycBanner";
@@ -33,6 +34,7 @@ const VaulticApp = ({ children }: { children: React.ReactNode }) => {
         </div>
         <main className="relative flex flex-col flex-1">{children}</main>
         <Footer />
+        <AssetTicker />
       </div>
       <Toaster />
     </>

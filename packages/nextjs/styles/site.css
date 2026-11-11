@@ -91,50 +91,41 @@
   @apply rounded-3xl border border-base-300/80 bg-base-100/50 shadow-xl shadow-primary/5 backdrop-blur-md;
 }
 
-.live-showcase {
-  @apply relative overflow-hidden bg-base-100;
+.asset-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
 }
 
-.live-showcase::before {
-  content: "";
-  @apply pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent;
+.asset-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: asset-marquee 40s linear infinite;
 }
 
-.live-showcase__timer {
-  @apply h-0.5 w-full origin-left bg-primary;
-  animation: live-showcase-timer 6s linear infinite;
+.asset-marquee__set {
+  display: flex;
 }
 
-.live-showcase__live-dot {
-  @apply h-2 w-2 shrink-0 bg-primary;
-  box-shadow: 0 0 10px oklch(from var(--color-primary) l c h / 0.75);
-  animation: hero-banner-pulse 2s ease-in-out infinite;
+.asset-marquee:hover .asset-marquee__track {
+  animation-play-state: paused;
 }
 
-.live-showcase__valuation {
-  @apply border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent;
-}
-
-.live-showcase__dot {
-  @apply h-1.5 w-6 rounded-none bg-base-content/15 transition-all duration-300;
-}
-
-.live-showcase__dot--active {
-  @apply w-10 bg-primary;
-}
-
-@keyframes live-showcase-timer {
+@keyframes asset-marquee {
   from {
-    transform: scaleX(0);
+    transform: translateX(0);
   }
   to {
-    transform: scaleX(1);
+    transform: translateX(-50%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live-showcase__timer,
-  .live-showcase__live-dot {
+  .asset-marquee {
+    overflow-x: auto;
+    mask-image: none;
+  }
+
+  .asset-marquee__track {
     animation: none;
   }
 }
