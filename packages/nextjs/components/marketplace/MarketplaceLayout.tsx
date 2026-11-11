@@ -9,41 +9,42 @@ import { notification } from "~~/utils/vaultic";
 
 export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tvl: string } }) => (
   <>
-    <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
-      <div>
+    <div className="mb-8 flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:justify-between md:text-left">
+      <div className="w-full md:w-auto">
         <h1 className="page-title">Marketplace</h1>
         <p className="section-label mt-1">Registered real-world assets</p>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-2 md:pb-0">
+      <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 md:flex md:w-auto">
         <StatCard
           label="Active listings"
           value={
             <>
-              {stats?.totalAssets ?? "N/A"} <span className="text-base font-normal text-base-content/50">assets</span>
+              {stats?.totalAssets ?? "N/A"}{" "}
+              <span className="text-base font-semibold text-base-content/70">assets</span>
             </>
           }
-          className="min-w-[140px]"
+          className="w-full min-w-0 md:min-w-[160px]"
         />
         <StatCard
           label="Total valuation"
           value={
             <>
-              {stats?.tvl ?? "N/A"} <span className="text-base font-normal text-base-content/50">USDC</span>
+              {stats?.tvl ?? "N/A"} <span className="text-base font-semibold text-base-content/70">USDC</span>
             </>
           }
-          className="min-w-[140px]"
+          className="w-full min-w-0 md:min-w-[160px]"
         />
       </div>
     </div>
-    <div className="mb-12 max-w-2xl">
+    <div className="mx-auto mb-10 max-w-2xl text-center md:mx-0 md:mb-12 md:text-left">
       <p className="page-subtitle">
         Browse approved assets on Stellar. Complete KYC and add a USDC trustline before you invest.
       </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <span className="badge badge-outline border-base-300">Admin reviewed</span>
-        <span className="badge badge-outline border-base-300">Soroban contracts</span>
-        <span className="badge badge-outline border-base-300">KYC required</span>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+        <span className="badge badge-outline border-base-300 font-semibold">Admin reviewed</span>
+        <span className="badge badge-outline border-base-300 font-semibold">Soroban contracts</span>
+        <span className="badge badge-outline border-base-300 font-semibold">KYC required</span>
       </div>
     </div>
   </>

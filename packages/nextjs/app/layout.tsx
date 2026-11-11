@@ -8,6 +8,7 @@ validateEnv();
 
 const montserrat = Montserrat({
   subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
   variable: "--font-montserrat",
   display: "swap",
 });
@@ -21,7 +22,7 @@ export const metadata = getMetadata({
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en" suppressHydrationWarning className={montserrat.variable}>
-      <body className={`${montserrat.className} font-sans antialiased`}>
+      <body className={`${montserrat.className} font-sans`}>
         <ThemeProvider enableSystem>
           <VaulticAppWithProviders>{children}</VaulticAppWithProviders>
         </ThemeProvider>

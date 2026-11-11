@@ -52,19 +52,19 @@ export const AssetCard = ({
 
   return (
     <div data-testid="asset-card" className="group rounded-3xl border border-base-300 bg-base-100/50 p-6 shadow-xl shadow-primary/5 backdrop-blur-md transition-all hover:border-primary/50 md:p-10">
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center md:gap-8">
-        <div className="flex items-start gap-4 sm:gap-6">
+      <div className="flex flex-col items-center justify-between gap-6 text-center md:flex-row md:items-center md:gap-8 md:text-left">
+        <div className="flex w-full flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6 sm:text-left">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary shadow-inner transition-colors group-hover:bg-primary/10 sm:h-16 sm:w-16">
             <Icon className="h-7 w-7 sm:h-9 sm:w-9" />
           </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-xl font-semibold text-base-content">{asset.asset_name}</h3>
-              <span className={`badge badge-sm ${isTokenized ? "badge-primary" : "badge-success"}`}>
+          <div className="w-full min-w-0">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+              <h3 className="text-xl font-bold text-base-content">{asset.asset_name}</h3>
+              <span className={`badge badge-sm font-semibold ${isTokenized ? "badge-primary" : "badge-success"}`}>
                 {asset.state.tag}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-base-content/50">
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-semibold text-base-content/65 sm:justify-start">
               <span className="flex items-center gap-1">
                 <CubeIcon className="h-3 w-3" /> {asset.asset_category}
               </span>
@@ -81,14 +81,14 @@ export const AssetCard = ({
                   <p className="section-label mb-0.5 text-xs">Price per share</p>
                   <p className="text-lg font-semibold text-primary">
                     {(Number(asset.price_per_share) / 1e7).toFixed(2)}{" "}
-                    <span className="text-sm font-normal text-base-content/50">USDC</span>
+                    <span className="text-sm font-semibold text-base-content/65">USDC</span>
                   </p>
                 </div>
                 <div className="flex flex-col justify-center bg-base-100 p-3">
                   <p className="section-label mb-0.5 text-xs">Total shares</p>
                   <p className="text-lg font-semibold text-base-content">
                     {asset.total_shares.toString()}{" "}
-                    <span className="text-sm font-normal text-base-content/50">shares</span>
+                    <span className="text-sm font-semibold text-base-content/65">shares</span>
                   </p>
                 </div>
               </div>
@@ -101,7 +101,7 @@ export const AssetCard = ({
 
             <Link
               href={`/asset/${asset.asset_id}`}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              className="mt-3 inline-flex items-center justify-center gap-1 text-sm font-semibold text-primary hover:underline sm:justify-start"
             >
               View details
               <ArrowRightIcon className="h-3.5 w-3.5" />

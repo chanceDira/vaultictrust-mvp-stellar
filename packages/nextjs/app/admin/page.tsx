@@ -63,11 +63,11 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col grow min-h-screen">
-      <section className="mx-auto w-full max-w-6xl px-3 py-8 sm:px-4">
-        <div className="mb-6">
-          <h1 className="text-xl font-bold sm:text-2xl">Admin dashboard</h1>
-          <p className="text-sm font-medium text-base-content/50">Compliance and registry control</p>
-          <p className="mt-1 text-sm font-medium text-base-content/60">
+      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-6 text-center md:text-left">
+          <h1 className="page-title text-2xl sm:text-3xl">Admin dashboard</h1>
+          <p className="section-label mt-1">Compliance and registry control</p>
+          <p className="page-subtitle mx-auto mt-3 max-w-2xl md:mx-0">
             Review and approve RWA submissions, manage tokenization, and oversee protocol fees. Restricted to Vaultic
             team wallets.
           </p>

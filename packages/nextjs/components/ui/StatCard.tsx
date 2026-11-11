@@ -10,13 +10,13 @@ type StatCardProps = {
 
 export function StatCard({ label, value, hint, icon, className = "" }: StatCardProps) {
   return (
-    <div className={`rounded-2xl border border-base-300 bg-base-100/50 p-5 ${className}`}>
-      <div className="mb-2 flex items-center gap-2 text-base-content/60">
+    <div className={`rounded-2xl border border-base-300 bg-base-100/50 p-4 text-center sm:p-5 md:text-left ${className}`}>
+      <div className="mb-2 flex items-center justify-center gap-2 text-base-content/70 md:justify-start">
         {icon}
         <span className="section-label">{label}</span>
       </div>
       <p className="stat-value text-base-content">{value}</p>
-      {hint && <p className="mt-1 text-sm text-base-content/50">{hint}</p>}
+      {hint && <p className="mt-1 text-sm font-semibold text-base-content/65">{hint}</p>}
     </div>
   );
 }

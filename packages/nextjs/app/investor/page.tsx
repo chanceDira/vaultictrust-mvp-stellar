@@ -214,9 +214,9 @@ export default function InvestorPage() {
 
   return (
     <div className="flex flex-col grow min-h-screen">
-      <section className="mx-auto w-full max-w-5xl px-3 py-8 sm:px-4 md:py-12">
-        <div className="mb-4">
-          <div className="flex flex-wrap items-center gap-3">
+      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-12">
+        <div className="mb-4 text-center md:text-left">
+          <div className="flex flex-col items-center gap-3 md:flex-row md:flex-wrap">
             <h1 className="page-title">Investment portfolio</h1>
             {isConnected && !isKycLoading && (
               <KycStatusBadge
@@ -226,7 +226,7 @@ export default function InvestorPage() {
           </div>
           <p className="section-label mt-1">Holdings and dividend claims</p>
         </div>
-        <p className="page-subtitle mb-8 max-w-2xl">
+        <p className="page-subtitle mx-auto mb-8 max-w-2xl text-center md:mx-0 md:text-left">
           View fractional positions, portfolio value, and claim USDC yield from tokenized assets.
         </p>
 

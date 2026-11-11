@@ -100,6 +100,8 @@
     overflow-x: clip;
     font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
     font-weight: 500;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
   }
 
   h1,
@@ -107,7 +109,8 @@
   h3,
   h4 {
     margin-bottom: 0.5rem;
-    line-height: 1;
+    font-weight: 700;
+    line-height: 1.15;
   }
 }
 
@@ -150,15 +153,15 @@
 }
 
 .page-title {
-  @apply text-3xl font-bold tracking-tight text-base-content sm:text-4xl;
+  @apply text-3xl font-extrabold tracking-tight text-base-content sm:text-4xl;
 }
 
 .page-subtitle {
-  @apply text-base font-medium leading-relaxed text-base-content/70;
+  @apply my-0 text-base font-semibold leading-relaxed text-base-content/80;
 }
 
 .section-label {
-  @apply text-sm font-medium text-base-content/60;
+  @apply text-sm font-semibold text-base-content/70;
 }
 
 .display-headline {
@@ -247,7 +250,7 @@
 }
 
 .landing-section-desc {
-  @apply mx-auto mt-3 max-w-lg text-sm font-medium leading-relaxed text-base-content/65 sm:text-base;
+  @apply mx-auto mt-3 max-w-lg text-sm font-semibold leading-relaxed text-base-content/75 sm:text-base;
 }
 
 .landing-stat-card {
@@ -307,7 +310,7 @@
 }
 
 .stat-value {
-  @apply text-2xl font-semibold tabular-nums sm:text-3xl;
+  @apply text-2xl font-extrabold tabular-nums sm:text-3xl;
 }
 
 .brand-wordmark {
@@ -327,5 +330,5 @@
 }
 
 .footer-link {
-  @apply text-sm font-medium text-base-content/70 transition-colors hover:text-primary;
+  @apply text-sm font-semibold text-base-content/75 transition-colors hover:text-primary;
 }

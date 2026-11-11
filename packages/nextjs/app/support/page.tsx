@@ -44,7 +44,7 @@ const FAQ = [
 const SupportPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
-      <article className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
+      <article className="mx-auto w-full max-w-3xl px-5 py-12 text-center sm:px-8 sm:py-16 sm:text-left [&_p]:font-semibold">
         <DocArticleHeader title="Support" />
 
         <p className="text-base leading-relaxed text-base-content/85">

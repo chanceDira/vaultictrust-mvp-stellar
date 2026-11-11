@@ -108,35 +108,35 @@ export default function AssetDetailsPage() {
   return (
     <div className="flex flex-col grow pb-20">
       <section className="bg-base-200/50 border-b border-base-300 relative overflow-hidden">
-        <div className="relative z-10 mx-auto max-w-7xl px-3 py-12 sm:px-4 md:py-16">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-16">
           <Link
             href="/marketplace"
-            className="btn btn-ghost btn-sm gap-2 mb-8 -ml-2 rounded-xl text-xs uppercase tracking-widest font-bold opacity-50 hover:opacity-100 transition-opacity"
+            className="btn btn-ghost btn-sm mb-8 gap-2 rounded-xl text-xs font-bold uppercase tracking-widest opacity-70 hover:opacity-100"
           >
             <ArrowLeftIcon className="h-3 w-3" />
             Back to Marketplace
           </Link>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="space-y-4 max-w-2xl">
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
-                  <BuildingOffice2Icon className="h-7 w-7 text-primary" />
+          <div className="flex flex-col items-center gap-8 text-center md:flex-row md:items-end md:justify-between md:text-left">
+            <div className="mx-auto w-full max-w-2xl space-y-4 md:mx-0">
+              <div className="flex flex-col items-center gap-3 md:flex-row md:items-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-primary/20 bg-primary/10 text-primary shadow-xl shadow-primary/5">
+                  <BuildingOffice2Icon className="h-7 w-7" />
                 </div>
                 <div>
-                  <h1 className="page-title text-4xl leading-tight sm:text-5xl">{asset.asset_name}</h1>
-                  <p className="mt-2 text-sm text-base-content/60">
+                  <h1 className="page-title text-3xl leading-tight sm:text-4xl md:text-5xl">{asset.asset_name}</h1>
+                  <p className="mt-2 text-sm font-semibold text-base-content/70">
                     {asset.asset_code} · {asset.asset_category}
                   </p>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed text-base-content/60">
+              <p className="text-sm font-medium leading-relaxed text-base-content/75">
                 Tokenized {asset.asset_category.toLowerCase()} asset on Stellar. Shares are issued as native assets
                 after admin review and KYC checks.
               </p>
             </div>
 
-            <div className="bg-base-100 border border-base-300 p-8 rounded-[2.5rem] shadow-2xl shadow-primary/5 min-w-[280px]">
+            <div className="w-full rounded-[2.5rem] border border-base-300 bg-base-100 p-8 shadow-2xl shadow-primary/5 md:w-auto md:min-w-[280px]">
               <p className="text-[10px] text-base-content/40 uppercase tracking-widest font-black mb-1">
                 Asset Valuation
               </p>
@@ -156,7 +156,7 @@ export default function AssetDetailsPage() {
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent skew-x-[-20deg] translate-x-1/4" />
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-3 py-12 sm:px-4">
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

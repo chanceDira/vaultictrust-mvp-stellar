@@ -112,7 +112,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="flex flex-col grow">
-      <section className="mx-auto w-full max-w-5xl px-3 py-8 sm:px-4 md:py-12">
+      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-12">
         <MarketplaceHeader stats={stats} />
 
         {!isDeployed ? (

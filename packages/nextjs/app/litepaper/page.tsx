@@ -12,10 +12,10 @@ export const metadata = getMetadata({
 const LitepaperPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
-      <article className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
+      <article className="mx-auto w-full max-w-3xl px-5 py-12 text-center sm:px-8 sm:py-16 sm:text-left">
         <DocArticleHeader title="Litepaper" meta="Version 3.0 · Stellar Network" />
 
-        <div className="prose prose-neutral mt-4 max-w-none">
+        <div className="prose prose-neutral mt-4 max-w-none text-center sm:text-left [&_p]:font-semibold">
           <p className="text-base leading-relaxed text-base-content/85">
             VTrust Africa is a Real World Asset (RWA) tokenization platform for Rwanda and Africa. This document
             outlines the vision, architecture, and roadmap for listing and fractionalizing assets with on-chain records,
