@@ -27,6 +27,31 @@ export function useTotalAssets() {
   return data ?? 0;
 }
 
+async function fetchMarketplaceAssets(): Promise<OnChainAsset[]> {
+  const total = await fetchTotalAssets();
+  if (total === 0) return [];
+
+  const ids = Array.from({ length: total }, (_, index) => index + 1);
+  const settled = await Promise.allSettled(ids.map(id => fetchAsset(id)));
+  return settled
+    .filter(
+      (result): result is PromiseFulfilledResult<OnChainAsset> =>
+        result.status === "fulfilled" && result.value !== null,
+    )
+    .map(result => result.value)
+    .filter(asset => VISIBLE_STATES.has(asset.state.tag))
+    .reverse();
+}
+
+export function useMarketplaceAssets(): { assets: OnChainAsset[]; isLoading: boolean } {
+  const { data, isLoading } = useSWR("marketplace-assets", fetchMarketplaceAssets, {
+    revalidateOnFocus: false,
+    dedupingInterval: 15_000,
+  });
+
+  return { assets: data ?? [], isLoading };
+}
+
 export function useAssets(pageIndex = 0) {
   const total = useTotalAssets();
 
