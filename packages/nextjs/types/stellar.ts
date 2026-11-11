@@ -1,4 +1,4 @@
-export type AssetStateKey = "Pending" | "Active" | "Tokenized" | "Closed" | "Relisted";
+export type AssetStateKey = "Pending" | "Active" | "Tokenized" | "Closed" | "Relisted" | "Archived" | "Burned";
 export type KycStatusTag = "None" | "Pending" | "Verified" | "Rejected" | "Suspended";
 
 export type UserRecord = {
