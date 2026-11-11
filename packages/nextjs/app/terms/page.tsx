@@ -12,14 +12,13 @@ export const metadata = getMetadata({
 const TermsPage: NextPage = () => {
   return (
     <div className="min-h-0 flex flex-col">
-      <article className="mx-auto w-full max-w-3xl px-5 py-12 text-center sm:px-8 sm:py-16 sm:text-left [&_p]:font-semibold">
+      <article className="mx-auto w-full max-w-3xl px-5 py-8 text-center sm:px-8 sm:py-10 sm:text-left [&_p]:font-semibold">
         <DocArticleHeader title="Terms of Service" meta="Last updated: April 2026" />
 
         <p className="text-base leading-relaxed text-base-content/85">
           By using VTrust Africa (&quot;Platform&quot;, &quot;we&quot;, &quot;us&quot;) you agree to these terms. The
-          Platform is a decentralized application for tokenizing real-world assets on the{" "}
-          <strong>Stellar Network</strong>. You are responsible for compliance with local laws and for the security of
-          your wallet.
+          Platform lists real assets and sells shares on Stellar. You are responsible for your local laws and for
+          keeping your wallet safe.
         </p>
 
         <h2 className="mt-10 text-xl font-semibold text-base-content">1. How the Platform Works</h2>

@@ -68,8 +68,8 @@ export default function AdminPage() {
           <h1 className="page-title text-2xl sm:text-3xl">Admin dashboard</h1>
           <p className="section-label mt-1">Compliance and registry control</p>
           <p className="page-subtitle mx-auto mt-3 max-w-2xl md:mx-0">
-            Review and approve RWA submissions, manage tokenization, and oversee protocol fees. Restricted to Vaultic
-            team wallets.
+            Review submissions, turn approved assets into shares, and collect fees. Only VTrust Africa wallets can open
+            this page.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export default function AdminPage() {
             <WalletIcon className="h-12 w-12 text-base-content/20 mx-auto mb-3" />
             <p className="font-bold mb-1">Connect your Admin Wallet</p>
             <p className="text-sm text-base-content/60 mb-5">
-              Only Vaultic team wallets can access administrative functions.
+              Only VTrust Africa wallets can use these controls.
             </p>
             <StellarConnectButton />
           </div>

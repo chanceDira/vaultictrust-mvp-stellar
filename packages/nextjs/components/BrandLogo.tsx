@@ -71,7 +71,7 @@ export function BrandLogo({
             </span>
           )}
           {showTagline && (
-            <span className="brand-tagline mt-1.5 hidden whitespace-nowrap sm:inline">Stellar RWA Gateway</span>
+            <span className="brand-tagline mt-1.5 hidden whitespace-nowrap sm:inline">Real assets on Stellar</span>
           )}
         </div>
       )}

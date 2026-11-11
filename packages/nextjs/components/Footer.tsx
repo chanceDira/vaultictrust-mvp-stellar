@@ -40,7 +40,7 @@ export const Footer = () => {
           <div className="flex max-w-sm flex-col items-center lg:items-start">
             <BrandLogo size="lg" showTagline href="/" />
             <p className="mt-4 text-sm font-medium leading-relaxed text-base-content/70">
-              Tokenize and invest in real-world assets on Stellar.
+              Buy shares in real assets. List one if you own it.
             </p>
           </div>
 

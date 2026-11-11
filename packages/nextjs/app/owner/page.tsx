@@ -140,8 +140,8 @@ export default function OwnerPage() {
           <h1 className="page-title">Owner dashboard</h1>
           <p className="section-label mt-1">Register and manage your assets</p>
         </div>
-        <p className="page-subtitle mx-auto mb-8 max-w-2xl text-center md:mx-0 md:text-left">
-          Submit assets for review, track tokenization, withdraw USDC proceeds, and distribute yield to investors.
+        <p className="page-subtitle mx-auto mb-6 max-w-2xl text-center md:mx-0 md:text-left">
+          Send an asset for review, then pay investors in USDC when you are ready.
         </p>
 
         {!isConnected ? (
@@ -214,7 +214,7 @@ export default function OwnerPage() {
               {isLoading ? (
                 <VaulticLoader />
               ) : assets.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-base-300 p-16 text-center bg-base-100/50 italic text-base-content/40">
+                <div className="rounded-2xl border border-dashed border-base-300 bg-base-100/50 p-8 text-center font-medium text-base-content/70">
                   You haven&apos;t registered any assets yet.
                   <button
                     onClick={() => setIsRegisterModalOpen(true)}

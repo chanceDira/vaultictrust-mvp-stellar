@@ -18,7 +18,7 @@ test.describe("marketplace page", () => {
     await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => null);
 
     const assetCard = page.locator('[data-testid="asset-card"]').first();
-    const emptyState = page.getByText(/no active opportunities/i);
+    const emptyState = page.getByText(/no listings are open/i);
     const spinner = page.locator(".loading").first();
 
     const hasCards = await assetCard.isVisible().catch(() => false);
@@ -43,16 +43,14 @@ test.describe("marketplace page", () => {
     await expect(prevBtn).toBeEnabled();
   });
 
-  test("invest button triggers connect flow when not logged in", async ({ page }) => {
-    const investBtn = page.getByRole("button", { name: /invest/i }).first();
-    const isVisible = await investBtn.isVisible({ timeout: 15_000 }).catch(() => false);
+  test("opening a listing goes to the asset page", async ({ page }) => {
+    const card = page.locator('[data-testid="asset-card"]').first();
+    const isVisible = await card.isVisible({ timeout: 20_000 }).catch(() => false);
     if (!isVisible) {
       test.skip();
       return;
     }
-    await investBtn.click();
-    await expect(
-      page.getByRole("button", { name: /connect wallet|connect/i }).or(page.getByRole("dialog")),
-    ).toBeVisible({ timeout: 5_000 });
+    await card.click();
+    await expect(page).toHaveURL(/\/asset\/\d+/, { timeout: 10_000 });
   });
 });

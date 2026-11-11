@@ -47,7 +47,7 @@ export function TokenizeModal({
     if (loading) return;
 
     if (!rwaIssuer.trim()) {
-      notification.error("RWA Issuer address is required");
+      notification.error("The share issuer address is required");
       return;
     }
     if (priceStroops <= 0n) {
@@ -229,7 +229,7 @@ export function TokenizeModal({
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">
-                RWA Native Asset Issuer <span className="text-error">*</span>
+                Share issuer address <span className="text-error">*</span>
               </span>
               {rwaIssuer && (
                 <span

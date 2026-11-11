@@ -2,7 +2,7 @@ import React from "react";
 
 export const VaulticLoader = ({
   message = "Loading",
-  className = "py-24",
+  className = "py-10",
 }: {
   message?: string;
   className?: string;

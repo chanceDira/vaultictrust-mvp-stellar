@@ -9,10 +9,12 @@ import { notification } from "~~/utils/vaultic";
 
 export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tvl: string } }) => (
   <>
-    <div className="mb-8 flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:justify-between md:text-left">
-      <div className="w-full md:w-auto">
+    <div className="mb-6 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:justify-between md:text-left">
+      <div className="w-full md:max-w-md md:text-left">
         <h1 className="page-title">Marketplace</h1>
-        <p className="section-label mt-1">Registered real-world assets</p>
+        <p className="page-subtitle mt-2">
+          You need a Stellar wallet. Add a trustline before your wallet can hold shares.
+        </p>
       </div>
 
       <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 md:flex md:w-auto">
@@ -37,16 +39,6 @@ export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tv
         />
       </div>
     </div>
-    <div className="mx-auto mb-10 max-w-2xl text-center md:mx-0 md:mb-12 md:text-left">
-      <p className="page-subtitle">
-        Browse approved assets on Stellar. Complete KYC and add a USDC trustline before you invest.
-      </p>
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-        <span className="badge badge-outline border-base-300 font-semibold">Admin reviewed</span>
-        <span className="badge badge-outline border-base-300 font-semibold">Soroban contracts</span>
-        <span className="badge badge-outline border-base-300 font-semibold">KYC required</span>
-      </div>
-    </div>
   </>
 );
 
@@ -55,7 +47,7 @@ export const ConnectWalletBanner = () => (
     <WalletIcon className="mx-auto mb-3 h-12 w-12 text-base-content/20" />
     <p className="mb-1 text-lg font-semibold">Connect your wallet</p>
     <p className="mx-auto mb-6 max-w-sm text-sm text-base-content/60">
-      Connect Freighter to view listings and invest in registered assets.
+      Connect Freighter to see listings and buy shares.
     </p>
     <StellarConnectButton />
   </div>

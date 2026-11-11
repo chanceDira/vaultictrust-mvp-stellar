@@ -16,7 +16,7 @@ const montserrat = Montserrat({
 export const metadata = getMetadata({
   title: "VTrust Africa",
   description:
-    "Tokenize and invest in real-world assets on Stellar. RWA platform for Rwanda and Africa with on-chain registration and KYC.",
+    "Buy shares in real assets from Rwanda and across Africa. Owners list an asset. Investors pay in USDC on Stellar.",
 });
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {

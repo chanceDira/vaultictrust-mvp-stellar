@@ -1,167 +1,57 @@
 "use client";
 
+import type { ReactElement } from "react";
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  BuildingOffice2Icon,
-  CubeIcon,
-  GlobeAltIcon,
-  ShoppingBagIcon,
-  SparklesIcon,
-} from "@heroicons/react/24/outline";
+import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import { OnChainAsset } from "~~/types/stellar";
 
-const CATEGORY_ICONS: Record<string, any> = {
-  "Real Estate": BuildingOffice2Icon,
-  Mining: SparklesIcon,
-  Agriculture: GlobeAltIcon,
-  Infrastructure: CubeIcon,
-  Commodities: ShoppingBagIcon,
+type AssetCardProps = {
+  asset: OnChainAsset;
 };
 
-function getAssetIcon(category: string) {
-  return CATEGORY_ICONS[category] || CubeIcon;
-}
-
-interface AssetCardProps {
-  asset: OnChainAsset;
-  isConnected: boolean;
-  isPurchasing: boolean;
-  kycStatus: string;
-  onInvestClick: (asset: OnChainAsset) => void;
-  selectedAssetId?: number;
-}
-
-export const AssetCard = ({
-  asset,
-  isConnected,
-  isPurchasing,
-  kycStatus,
-  onInvestClick,
-  selectedAssetId,
-}: AssetCardProps) => {
-  const Icon = getAssetIcon(asset.asset_category);
-  const progress =
-    asset.total_shares > 0n ? Math.round((Number(asset.sold_shares) / Number(asset.total_shares)) * 100) : 0;
-  const isTokenized = asset.state.tag === "Tokenized";
-  const isCurrentPurchasing = isPurchasing && selectedAssetId === asset.asset_id;
-  const needsKyc = isConnected && kycStatus !== "Verified";
-  const isDisabled =
-    (isConnected && asset.model.tag === "Fractional" && asset.state.tag === "Active") || isPurchasing || needsKyc;
+export function AssetCard({ asset }: AssetCardProps): ReactElement {
+  const { metadata } = useAssetMetadata(asset.metadata_uri);
+  const sharePrice = (Number(asset.price_per_share) / 1e7).toFixed(2);
+  const available = Number(asset.total_shares - asset.sold_shares);
+  const sharesForSale = asset.state.tag === "Tokenized";
+  const place = metadata?.location || asset.asset_category;
 
   return (
-    <div data-testid="asset-card" className="group rounded-3xl border border-base-300 bg-base-100/50 p-6 shadow-xl shadow-primary/5 backdrop-blur-md transition-all hover:border-primary/50 md:p-10">
-      <div className="flex flex-col items-center justify-between gap-6 text-center md:flex-row md:items-center md:gap-8 md:text-left">
-        <div className="flex w-full flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6 sm:text-left">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary shadow-inner transition-colors group-hover:bg-primary/10 sm:h-16 sm:w-16">
-            <Icon className="h-7 w-7 sm:h-9 sm:w-9" />
-          </div>
-          <div className="w-full min-w-0">
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-              <h3 className="text-xl font-bold text-base-content">{asset.asset_name}</h3>
-              <span className={`badge badge-sm font-semibold ${isTokenized ? "badge-primary" : "badge-success"}`}>
-                {asset.state.tag}
-              </span>
-            </div>
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-semibold text-base-content/65 sm:justify-start">
-              <span className="flex items-center gap-1">
-                <CubeIcon className="h-3 w-3" /> {asset.asset_category}
-              </span>
-              <span className="rounded bg-primary/5 px-1.5 font-mono text-primary">{asset.asset_code}</span>
-              <span>ID #{asset.asset_id}</span>
-              <span className="rounded bg-base-200 px-1.5 py-0.5 font-mono text-[10px]" title={asset.asset_owner}>
-                Owner {shortenStellarAddress(asset.asset_owner, 6)}
-              </span>
-            </div>
-
-            {isTokenized ? (
-              <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-base-300 bg-base-300 shadow-sm">
-                <div className="flex flex-col justify-center bg-base-100 p-3">
-                  <p className="section-label mb-0.5 text-xs">Price per share</p>
-                  <p className="text-lg font-semibold text-primary">
-                    {(Number(asset.price_per_share) / 1e7).toFixed(2)}{" "}
-                    <span className="text-sm font-semibold text-base-content/65">USDC</span>
-                  </p>
-                </div>
-                <div className="flex flex-col justify-center bg-base-100 p-3">
-                  <p className="section-label mb-0.5 text-xs">Total shares</p>
-                  <p className="text-lg font-semibold text-base-content">
-                    {asset.total_shares.toString()}{" "}
-                    <span className="text-sm font-semibold text-base-content/65">shares</span>
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-5 flex items-center gap-2 rounded-xl border border-success/20 bg-success/5 p-3">
-                <SparklesIcon className="h-4 w-4 text-success" />
-                <p className="text-sm font-medium text-success">Approved · Tokenization in progress</p>
-              </div>
-            )}
-
-            <Link
-              href={`/asset/${asset.asset_id}`}
-              className="mt-3 inline-flex items-center justify-center gap-1 text-sm font-semibold text-primary hover:underline sm:justify-start"
-            >
-              View details
-              <ArrowRightIcon className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="w-full md:w-auto md:shrink-0">
-          {needsKyc && (
-            <p className="mb-2 text-xs text-base-content/60 md:max-w-[200px]">
-              Complete{" "}
-              <Link href="/investor/kyc" className="link link-primary">
-                verification
-              </Link>{" "}
-              to invest.
+    <Link
+      data-testid="asset-card"
+      href={`/asset/${asset.asset_id}`}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100 text-center transition-colors hover:border-primary/50 md:text-left"
+    >
+      {metadata?.imageUrl ? (
+        <img src={metadata.imageUrl} alt="" className="h-44 w-full object-cover sm:h-52" />
+      ) : null}
+      <div className="flex flex-1 flex-col p-5">
+        <p className="text-sm font-semibold text-primary">{place}</p>
+        <h3 className="mt-1 text-xl font-bold leading-tight text-base-content">{asset.asset_name}</h3>
+        <p className="mt-1 text-xs font-semibold text-base-content/60">
+          {asset.asset_code} · Owner {shortenStellarAddress(asset.asset_owner, 4)}
+        </p>
+        {metadata?.description ? (
+          <p className="mt-3 line-clamp-3 text-sm font-medium leading-relaxed text-base-content/75">
+            {metadata.description}
+          </p>
+        ) : null}
+        <div className="mt-auto grid grid-cols-2 gap-3 pt-5">
+          <div>
+            <p className="text-sm font-semibold text-base-content/70">Share price</p>
+            <p className="mt-1 text-lg font-bold tabular-nums text-base-content">
+              {sharesForSale ? `${sharePrice} USDC` : "Not issued"}
             </p>
-          )}
-          <button
-            onClick={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              onInvestClick(asset);
-            }}
-            disabled={isDisabled}
-            className="btn btn-primary btn-lg w-full gap-3 rounded-2xl px-8 shadow-lg shadow-primary/20 stellar-glow md:w-auto"
-          >
-            {isCurrentPurchasing && <span className="loading loading-bars loading-sm" />}
-            {isCurrentPurchasing
-              ? asset.model.tag === "WholeOwnership"
-                ? "Processing..."
-                : "Investing..."
-              : !isConnected
-                ? "Connect wallet"
-                : asset.model.tag === "WholeOwnership"
-                  ? "Buy asset"
-                  : "Invest"}
-            {!isCurrentPurchasing && <ArrowRightIcon className="h-5 w-5" />}
-          </button>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-base-content/70">Available</p>
+            <p className="mt-1 text-lg font-bold tabular-nums text-base-content">
+              {sharesForSale ? available.toLocaleString() : "Soon"}
+            </p>
+          </div>
         </div>
       </div>
-
-      {isTokenized && (
-        <div className="mt-8 border-t border-base-200 pt-8">
-          <div className="mb-2.5 flex items-end justify-between">
-            <span className="section-label">Funding progress</span>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm text-base-content/70">
-                {asset.sold_shares.toString()} / {asset.total_shares.toString()} sold
-              </span>
-              <span className="text-sm font-semibold text-primary">{progress}%</span>
-            </div>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full border border-base-300/50 bg-base-200 p-0.5 shadow-inner">
-            <div
-              className="h-full rounded-full bg-primary shadow-lg transition-all duration-1000 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+    </Link>
   );
-};
+}

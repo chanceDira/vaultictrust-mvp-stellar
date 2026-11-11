@@ -98,7 +98,7 @@ export function AdminComplianceTab({ publicKey }: Readonly<Props>) {
       return;
     }
     setIsDecrypting(true);
-    const notifId = notification.loading("Decrypting document via Vaultic Org Key...");
+    const notifId = notification.loading("Decrypting document...");
     try {
       const ipfsPayload = (await fetchFromIpfs(foundUser.metadata_uri)) as Record<string, unknown>;
       const encryptedData = (ipfsPayload?.encryptedDocument ?? ipfsPayload) as Parameters<typeof decryptFileAsAdmin>[0];
