@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
+import Image from "next/image";
 
 type ListingPlateProps = {
   code: string;
@@ -30,7 +31,7 @@ export function ListingPlate({
   return (
     <div className={`relative overflow-hidden border-b border-base-300/70 ${frame}`}>
       {imageUrl ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <Image src={imageUrl} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-br ${tint}`} />
       )}

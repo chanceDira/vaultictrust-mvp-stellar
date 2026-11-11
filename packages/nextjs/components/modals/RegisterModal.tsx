@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import Image from "next/image";
 import {
   ArrowTopRightOnSquareIcon,
   CheckCircleIcon,
@@ -305,7 +306,9 @@ export function RegisterModal({
               disabled={loading}
             />
             {photoPreview ? (
-              <img src={photoPreview} alt="" className="mt-3 h-40 w-full rounded-xl object-cover" />
+              <div className="relative mt-3 h-40 w-full">
+                <Image src={photoPreview} alt="" fill unoptimized className="rounded-xl object-cover" />
+              </div>
             ) : null}
           </div>
 
