@@ -197,7 +197,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+      <div className="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {(Object.keys(STATE_CONFIG) as AssetStateKey[]).map(state => {
           const cfg = STATE_CONFIG[state];
           const Icon = cfg.icon;
@@ -205,15 +205,17 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
             <button
               key={state}
               onClick={() => setFilter(filter === state ? "All" : state)}
-              className={`rounded-2xl border p-4 text-left transition-all hover:scale-[1.02] hover:shadow-lg ${
+              className={`rounded-2xl border p-3 text-left transition-all hover:scale-[1.02] hover:shadow-lg sm:p-4 ${
                 filter === state
                   ? "ring-2 ring-primary border-transparent bg-primary/5 shadow-primary/10"
                   : "border-base-300 bg-base-100"
               }`}
             >
-              <Icon className={`h-6 w-6 mb-2 ${cfg.color.split(" ")[0]}`} />
-              <p className="text-2xl font-black italic">{counts[state] ?? 0}</p>
-              <p className="text-[10px] text-base-content/40 font-bold uppercase tracking-[0.2em]">{state}</p>
+              <Icon className={`mb-1.5 h-5 w-5 sm:mb-2 sm:h-6 sm:w-6 ${cfg.color.split(" ")[0]}`} />
+              <p className="text-xl font-black italic sm:text-2xl">{counts[state] ?? 0}</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-base-content/40 sm:text-[10px] sm:tracking-[0.2em]">
+                {state}
+              </p>
             </button>
           );
         })}

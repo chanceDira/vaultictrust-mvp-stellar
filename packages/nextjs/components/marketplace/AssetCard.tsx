@@ -52,10 +52,10 @@ export const AssetCard = ({
 
   return (
     <div data-testid="asset-card" className="group rounded-3xl border border-base-300 bg-base-100/50 p-6 shadow-xl shadow-primary/5 backdrop-blur-md transition-all hover:border-primary/50 md:p-10">
-      <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
-        <div className="flex items-start gap-6">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary shadow-inner transition-colors group-hover:bg-primary/10">
-            <Icon className="h-9 w-9" />
+      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center md:gap-8">
+        <div className="flex items-start gap-4 sm:gap-6">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary shadow-inner transition-colors group-hover:bg-primary/10 sm:h-16 sm:w-16">
+            <Icon className="h-7 w-7 sm:h-9 sm:w-9" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-3">
@@ -109,9 +109,9 @@ export const AssetCard = ({
           </div>
         </div>
 
-        <div className="shrink-0">
+        <div className="w-full md:w-auto md:shrink-0">
           {needsKyc && (
-            <p className="mb-2 max-w-[200px] text-xs text-base-content/60">
+            <p className="mb-2 text-xs text-base-content/60 md:max-w-[200px]">
               Complete{" "}
               <Link href="/investor/kyc" className="link link-primary">
                 verification
@@ -126,7 +126,7 @@ export const AssetCard = ({
               onInvestClick(asset);
             }}
             disabled={isDisabled}
-            className="btn btn-primary btn-lg gap-3 rounded-2xl px-8 shadow-lg shadow-primary/20 stellar-glow"
+            className="btn btn-primary btn-lg w-full gap-3 rounded-2xl px-8 shadow-lg shadow-primary/20 stellar-glow md:w-auto"
           >
             {isCurrentPurchasing && <span className="loading loading-bars loading-sm" />}
             {isCurrentPurchasing
