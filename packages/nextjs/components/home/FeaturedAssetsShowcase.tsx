@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
-import { FeaturedListingBody } from "~~/components/home/FeaturedListingBody";
 import { VaulticLoader } from "~~/components/VaulticLoader";
+import { FeaturedListingBody } from "~~/components/home/FeaturedListingBody";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
 import { fetchAsset, fetchTotalAssets, getContractIds } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
@@ -85,9 +85,7 @@ export function FeaturedAssetsShowcase() {
   if (assets.length === 0) {
     return (
       <div className="live-showcase p-6 text-center sm:p-8">
-        <p className="text-base text-base-content/70">
-          No listings are open right now.
-        </p>
+        <p className="text-base text-base-content/70">No listings are open right now.</p>
         <Link href="/marketplace" className="btn btn-primary btn-sm mt-6 gap-2 rounded-xl px-6 stellar-glow">
           Browse marketplace
           <ArrowRightIcon className="h-4 w-4" />

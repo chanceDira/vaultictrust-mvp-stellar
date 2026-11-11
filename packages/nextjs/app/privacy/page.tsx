@@ -37,7 +37,7 @@ const PrivacyPage: NextPage = () => {
 
         <h2 className="mt-10 text-xl font-semibold text-base-content">3. Wallet and chain data</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
-          When you connect a wallet through <strong>Freighter</strong>, your wallet address and network are available to
+          When you connect a Stellar wallet, your wallet address and network are available to
           the frontend to send transactions and read on-chain state. Transaction signing happens in your wallet. We do
           not see or store your private keys. Public blockchain data (addresses, balances, transactions) is read from
           the chain or public Horizon and Soroban RPC services and may be temporarily processed in the browser to

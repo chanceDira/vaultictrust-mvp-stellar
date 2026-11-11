@@ -2,22 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowPathIcon,
-  ArrowRightIcon,
-  ArrowTopRightOnSquareIcon,
-  BanknotesIcon,
-  CheckBadgeIcon,
-  CubeIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowPathIcon, ArrowRightIcon, ArrowTopRightOnSquareIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
+import { CopyAddress } from "~~/components/ui/CopyAddress";
 import { useStellarHoldings } from "~~/hooks/stellar/useStellarHoldings";
 import { getExplorerAssetUrl, getExplorerTxUrl } from "~~/scaffold.config";
-import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   claimAllYield,
   fetchAsset,
@@ -212,237 +205,189 @@ export default function InvestorPage() {
     }
   };
 
+  const portfolioValue = enrichedHoldings.reduce((acc, curr) => acc + curr.value, 0);
+  const kycStatus = typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag;
+  const canClaim = kycStatus === "Verified";
+
   return (
-    <div className="flex flex-col grow min-h-screen">
-      <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 md:py-12">
-        <div className="mb-4 text-center md:text-left">
-          <div className="flex flex-col items-center gap-3 md:flex-row md:flex-wrap">
-            <h1 className="page-title">Investment portfolio</h1>
-            {isConnected && !isKycLoading && (
-              <KycStatusBadge
-                status={typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag}
-              />
-            )}
+    <div className="flex grow flex-col">
+      <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+        <div className="mb-10 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:justify-between md:text-left">
+          <div className="w-full md:max-w-xl">
+            <div className="flex flex-col items-center gap-3 md:flex-row">
+              <h1 className="page-title">Investment portfolio</h1>
+              {isConnected && !isKycLoading ? <KycStatusBadge status={kycStatus ?? "None"} /> : null}
+            </div>
+            <p className="page-subtitle mt-2">See the shares you hold, and claim USDC when an owner pays yield.</p>
           </div>
-          <p className="section-label mt-1">Holdings and dividend claims</p>
+          {isConnected ? (
+            <button
+              type="button"
+              onClick={() => {
+                loadContractPositions();
+                loadKyc();
+              }}
+              className="btn btn-ghost btn-sm gap-2 rounded-xl"
+              disabled={isHoldingsLoading}
+            >
+              {isHoldingsLoading ? (
+                <span className="loading loading-bars loading-xs" />
+              ) : (
+                <ArrowPathIcon className="h-4 w-4" />
+              )}
+              Refresh
+            </button>
+          ) : null}
         </div>
-        <p className="page-subtitle mx-auto mb-6 max-w-2xl text-center md:mx-0 md:text-left">
-          See the shares you hold, and claim USDC when an owner pays yield.
-        </p>
 
         {!isConnected ? (
           <ConnectWalletPrompt
             title="Connect your wallet"
-            description="Connect Freighter to view holdings and claim dividends tied to your Stellar address."
+            description="Connect a Stellar wallet to view holdings and claim dividends tied to your address."
           />
         ) : (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center gap-2 text-base-content/40 mb-2">
-                  <CubeIcon className="h-4 w-4" />
-                  <span className="text-xs font-semibold text-base-content/60">Total assets held</span>
-                </div>
-                <p className="text-4xl font-bold leading-none text-base-content">{enrichedHoldings.length}</p>
-                <p className="mt-2 text-sm text-primary/80">On-chain positions</p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+                <p className="text-xs font-medium text-base-content/55">Total assets held</p>
+                <p className="mt-2 text-3xl font-bold tabular-nums text-base-content">{enrichedHoldings.length}</p>
+                <p className="mt-1 text-sm font-medium text-base-content/60">On-chain positions</p>
               </div>
-
-              <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 md:col-span-2 flex flex-col justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-base-content/40">
-                    <BanknotesIcon className="h-4 w-4" />
-                    <span className="text-xs font-semibold text-base-content/60">Portfolio valuation</span>
+              <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm md:col-span-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-medium text-base-content/55">Portfolio valuation</p>
+                  {isYieldLoading ? <span className="loading loading-bars loading-xs text-primary" /> : null}
+                </div>
+                <p className="mt-2 text-3xl font-bold tabular-nums text-success">
+                  {portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <span className="ml-2 text-sm font-semibold text-base-content/60">USDC</span>
+                </p>
+                {publicKey ? (
+                  <div className="mt-4 max-w-xs border-t border-base-200 pt-4">
+                    <CopyAddress label="Your wallet" address={publicKey} />
                   </div>
-                  {isYieldLoading && <span className="loading loading-bars loading-xs text-primary" />}
-                </div>
-                <div className="flex items-end justify-between mt-3">
-                  <p className="text-3xl font-bold leading-none text-success">
-                    {enrichedHoldings
-                      .reduce((acc, curr) => acc + curr.value, 0)
-                      .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                    <span className="text-xs font-semibold text-base-content/60">USDC</span>
-                  </p>
-                  <p className="text-[10px] text-base-content/30 font-mono tracking-tighter">
-                    {shortenStellarAddress(publicKey || "")}
-                  </p>
-                </div>
+                ) : null}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
               <RpcErrorBoundary label="holdings">
-                <div className="lg:col-span-2 space-y-4">
-                  <div className="flex justify-between items-end pb-2">
-                    <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-2">
-                      <CheckBadgeIcon className="h-4 w-4" /> Your Active Positions
-                    </h3>
-                    <button
-                      onClick={() => {
-                        loadContractPositions();
-                        loadKyc();
-                      }}
-                      className="btn btn-ghost btn-xs gap-1.5 font-bold uppercase tracking-widest text-[8px] opacity-40 hover:opacity-100 transition-opacity"
-                      disabled={isHoldingsLoading}
-                    >
-                      {isHoldingsLoading ? (
-                        <span className="loading loading-bars loading-[10px]" />
-                      ) : (
-                        <ArrowPathIcon className="h-2.5 w-2.5" />
-                      )}
-                      Refresh
-                    </button>
-                  </div>
-
+                <div className="space-y-4">
+                  <h2 className="text-sm font-semibold text-base-content">Your positions</h2>
                   {isHoldingsLoading ? (
                     <VaulticLoader />
                   ) : enrichedHoldings.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-base-300 p-12 text-center bg-base-100/50">
-                      <p className="text-sm font-medium text-base-content/70">You do not hold any VTrust Africa shares yet.</p>
-                      <Link href="/marketplace" className="btn btn-primary btn-sm mt-4 gap-2">
-                        Explore Marketplace
-                        <ArrowRightIcon className="h-3 w-3" />
+                    <div className="rounded-2xl border border-dashed border-base-300 bg-base-100 p-8 text-center sm:p-10">
+                      <p className="text-sm font-medium text-base-content/70">
+                        You do not hold any VTrust Africa shares yet.
+                      </p>
+                      <Link href="/marketplace" className="btn btn-primary btn-sm mt-4 gap-2 rounded-xl">
+                        Explore marketplace
+                        <ArrowRightIcon className="h-4 w-4" />
                       </Link>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {enrichedHoldings.map(holding => (
-                        <div
+                        <article
                           key={`${holding.assetCode}-${holding.assetId}`}
-                          className="rounded-2xl border border-base-300 bg-base-100/60 backdrop-blur-sm p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 group"
+                          className="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-5"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner group-hover:scale-110 transition-transform">
-                                <CubeIcon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-bold text-base-content">{holding.assetName}</p>
-                                  <span className="font-mono text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                                    {holding.assetCode}
-                                  </span>
-                                  <span className="px-1.5 py-0.5 rounded bg-base-200 text-[8px] font-bold opacity-60 uppercase tracking-tighter">
-                                    {holding.ownershipPercent.toFixed(4)}% Share
-                                  </span>
-                                  {holding.source === "horizon" && (
-                                    <span className="px-1.5 py-0.5 rounded bg-success/10 text-success text-[8px] font-bold uppercase">
-                                      ✓ Distributed
-                                    </span>
-                                  )}
-                                </div>
-                                {holding.assetIssuer && (
-                                  <p className="text-[10px] text-base-content/40 font-mono mt-0.5">
-                                    Issuer: {shortenStellarAddress(holding.assetIssuer, 8)}
-                                  </p>
-                                )}
-                              </div>
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-primary">{holding.assetCode}</p>
+                              <Link
+                                href={`/asset/${holding.assetId}`}
+                                className="mt-1 block text-base font-semibold text-base-content hover:text-primary"
+                              >
+                                {holding.assetName}
+                              </Link>
+                              <p className="mt-1 text-xs font-medium text-base-content/55">
+                                {holding.balance.toLocaleString()} shares · {holding.ownershipPercent.toFixed(2)}% of
+                                the listing
+                                {holding.source === "horizon" ? " · In your wallet" : ""}
+                              </p>
                             </div>
-                            <div className="flex items-center gap-8">
-                              <div className="text-right hidden sm:block">
-                                <p className="text-[10px] uppercase font-bold tracking-widest opacity-30 mb-0.5">
-                                  Price/Share
-                                </p>
-                                <p className="text-xs font-mono font-bold">${holding.price.toFixed(2)} USDC</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-base font-semibold text-base-content">
-                                  {holding.balance.toLocaleString()}{" "}
-                                  <span className="text-[10px] uppercase font-normal opacity-40 tracking-widest">
-                                    Shares
-                                  </span>
-                                </p>
-                                <p className="text-xs font-semibold text-primary">
-                                  $
-                                  {holding.value.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}{" "}
-                                  <span className="text-[8px] opacity-60">USDC</span>
-                                </p>
-                                {holding.assetIssuer && (
-                                  <a
-                                    href={getExplorerAssetUrl(holding.assetCode, holding.assetIssuer)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[9px] text-primary hover:underline flex items-center justify-end gap-1 mt-1 opacity-60"
-                                  >
-                                    Explorer <ArrowTopRightOnSquareIcon className="h-2 w-2" />
-                                  </a>
-                                )}
-                              </div>
+                            <div className="min-w-0 sm:text-right">
+                              <p className="text-xs font-medium text-base-content/55">Value</p>
+                              <p className="mt-0.5 text-base font-bold tabular-nums text-base-content">
+                                $
+                                {holding.value.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </p>
+                              <p className="text-xs font-medium text-base-content/50">
+                                {holding.price.toFixed(2)} USDC a share
+                              </p>
+                              {holding.assetIssuer ? (
+                                <a
+                                  href={getExplorerAssetUrl(holding.assetCode, holding.assetIssuer)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                >
+                                  Explorer
+                                  <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+                                </a>
+                              ) : null}
                             </div>
                           </div>
-                        </div>
+                        </article>
                       ))}
                     </div>
                   )}
                 </div>
               </RpcErrorBoundary>
 
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-base-content">Dividends</h3>
-                <div className="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm">
-                  <p className="font-bold text-base-content mb-4 text-sm">Accumulated Dividends</p>
-
-                  {yields.length === 0 ? (
-                    <div className="text-center py-6">
-                      <BanknotesIcon className="h-8 w-8 text-base-content/10 mx-auto mb-2" />
-                      <p className="text-sm font-medium text-base-content/60">No unclaimed yield for your shares.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 mb-6">
-                      {yields.map(y => (
-                        <div
-                          key={y.assetId}
-                          className="flex items-center justify-between border-b border-base-200 pb-3 last:border-0 last:pb-0"
-                        >
-                          <div>
-                            <p className="font-bold text-sm">{y.assetCode}</p>
-                            <p className="text-[10px] text-success font-bold uppercase">Ready to claim</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm">{(Number(y.claimable) / 1e7).toFixed(2)} USDC</p>
-                            <button
-                              onClick={e => handleClaimYield(e, y.assetId, y.assetCode)}
-                              disabled={
-                                isClaiming ||
-                                (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
-                                  "Verified"
-                              }
-                              className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest mt-0.5 disabled:opacity-30"
-                            >
-                              Claim This Asset
-                            </button>
-                          </div>
+              <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+                <h2 className="text-sm font-semibold text-base-content">Dividends</h2>
+                {yields.length === 0 ? (
+                  <p className="mt-4 text-sm font-medium text-base-content/60">No unclaimed yield for your shares.</p>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {yields.map(y => (
+                      <div
+                        key={y.assetId}
+                        className="flex items-center justify-between gap-3 border-b border-base-200 pb-3 last:border-0 last:pb-0"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold">{y.assetCode}</p>
+                          <p className="text-xs font-medium text-success">Ready to claim</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="pt-4 border-t border-base-200">
-                    <p className="text-[10px] text-base-content/40 mb-3 leading-relaxed">
-                      Yield is distributed in USDC directly to your Stellar wallet based on your fractional asset
-                      ownership percentage.
-                    </p>
-                    <button
-                      className="btn btn-primary btn-md stellar-glow w-full gap-2 rounded-2xl shadow-lg shadow-primary/20"
-                      disabled={
-                        yields.length === 0 ||
-                        isClaiming ||
-                        (typeof kycRecord?.status === "string" ? kycRecord.status : kycRecord?.status?.tag) !==
-                          "Verified"
-                      }
-                      onClick={e => yields.length > 0 && handleClaimYield(e, yields[0].assetId, "All Assets")}
-                    >
-                      {isClaiming ? (
-                        <span className="loading loading-bars loading-xs" />
-                      ) : (
-                        <BanknotesIcon className="h-5 w-5" />
-                      )}
-                      Claim All Yield
-                    </button>
+                        <div className="text-right">
+                          <p className="text-sm font-bold tabular-nums">
+                            {(Number(y.claimable) / 1e7).toFixed(2)} USDC
+                          </p>
+                          <button
+                            type="button"
+                            onClick={e => handleClaimYield(e, y.assetId, y.assetCode)}
+                            disabled={isClaiming || !canClaim}
+                            className="text-xs font-semibold text-primary hover:underline disabled:opacity-40"
+                          >
+                            Claim
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                )}
+                <p className="mt-4 text-sm font-medium leading-relaxed text-base-content/60">
+                  Yield is paid in USDC to your wallet, in proportion to the shares you hold.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm mt-4 w-full gap-2 rounded-xl"
+                  disabled={yields.length === 0 || isClaiming || !canClaim}
+                  onClick={e => yields.length > 0 && handleClaimYield(e, yields[0].assetId, "All Assets")}
+                >
+                  {isClaiming ? (
+                    <span className="loading loading-bars loading-xs" />
+                  ) : (
+                    <BanknotesIcon className="h-4 w-4" />
+                  )}
+                  Claim all yield
+                </button>
               </div>
             </div>
           </div>

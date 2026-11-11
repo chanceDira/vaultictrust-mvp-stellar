@@ -1,10 +1,6 @@
 import { notification } from "~~/utils/vaultic";
 
-const IPFS_GATEWAYS = [
-  "https://gateway.pinata.cloud/ipfs/",
-  "https://dweb.link/ipfs/",
-  "https://ipfs.io/ipfs/",
-];
+const IPFS_GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/"];
 
 export function toIpfsCid(uriOrCid: string): string {
   return uriOrCid.replace(/^ipfs:\/\//, "").replace(/^https?:\/\/[^/]+\/ipfs\//, "");

@@ -10,7 +10,9 @@ type StatCardProps = {
 
 export function StatCard({ label, value, hint, icon, className = "" }: StatCardProps) {
   return (
-    <div className={`rounded-2xl border border-base-300 bg-base-100/50 p-4 text-center sm:p-5 md:text-left ${className}`}>
+    <div
+      className={`rounded-2xl border border-base-300 bg-base-100/50 p-4 text-center sm:p-5 md:text-left ${className}`}
+    >
       <div className="mb-2 flex items-center justify-center gap-2 text-base-content/70 md:justify-start">
         {icon}
         <span className="section-label">{label}</span>

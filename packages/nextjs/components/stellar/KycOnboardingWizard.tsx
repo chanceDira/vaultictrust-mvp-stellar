@@ -102,7 +102,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
   };
 
   return (
-    <div className="bg-base-100 rounded-3xl border border-base-300 shadow-2xl overflow-hidden max-w-xl w-full mx-auto">
+    <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm">
       <div className="bg-base-200/50 p-6 border-b border-base-300 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-xl">
@@ -252,8 +252,8 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                     <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <p className="font-bold text-sm">{idFile.name}</p>
-                  <p className="text-[10px] opacity-40 uppercase tracking-widest">
-                    {(idFile.size / 1024).toFixed(1)} KB · Ready to Encrypt
+                  <p className="text-xs font-medium text-base-content/50">
+                    {(idFile.size / 1024).toFixed(1)} KB, ready to encrypt
                   </p>
                 </div>
               ) : (
@@ -263,7 +263,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                   </div>
                   <div>
                     <p className="font-bold text-sm">Select identity document</p>
-                    <p className="text-[10px] opacity-40 uppercase tracking-widest mt-1">PNG, JPG up to 5MB</p>
+                    <p className="mt-1 text-xs font-medium text-base-content/50">PNG or JPG, up to 5MB</p>
                   </div>
                 </div>
               )}
@@ -281,7 +281,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                 Back
               </button>
               <button
-                className="btn btn-primary flex-1 rounded-xl shadow-lg shadow-primary/20"
+                className="btn btn-primary flex-1 rounded-xl"
                 disabled={!idFile}
                 onClick={() => setStep("submit")}
               >
@@ -302,9 +302,9 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
               while your raw data is securely linked.
             </p>
             <div className="bg-base-200 rounded-2xl p-4 mb-8 text-left border border-base-300">
-              <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest opacity-40">
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium text-base-content/55">
                 <InformationCircleIcon className="h-4 w-4" />
-                Commitment Info
+                Commitment
               </div>
               <code className="text-[10px] break-all opacity-70">
                 {`{ "owner": "${publicKey.substring(0, 8)}...", "algorithm": "SHA-256", "type": "KYC_COMMITMENT" }`}
@@ -316,7 +316,7 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
                 onClick={() => setStep("data")}
                 disabled={isSubmitting}
               >
-                Edit Info
+                Edit details
               </button>
               <button className="btn btn-primary flex-1 rounded-xl" onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? <span className="loading loading-bars loading-xs" /> : "Submit application"}
@@ -330,12 +330,12 @@ export const KycOnboardingWizard: React.FC<KycOnboardingWizardProps> = ({ public
             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-4 ring-emerald-500/5">
               <CheckCircleIcon className="h-12 w-12 text-emerald-500" />
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-base-content">Submitted!</h3>
+            <h3 className="mb-3 text-2xl font-bold text-base-content">Submitted</h3>
             <p className="text-base-content/60 mb-8 max-w-xs mx-auto">
               Your check is submitted. The VTrust Africa team will review it shortly.
             </p>
             <button className="btn btn-success w-full rounded-xl" onClick={onComplete}>
-              Back to Dashboard
+              Back to portfolio
             </button>
           </div>
         )}

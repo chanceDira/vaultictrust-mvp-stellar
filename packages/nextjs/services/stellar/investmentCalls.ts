@@ -1,9 +1,9 @@
-import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
-import { TESTNET_USDC_CONTRACT } from "~~/scaffold.config";
 import { callContract } from "./sorobanCall";
 import { safeScValToNative } from "./sorobanDecode";
 import { simulateReadCall } from "./sorobanRead";
 import { getContractIds, getRpcServer } from "./sorobanRpc";
+import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
+import { TESTNET_USDC_CONTRACT } from "~~/scaffold.config";
 
 export async function fetchPool(assetId: number): Promise<any> {
   const { investmentManager } = getContractIds();

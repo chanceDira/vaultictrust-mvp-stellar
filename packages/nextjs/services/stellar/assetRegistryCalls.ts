@@ -1,8 +1,8 @@
-import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { callContract } from "./sorobanCall";
 import { normalizeAssetRecord, safeScValToNative } from "./sorobanDecode";
 import { simulateReadCall } from "./sorobanRead";
 import { getContractIds } from "./sorobanRpc";
+import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 
 export async function fetchTotalAssets(): Promise<number> {
   const { registry } = getContractIds();

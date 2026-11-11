@@ -11,8 +11,8 @@ import {
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { uploadImageToIpfs, uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { registerAsset } from "~~/services/stellar/sorobanService";
-import { isAssetPhotoMime, MAX_ASSET_PHOTO_BYTES } from "~~/utils/vaultic/assetPhoto";
 import { notification } from "~~/utils/vaultic";
+import { MAX_ASSET_PHOTO_BYTES, isAssetPhotoMime } from "~~/utils/vaultic/assetPhoto";
 
 export function RegisterModal({
   onClose,

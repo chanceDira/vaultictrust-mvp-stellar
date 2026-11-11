@@ -36,7 +36,7 @@ const TermsPage: NextPage = () => {
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
           Every action that changes on-chain state (listing an asset, tokenizing, buying shares, withdrawing proceeds,
           and similar actions) requires one or more transactions. Each transaction must be signed and confirmed in your
-          wallet (for example, Freighter). The Platform shows loading and status messages. You must complete the
+          Stellar wallet. The Platform shows loading and status messages. You must complete the
           matching wallet prompts for the action to succeed.
         </p>
 

@@ -35,9 +35,7 @@ export function FeaturedListingBody({
 }: FeaturedListingBodyProps): ReactElement {
   return (
     <>
-      {metadata?.imageUrl ? (
-        <img src={metadata.imageUrl} alt="" className="h-56 w-full object-cover sm:h-72" />
-      ) : null}
+      {metadata?.imageUrl ? <img src={metadata.imageUrl} alt="" className="h-56 w-full object-cover sm:h-72" /> : null}
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_17rem] xl:grid-cols-[minmax(0,1fr)_19rem]">
         <div
           className={`px-5 py-5 transition-opacity duration-300 ease-out sm:px-8 sm:py-6 ${

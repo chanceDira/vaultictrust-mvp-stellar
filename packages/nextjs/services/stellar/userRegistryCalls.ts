@@ -1,8 +1,8 @@
-import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { callContract } from "./sorobanCall";
 import { normalizeKycRecord, safeScValToNative } from "./sorobanDecode";
 import { simulateReadCall } from "./sorobanRead";
 import { getContractIds, getRpcServer } from "./sorobanRpc";
+import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 
 export async function fetchUserRecord(userAddress: string): Promise<import("~~/types/stellar").UserRecord | null> {
   const { userRegistry } = getContractIds();

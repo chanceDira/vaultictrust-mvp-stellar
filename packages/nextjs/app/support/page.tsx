@@ -21,7 +21,7 @@ const SUPPORT_LINKS = [
 const FAQ = [
   {
     q: "Why do I need a trustline before buying shares?",
-    a: "On Stellar, a wallet must trust an asset before it can hold it. The first time you buy a VTrust Africa share, Freighter asks you to add that trustline. You do this once per asset.",
+    a: "On Stellar, a wallet must trust an asset before it can hold it. The first time you buy a VTrust Africa share, your wallet asks you to add that trustline. You do this once per asset.",
   },
   {
     q: 'My transaction failed with "No trustline". What should I do?',
@@ -29,11 +29,11 @@ const FAQ = [
   },
   {
     q: "Which network does VTrust Africa use?",
-    a: "VTrust Africa runs on the Stellar network. Connect Freighter and approve transactions when prompted.",
+    a: "VTrust Africa runs on the Stellar network. Connect your wallet and approve transactions when prompted.",
   },
   {
     q: "Do I need to create an account?",
-    a: "No email registration is required. You need a Stellar wallet such as Freighter and USDC for investments. Holdings are tied to your Stellar public key.",
+    a: "No email registration is required. You need a Stellar wallet and USDC for investments. Holdings are tied to your Stellar public key.",
   },
   {
     q: "Where can I read about transaction flows?",

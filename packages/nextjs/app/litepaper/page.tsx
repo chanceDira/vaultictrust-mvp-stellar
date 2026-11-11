@@ -5,8 +5,7 @@ import { getMetadata } from "~~/utils/vaultic/getMetadata";
 
 export const metadata = getMetadata({
   title: "Litepaper",
-  description:
-    "How VTrust Africa lists real assets and sells shares on Stellar. What is live today, and what is not.",
+  description: "How VTrust Africa lists real assets and sells shares on Stellar. What is live today, and what is not.",
 });
 
 const LitepaperPage: NextPage = () => {
@@ -33,7 +32,7 @@ const LitepaperPage: NextPage = () => {
           <li>The owner sends the asset from the owner page.</li>
           <li>A reviewer approves it, or asks for changes.</li>
           <li>Share listings are split into shares and shown on the marketplace.</li>
-          <li>The investor connects Freighter, passes the identity check, and buys.</li>
+          <li>The investor connects a Stellar wallet, passes the identity check, and buys.</li>
         </ol>
 
         <h2 className="mt-8 text-xl font-bold text-base-content">What sits behind the pages</h2>

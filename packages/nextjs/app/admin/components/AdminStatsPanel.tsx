@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BanknotesIcon, CubeTransparentIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { fetchTotalAssets, fetchTotalFees, fetchTotalUsers } from "~~/services/stellar/sorobanService";
 
 type Props = {
@@ -23,40 +22,24 @@ export function AdminStatsPanel({ isDeployed }: Readonly<Props>) {
   }, [isDeployed]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div className="stats shadow-2xl bg-base-100 border border-base-300">
-        <div className="stat">
-          <div className="stat-figure text-primary">
-            <UserGroupIcon className="w-8 h-8" />
-          </div>
-          <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Total Platform Users</div>
-          <div className="stat-value text-primary">{totalUsers}</div>
-          <div className="stat-desc text-xs mt-1">Verified on UserRegistry</div>
-        </div>
+    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+        <p className="text-xs font-medium text-base-content/55">Verified accounts</p>
+        <p className="mt-2 text-3xl font-bold tabular-nums">{totalUsers}</p>
+        <p className="mt-1 text-sm font-medium text-base-content/60">Identity checks on file</p>
       </div>
-
-      <div className="stats shadow-2xl bg-base-100 border border-base-300">
-        <div className="stat">
-          <div className="stat-figure text-secondary">
-            <BanknotesIcon className="w-8 h-8" />
-          </div>
-          <div className="stat-title uppercase tracking-widest text-[10px] font-bold">Accumulated Fees</div>
-          <div className="stat-value text-accent font-bold">
-            {(Number(platformFees) / 10 ** 7).toFixed(2)} <span className="text-sm text-accent font-normal">USDC</span>
-          </div>
-          <div className="stat-desc text-xs mt-1">Ready for Treasury Sweep</div>
-        </div>
+      <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+        <p className="text-xs font-medium text-base-content/55">Collected fees</p>
+        <p className="mt-2 text-3xl font-bold tabular-nums text-success">
+          {(Number(platformFees) / 1e7).toFixed(2)}
+          <span className="ml-2 text-sm font-semibold text-base-content/60">USDC</span>
+        </p>
+        <p className="mt-1 text-sm font-medium text-base-content/60">Held by the contracts</p>
       </div>
-
-      <div className="stats shadow-2xl bg-base-100 border border-base-300">
-        <div className="stat">
-          <div className="stat-figure text-accent">
-            <CubeTransparentIcon className="w-8 h-8" />
-          </div>
-          <div className="stat-title text-sm font-semibold">Assets</div>
-          <div className="stat-value text-accent">{totalAssets}</div>
-          <div className="stat-desc mt-1 text-xs font-medium">Listings in the registry</div>
-        </div>
+      <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+        <p className="text-xs font-medium text-base-content/55">Assets</p>
+        <p className="mt-2 text-3xl font-bold tabular-nums">{totalAssets}</p>
+        <p className="mt-1 text-sm font-medium text-base-content/60">Listings in the registry</p>
       </div>
     </div>
   );

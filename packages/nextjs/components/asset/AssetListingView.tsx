@@ -1,11 +1,11 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { ListingFacts } from "~~/components/asset/ListingFacts";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
+import { ListingFacts } from "~~/components/asset/ListingFacts";
 import { ListingPlate } from "~~/components/marketplace/ListingPlate";
-import { listingStatusLabel, saleTypeLabel } from "~~/utils/vaultic/listingLabels";
 import { OnChainAsset } from "~~/types/stellar";
+import { listingStatusLabel, saleTypeLabel } from "~~/utils/vaultic/listingLabels";
 
 type AssetListingViewProps = {
   asset: OnChainAsset;
@@ -42,7 +42,7 @@ export function AssetListingView({
 
   return (
     <div className="flex grow flex-col pb-16">
-      <section className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <section className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <Link href="/marketplace" className="btn btn-ghost btn-sm mb-4 gap-2 rounded-xl font-semibold">
           <ArrowLeftIcon className="h-3 w-3" />
           Back to Marketplace

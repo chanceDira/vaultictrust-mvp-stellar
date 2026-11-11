@@ -42,9 +42,9 @@ const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; c
               <Link
                 href={href}
                 onClick={onClose}
-                className={`${
-                  isActive ? "bg-secondary shadow-md" : ""
-                } rounded-full px-3 py-1.5 text-sm font-semibold hover:bg-secondary hover:shadow-md`}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                  isActive ? "bg-base-200 text-base-content" : "text-base-content/70 hover:bg-base-200"
+                }`}
               >
                 {label}
               </Link>
@@ -56,7 +56,7 @@ const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; c
   }
 
   return (
-    <nav className="hidden items-center lg:flex">
+    <nav className="hidden h-full items-stretch lg:flex">
       {menuLinks.map(({ label, href, adminOnly }) => {
         if (adminOnly && !isAdmin) return null;
         const isActive = pathname === href;
@@ -64,10 +64,10 @@ const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; c
           <Link
             key={href}
             href={href}
-            className={`rounded-full px-2.5 py-1 text-[13px] font-semibold transition-colors xl:px-3 xl:text-sm ${
+            className={`flex items-center border-b-2 px-2.5 text-[13px] font-semibold transition-colors xl:px-3 xl:text-sm ${
               isActive
-                ? "bg-secondary text-base-content shadow-sm"
-                : "text-base-content/70 hover:bg-base-200/80 hover:text-base-content"
+                ? "border-primary text-base-content"
+                : "border-transparent text-base-content/60 hover:text-base-content"
             }`}
           >
             {label}
@@ -84,9 +84,9 @@ export const Header = () => {
   useOutsideClick(burgerMenuRef, closeMenu);
 
   return (
-    <header className="border-b border-base-300/80 bg-base-100/95">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:h-[3.75rem] sm:gap-3 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3 lg:gap-6">
+    <header className="border-b border-base-300/80 bg-base-100/90 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
+        <div className="flex h-full min-w-0 flex-1 items-center gap-1 sm:gap-3 lg:gap-8">
           <details className="dropdown shrink-0 lg:hidden" ref={burgerMenuRef}>
             <summary
               className="btn btn-ghost btn-sm btn-square min-h-9 w-9 hover:bg-transparent"
@@ -96,12 +96,6 @@ export const Header = () => {
             </summary>
             <ul className="menu menu-compact dropdown-content rounded-box mt-2 w-52 bg-base-100 p-2 shadow-lg">
               <HeaderMenuLinks onClose={closeMenu} compact />
-              <li className="mt-1 border-t border-base-300 pt-1">
-                <div className="flex items-center justify-between gap-3 px-3 py-2">
-                  <span className="text-sm text-base-content/70">Theme</span>
-                  <SwitchTheme />
-                </div>
-              </li>
             </ul>
           </details>
 
@@ -115,7 +109,7 @@ export const Header = () => {
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <SwitchTheme className="hidden items-center sm:flex sm:scale-100" />
+          <SwitchTheme />
           <StellarConnectButton />
         </div>
       </div>

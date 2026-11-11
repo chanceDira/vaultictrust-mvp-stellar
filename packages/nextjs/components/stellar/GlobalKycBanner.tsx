@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { ShieldExclamationIcon } from "@heroicons/react/24/outline";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { fetchUserRecord } from "~~/services/stellar/sorobanService";
+
+type BannerTone = "primary" | "warning" | "error";
+
+const TONE_CLASS: Record<BannerTone, string> = {
+  primary: "bg-primary text-primary-content",
+  warning: "bg-warning text-warning-content",
+  error: "bg-error text-error-content",
+};
 
 export const GlobalKycBanner: React.FC = () => {
   const { isConnected, publicKey } = useStellarWallet();
@@ -37,20 +46,31 @@ export const GlobalKycBanner: React.FC = () => {
   if (!isConnected || loading || status === "Verified") return null;
 
   const isPending = status === "Pending";
+  const isRejected = status === "Rejected";
+  const isSuspended = status === "Suspended";
+  let tone: BannerTone = "primary";
+  let message = "Verify your identity before you buy shares.";
+  if (isPending) {
+    tone = "warning";
+    message = "Your identity check is in review.";
+  } else if (isRejected) {
+    tone = "error";
+    message = "Your identity check was rejected. Submit it again.";
+  } else if (isSuspended) {
+    tone = "error";
+    message = "This account is suspended.";
+  }
 
   return (
-    <div
-      role="status"
-      className={`border-b ${isPending ? "border-warning/30 bg-warning/10" : "border-primary/25 bg-primary/10"}`}
-    >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-1.5 sm:px-6">
-        <p className="min-w-0 flex-1 text-sm font-medium leading-5 text-base-content">
-          {isPending
-            ? "Your identity check is in review."
-            : "Verify your identity before you buy shares."}
-        </p>
-        {!isPending ? (
-          <Link href="/investor/kyc" className="btn btn-primary btn-xs shrink-0 rounded-lg px-3 font-semibold">
+    <div role="status" className={TONE_CLASS[tone]}>
+      <div className="mx-auto flex max-w-7xl items-center gap-2.5 px-4 py-2 sm:px-6">
+        <ShieldExclamationIcon className="h-4 w-4 shrink-0" />
+        <p className="min-w-0 flex-1 text-sm font-semibold leading-5">{message}</p>
+        {!isPending && !isSuspended ? (
+          <Link
+            href="/investor/kyc"
+            className="btn btn-xs shrink-0 rounded-lg border-0 bg-base-100 px-3 font-bold text-primary hover:bg-base-100"
+          >
             Verify
           </Link>
         ) : null}

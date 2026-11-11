@@ -1,9 +1,9 @@
-import type { SignedTransaction } from "@stellar/freighter-api";
+import { getNetworkPassphrase } from "./horizonClient";
+import { getTxGuard } from "./sorobanRpc";
+import { signWalletTransaction } from "./walletKit";
 import { Asset, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { TESTNET_USDC_ASSET } from "~~/scaffold.config";
 import type { HorizonAssetBalance } from "~~/types/horizon";
-import { getNetworkPassphrase } from "./horizonClient";
-import { getTxGuard } from "./sorobanRpc";
 
 export async function setupUsdcTrustline(callerPublicKey: string) {
   const acquired = getTxGuard().begin();
@@ -33,12 +33,7 @@ export async function setupUsdcTrustline(callerPublicKey: string) {
       .setTimeout(60)
       .build();
 
-    const { signTransaction } = await import("@stellar/freighter-api");
-    const signedResult = await signTransaction(tx.toXDR(), {
-      networkPassphrase,
-    });
-
-    const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as SignedTransaction).signedTxXdr;
+    const signedXdr = await signWalletTransaction(tx.toXDR(), callerPublicKey);
     const response = await horizon.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
     return response;
   } catch (e: unknown) {

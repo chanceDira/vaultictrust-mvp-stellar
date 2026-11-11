@@ -5,8 +5,8 @@ import Link from "next/link";
 import { ListingPlate } from "~~/components/marketplace/ListingPlate";
 import { CopyAddress } from "~~/components/ui/CopyAddress";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
-import { listingStatusLabel } from "~~/utils/vaultic/listingLabels";
 import { OnChainAsset } from "~~/types/stellar";
+import { listingStatusLabel } from "~~/utils/vaultic/listingLabels";
 
 type AssetCardProps = {
   asset: OnChainAsset;

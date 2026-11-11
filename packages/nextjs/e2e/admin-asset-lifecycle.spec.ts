@@ -26,7 +26,10 @@ test.describe("admin asset lifecycle", () => {
   });
 
   test("state filter buttons render all seven states when connected as admin", async ({ page }) => {
-    const stateFilter = page.locator('[class*="grid"]').filter({ hasText: /Pending/i }).first();
+    const stateFilter = page
+      .locator('[class*="grid"]')
+      .filter({ hasText: /Pending/i })
+      .first();
     const isVisible = await stateFilter.isVisible({ timeout: 5_000 }).catch(() => false);
     if (!isVisible) {
       test.skip();
@@ -86,8 +89,14 @@ test.describe("admin asset lifecycle", () => {
     for (let i = 0; i < count; i++) {
       const btn = burnBtns.nth(i);
       const row = btn.locator("xpath=ancestor::div[contains(@class,'rounded-2xl')]").first();
-      const stateText = await row.getByText(/tokenized|closed/i).isVisible().catch(() => false);
-      const modelText = await row.getByText(/fractional/i).isVisible().catch(() => false);
+      const stateText = await row
+        .getByText(/tokenized|closed/i)
+        .isVisible()
+        .catch(() => false);
+      const modelText = await row
+        .getByText(/fractional/i)
+        .isVisible()
+        .catch(() => false);
       expect(stateText && modelText).toBe(true);
     }
   });

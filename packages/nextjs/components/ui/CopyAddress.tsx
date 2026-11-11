@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { MouseEvent, ReactElement } from "react";
+import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 
 const COPIED_RESET_MS = 1600;
@@ -53,8 +54,14 @@ export function CopyAddress({ address, label }: CopyAddressProps): ReactElement 
           {shortenStellarAddress(address, 6)}
         </p>
       </div>
-      <button type="button" onClick={copyAddress} className="btn btn-ghost btn-xs shrink-0 rounded-lg font-semibold">
-        {copied ? "Copied" : "Copy"}
+      <button
+        type="button"
+        onClick={copyAddress}
+        aria-label={copied ? "Copied" : `Copy ${label} address`}
+        title={address}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-base-content/55 transition-colors hover:bg-base-200 hover:text-base-content"
+      >
+        {copied ? <CheckIcon className="h-4 w-4 text-success" /> : <ClipboardDocumentIcon className="h-4 w-4" />}
       </button>
     </div>
   );

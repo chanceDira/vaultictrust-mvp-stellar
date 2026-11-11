@@ -1,5 +1,5 @@
 import { getHorizonServer, getNetworkPassphrase } from "./horizonClient";
-import { signTransaction, type SignedTransaction } from "@stellar/freighter-api";
+import { signWalletTransaction } from "./walletKit";
 import { Asset, BASE_FEE, Keypair, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 
 export const TESTNET_USDC_ASSET = new Asset("USDC", "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
@@ -24,8 +24,7 @@ export async function setupTrustline(publicKey: string, assetCode: string, issue
     .setTimeout(30)
     .build();
 
-  const signedResult = await signTransaction(transaction.toXDR(), { networkPassphrase });
-  const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as SignedTransaction).signedTxXdr;
+  const signedXdr = await signWalletTransaction(transaction.toXDR(), publicKey);
 
   try {
     return await server.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
@@ -64,8 +63,7 @@ export async function purchaseRWAAsset(
     .setTimeout(30)
     .build();
 
-  const signedResult = await signTransaction(transaction.toXDR(), { networkPassphrase });
-  const signedXdr = typeof signedResult === "string" ? signedResult : (signedResult as SignedTransaction).signedTxXdr;
+  const signedXdr = await signWalletTransaction(transaction.toXDR(), buyerPublicKey);
   return server.submitTransaction(TransactionBuilder.fromXDR(signedXdr, networkPassphrase));
 }
 

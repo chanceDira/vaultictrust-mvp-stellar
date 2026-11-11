@@ -9,7 +9,7 @@ import { notification } from "~~/utils/vaultic";
 
 export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tvl: string } }) => (
   <>
-    <div className="mb-6 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:justify-between md:text-left">
+    <div className="mb-10 flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:justify-between md:text-left">
       <div className="w-full md:max-w-md md:text-left">
         <h1 className="page-title">Marketplace</h1>
         <p className="page-subtitle mt-2">
@@ -22,8 +22,7 @@ export const MarketplaceHeader = ({ stats }: { stats?: { totalAssets: number; tv
           label="Active listings"
           value={
             <>
-              {stats?.totalAssets ?? "N/A"}{" "}
-              <span className="text-base font-semibold text-base-content/70">assets</span>
+              {stats?.totalAssets ?? "N/A"} <span className="text-base font-semibold text-base-content/70">assets</span>
             </>
           }
           className="w-full min-w-0 md:min-w-[160px]"
@@ -47,7 +46,7 @@ export const ConnectWalletBanner = () => (
     <WalletIcon className="mx-auto mb-3 h-12 w-12 text-base-content/20" />
     <p className="mb-1 text-lg font-semibold">Connect your wallet</p>
     <p className="mx-auto mb-6 max-w-sm text-sm text-base-content/60">
-      Connect Freighter to see listings and buy shares.
+      Connect a Stellar wallet to see listings and buy shares.
     </p>
     <StellarConnectButton />
   </div>
