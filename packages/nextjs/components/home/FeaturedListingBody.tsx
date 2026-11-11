@@ -1,8 +1,10 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import { CopyAddress } from "~~/components/ui/CopyAddress";
 import type { AssetMetadata } from "~~/services/stellar/assetMetadata";
 import type { OnChainAsset } from "~~/types/stellar";
+import { listingStatusLabel } from "~~/utils/vaultic/listingLabels";
 
 type FeaturedListingBodyProps = {
   asset: OnChainAsset;
@@ -57,7 +59,7 @@ export function FeaturedListingBody({
                 </span>
               ) : null}
             </div>
-            <h3 className="mt-4 text-center text-2xl font-bold leading-tight tracking-tight text-base-content sm:text-3xl md:text-left lg:text-4xl">
+            <h3 className="mt-3 text-center text-xl font-semibold leading-tight tracking-tight text-base-content sm:text-2xl md:text-left">
               <Link href={`/asset/${asset.asset_id}`} className="hover:text-primary">
                 {asset.asset_name}
               </Link>
@@ -65,6 +67,9 @@ export function FeaturedListingBody({
             <p className="mt-2 text-center text-sm font-medium text-base-content/70 md:text-left">
               {asset.model.tag === "Fractional" ? "Sold as shares" : "Sold as one asset"}
             </p>
+            <div className="mx-auto mt-3 max-w-sm md:mx-0">
+              <CopyAddress label="Owner" address={asset.asset_owner} />
+            </div>
             {metadata?.description ? (
               <p className="mx-auto mt-3 line-clamp-3 max-w-2xl text-center text-sm font-medium leading-relaxed text-base-content/80 md:mx-0 md:text-left">
                 {metadata.description}
@@ -88,9 +93,7 @@ export function FeaturedListingBody({
             </div>
             <div className="col-span-2 sm:col-span-1">
               <p className="text-sm font-semibold text-base-content/70">Status</p>
-              <p className="mt-1 text-lg font-bold text-primary">
-                {asset.state.tag === "Tokenized" ? "Shares for sale" : "Approved"}
-              </p>
+              <p className="mt-1 text-lg font-bold text-primary">{listingStatusLabel(asset.state.tag)}</p>
             </div>
           </div>
           {total > 1 ? (
@@ -108,10 +111,10 @@ export function FeaturedListingBody({
             </div>
           ) : null}
         </div>
-        <div className="live-showcase__valuation flex flex-col justify-between border-t border-base-300/60 lg:border-t-0 lg:border-l">
-          <div className="p-6 sm:p-8">
+        <div className="live-showcase__valuation flex min-w-0 flex-col justify-between border-t border-base-300/60 lg:border-t-0 lg:border-l">
+          <div className="min-w-0 p-4 sm:p-5">
             <p className="text-sm font-semibold text-base-content/70">Value</p>
-            <p className="mt-2 text-4xl font-bold leading-none tabular-nums text-base-content sm:text-5xl">
+            <p className="mt-2 max-w-full break-words text-2xl font-bold leading-tight tabular-nums text-base-content">
               ${valuationLabel}
             </p>
             <p className="mt-2 text-sm font-medium text-base-content/50">USDC</p>

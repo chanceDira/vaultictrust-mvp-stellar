@@ -2,56 +2,77 @@
 
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { ListingPlate } from "~~/components/marketplace/ListingPlate";
+import { CopyAddress } from "~~/components/ui/CopyAddress";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
-import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
+import { listingStatusLabel } from "~~/utils/vaultic/listingLabels";
 import { OnChainAsset } from "~~/types/stellar";
 
 type AssetCardProps = {
   asset: OnChainAsset;
 };
 
+const FULL_PERCENT = 100;
+
 export function AssetCard({ asset }: AssetCardProps): ReactElement {
   const { metadata } = useAssetMetadata(asset.metadata_uri);
   const sharePrice = (Number(asset.price_per_share) / 1e7).toFixed(2);
-  const available = Number(asset.total_shares - asset.sold_shares);
+  const totalShares = Number(asset.total_shares);
+  const soldShares = Number(asset.sold_shares);
+  const available = totalShares - soldShares;
+  const soldPercent =
+    totalShares > 0 ? Math.min(FULL_PERCENT, Math.round((soldShares / totalShares) * FULL_PERCENT)) : 0;
   const sharesForSale = asset.state.tag === "Tokenized";
-  const place = metadata?.location || asset.asset_category;
+  const place = metadata?.location && metadata.location !== asset.asset_category ? metadata.location : "";
 
   return (
-    <Link
+    <article
       data-testid="asset-card"
-      href={`/asset/${asset.asset_id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100 text-center transition-colors hover:border-primary/50 md:text-left"
+      className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-colors hover:border-primary/40"
     >
-      {metadata?.imageUrl ? (
-        <img src={metadata.imageUrl} alt="" className="h-44 w-full object-cover sm:h-52" />
-      ) : null}
-      <div className="flex flex-1 flex-col p-5">
-        <p className="text-sm font-semibold text-primary">{place}</p>
-        <h3 className="mt-1 text-xl font-bold leading-tight text-base-content">{asset.asset_name}</h3>
-        <p className="mt-1 text-xs font-semibold text-base-content/60">
-          {asset.asset_code} · Owner {shortenStellarAddress(asset.asset_owner, 4)}
-        </p>
-        {metadata?.description ? (
-          <p className="mt-3 line-clamp-3 text-sm font-medium leading-relaxed text-base-content/75">
-            {metadata.description}
-          </p>
-        ) : null}
-        <div className="mt-auto grid grid-cols-2 gap-3 pt-5">
-          <div>
-            <p className="text-sm font-semibold text-base-content/70">Share price</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-base-content">
-              {sharesForSale ? `${sharePrice} USDC` : "Not issued"}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-base-content/70">Available</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-base-content">
-              {sharesForSale ? available.toLocaleString() : "Soon"}
-            </p>
+      <Link
+        href={`/asset/${asset.asset_id}`}
+        aria-label={`Open ${asset.asset_name}`}
+        className="absolute inset-0 z-0"
+      />
+      <div className="pointer-events-none relative z-10 flex flex-1 flex-col text-center md:text-left">
+        <ListingPlate
+          code={asset.asset_code}
+          category={asset.asset_category}
+          imageUrl={metadata?.imageUrl ?? null}
+          status={listingStatusLabel(asset.state.tag)}
+          forSale={sharesForSale}
+        />
+        <div className="flex flex-1 flex-col px-4 pb-3 pt-3">
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-base-content">{asset.asset_name}</h3>
+          {place ? <p className="mt-1 text-xs font-medium text-base-content/55">{place}</p> : null}
+          <div className="mt-4 border-t border-base-300/80 pt-3">
+            {sharesForSale ? (
+              <div className="mb-3">
+                <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-base-content/55">
+                  <span>{soldPercent}% sold</span>
+                  <span className="tabular-nums">{available.toLocaleString()} left</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-base-200">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${soldPercent}%` }} />
+                </div>
+              </div>
+            ) : null}
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium text-base-content/55">Share price</p>
+                <p className="mt-0.5 text-base font-bold tabular-nums text-base-content">
+                  {sharesForSale ? sharePrice : "Not issued"}
+                </p>
+              </div>
+              <p className="text-xs font-semibold text-base-content/45">{sharesForSale ? "USDC" : "Soon"}</p>
+            </div>
           </div>
         </div>
       </div>
-    </Link>
+      <div className="relative z-10 border-t border-base-300/80 px-4 py-3">
+        <CopyAddress label="Owner" address={asset.asset_owner} />
+      </div>
+    </article>
   );
 }

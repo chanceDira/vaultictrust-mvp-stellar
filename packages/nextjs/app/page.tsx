@@ -26,7 +26,7 @@ const Home: NextPage = () => {
     <div className="flex min-h-0 flex-col">
       <section className="px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
         <div className="mx-auto w-full max-w-3xl text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-base-content sm:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight text-base-content sm:text-4xl">
             Own a share of a real asset
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base font-semibold leading-relaxed text-base-content/85 sm:text-lg">

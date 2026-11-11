@@ -212,7 +212,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
               }`}
             >
               <Icon className={`mb-1.5 h-5 w-5 sm:mb-2 sm:h-6 sm:w-6 ${cfg.color.split(" ")[0]}`} />
-              <p className="text-xl font-black italic sm:text-2xl">{counts[state] ?? 0}</p>
+              <p className="text-lg font-bold sm:text-xl">{counts[state] ?? 0}</p>
               <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-base-content/40 sm:text-[10px] sm:tracking-[0.2em]">
                 {state}
               </p>

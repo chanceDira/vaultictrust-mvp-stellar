@@ -172,20 +172,20 @@ export default function OwnerPage() {
                 <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-2 text-base-content/40 mb-2">
                     <BuildingOffice2Icon className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets</span>
+                    <span className="text-xs font-semibold text-base-content/60">Total assets</span>
                   </div>
-                  <p className="text-5xl font-black italic text-base-content leading-none">{assets.length}</p>
+                  <p className="text-4xl font-bold leading-none text-base-content">{assets.length}</p>
                   <p className="mt-2 text-sm text-base-content/50">Registered</p>
                 </div>
 
                 <div className="rounded-3xl border border-base-300 bg-gradient-to-br from-base-100/80 to-base-100/40 backdrop-blur-md p-6 shadow-2xl col-span-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <div className="flex items-center gap-2 text-base-content/40 mb-2">
                     <BanknotesIcon className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Raised</span>
+                    <span className="text-xs font-semibold text-base-content/60">Total raised</span>
                   </div>
-                  <p className="text-4xl font-black text-success italic leading-none">
+                  <p className="text-3xl font-bold leading-none text-success">
                     {totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                    <span className="text-xs font-bold opacity-60 not-italic tracking-widest">USDC</span>
+                    <span className="text-xs font-semibold text-base-content/60">USDC</span>
                   </p>
                   <p className="mt-2 text-sm text-base-content/50">Across all rounds</p>
                 </div>
@@ -193,10 +193,10 @@ export default function OwnerPage() {
                 <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <div className="flex items-center gap-2 text-base-content/40 mb-2">
                     <SparklesIcon className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Tokenized</span>
+                    <span className="text-xs font-semibold text-base-content/60">Shares for sale</span>
                   </div>
                   <div className="flex items-end gap-3">
-                    <p className="text-5xl font-black italic text-base-content leading-none">{tokenizedCount}</p>
+                    <p className="text-4xl font-bold leading-none text-base-content">{tokenizedCount}</p>
                     {pendingCount > 0 && (
                       <span className="badge badge-warning badge-sm font-bold mb-1">{pendingCount} Pending</span>
                     )}
@@ -218,7 +218,7 @@ export default function OwnerPage() {
                   You haven&apos;t registered any assets yet.
                   <button
                     onClick={() => setIsRegisterModalOpen(true)}
-                    className="text-primary hover:underline ml-1 not-italic font-bold"
+                    className="ml-1 font-bold text-primary hover:underline"
                   >
                     Start here.
                   </button>
@@ -340,15 +340,15 @@ export default function OwnerPage() {
 
                             <div className="bg-base-200/50 rounded-2xl border border-base-300 p-4 flex flex-col justify-between">
                               <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">
+                                <p className="mb-1 text-xs font-semibold text-base-content/60">
                                   Withdrawable Proceeds
                                 </p>
-                                <p className="text-2xl font-black text-success italic">
+                                <p className="text-xl font-bold text-success">
                                   {withdrawableUsdc.toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
                                   })}{" "}
-                                  <span className="text-xs font-bold opacity-60 not-italic">USDC</span>
+                                  <span className="text-xs font-semibold text-base-content/60">USDC</span>
                                 </p>
                               </div>
                               <button

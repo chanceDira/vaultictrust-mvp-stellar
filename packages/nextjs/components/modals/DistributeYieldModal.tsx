@@ -119,7 +119,7 @@ export function DistributeYieldModal({ asset, isOpen, onClose, onSuccess, public
                 onChange={e => setUsdcAmount(e.target.value)}
                 disabled={isProcessing}
               />
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black opacity-30">$</div>
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-semibold opacity-40">$</div>
             </div>
           </div>
 

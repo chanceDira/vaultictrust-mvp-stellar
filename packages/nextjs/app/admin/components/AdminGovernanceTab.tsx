@@ -70,19 +70,19 @@ export function AdminGovernanceTab({ publicKey }: Readonly<Props>) {
               <ShieldCheckIcon className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold italic">On-chain governance</h3>
+              <h3 className="text-lg font-semibold">On-chain governance</h3>
               <p className="text-sm text-base-content/50">Admin wallet registry</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="bg-base-200/50 rounded-2xl p-4 border border-base-300">
-              <p className="text-[10px] uppercase font-black tracking-widest text-base-content/40 mb-3">
+              <p className="mb-3 text-xs font-semibold text-base-content/60">
                 Admin wallets
               </p>
               <div className="space-y-2">
                 {onChainAdmins.length === 0 ? (
-                  <div className="py-8 text-center italic text-base-content/30 border border-dashed border-base-300 rounded-xl">
+                  <div className="rounded-xl border border-dashed border-base-300 py-8 text-center text-sm font-medium text-base-content/60">
                     Loading administrators...
                   </div>
                 ) : (
@@ -101,7 +101,7 @@ export function AdminGovernanceTab({ publicKey }: Readonly<Props>) {
                         <button
                           onClick={e => handleRemoveAdmin(e, admin)}
                           disabled={isUpdatingAdmins}
-                          className="text-[10px] text-error font-black uppercase opacity-0 group-hover:opacity-100 transition-all hover:underline"
+                          className="text-xs font-semibold text-error opacity-0 transition-all hover:underline group-hover:opacity-100"
                         >
                           Revoke
                         </button>
@@ -137,7 +137,7 @@ export function AdminGovernanceTab({ publicKey }: Readonly<Props>) {
               <ShieldCheckIcon className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="font-black text-lg uppercase tracking-tight">System Integrity</h4>
+              <h4 className="text-lg font-semibold">System integrity</h4>
               <p className="text-xs text-base-content/60">
                 Admin power allows for protocol-level verification and issuance control. Handle with care.
               </p>
@@ -148,8 +148,8 @@ export function AdminGovernanceTab({ publicKey }: Readonly<Props>) {
 
       <div className="space-y-6">
         <div className="rounded-[2.5rem] bg-base-100/40 p-8 border border-base-300 shadow-2xl backdrop-blur-xl">
-          <h3 className="text-xl font-black italic uppercase tracking-tight mb-4">Administrative Log</h3>
-          <p className="text-sm text-base-content/60 italic border-l-2 border-primary/20 pl-4 py-2">
+          <h3 className="mb-4 text-lg font-semibold">Administrative log</h3>
+          <p className="border-l-2 border-primary/20 py-2 pl-4 text-sm font-medium text-base-content/70">
             All governance actions are recorded on the Stellar ledger for transparency and auditability.
           </p>
         </div>
