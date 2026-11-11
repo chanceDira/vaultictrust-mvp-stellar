@@ -65,9 +65,9 @@ export default function AdminPage() {
     <div className="flex flex-col grow min-h-screen">
       <section className="mx-auto w-full max-w-6xl px-3 py-8 sm:px-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold">Admin dashboard</h1>
-          <p className="text-sm text-base-content/50">Compliance and registry control</p>
-          <p className="text-sm text-base-content/60 mt-1">
+          <h1 className="text-xl font-bold sm:text-2xl">Admin dashboard</h1>
+          <p className="text-sm font-medium text-base-content/50">Compliance and registry control</p>
+          <p className="mt-1 text-sm font-medium text-base-content/60">
             Review and approve RWA submissions, manage tokenization, and oversee protocol fees. Restricted to Vaultic
             team wallets.
           </p>
@@ -103,11 +103,11 @@ export default function AdminPage() {
           <>
             <AdminStatsPanel isDeployed={isDeployed} />
 
-            <div className="flex border-b border-base-300 mb-6 gap-6">
+            <div className="mb-6 flex gap-4 overflow-x-auto border-b border-base-300 pb-px sm:gap-6">
               {TABS.map(tab => (
                 <button
                   key={tab.key}
-                  className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
+                  className={`shrink-0 whitespace-nowrap pb-3 text-sm font-bold uppercase tracking-widest transition-all ${
                     activeTab === tab.key
                       ? "border-b-2 border-primary text-primary"
                       : "text-base-content/40 hover:text-base-content/60"
