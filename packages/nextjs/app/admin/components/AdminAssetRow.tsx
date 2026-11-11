@@ -1,24 +1,45 @@
 "use client";
 
 import { STATE_CONFIG } from "./constants";
-import { CheckCircleIcon, CubeTransparentIcon } from "@heroicons/react/24/outline";
+import { ArchiveBoxIcon, CheckCircleIcon, CubeTransparentIcon, FireIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import { toIpfsGatewayUrl } from "~~/services/stellar/ipfsService";
-import { AssetStateKey, OnChainAsset } from "~~/types/stellar";
+import type { AssetStateKey, OnChainAsset } from "~~/types/stellar";
 
 type Props = {
   asset: OnChainAsset;
   onApprove: (e: React.MouseEvent, id: number) => void;
   onTokenize: (asset: OnChainAsset) => void;
+  onArchive: (asset: OnChainAsset) => void;
+  onDelete: (asset: OnChainAsset) => void;
+  onBurn: (asset: OnChainAsset) => void;
   isApproving: boolean;
 };
 
-export function AdminAssetRow({ asset, onApprove, onTokenize, isApproving }: Readonly<Props>) {
+const ARCHIVABLE_STATES: AssetStateKey[] = ["Pending", "Active", "Tokenized", "Closed", "Relisted"];
+const DELETABLE_STATES: AssetStateKey[] = ["Pending", "Archived"];
+const BURNABLE_STATES: AssetStateKey[] = ["Tokenized", "Closed"];
+
+export function AdminAssetRow({
+  asset,
+  onApprove,
+  onTokenize,
+  onArchive,
+  onDelete,
+  onBurn,
+  isApproving,
+}: Readonly<Props>) {
   const state = asset.state.tag as AssetStateKey;
   const stateConfig = STATE_CONFIG[state] ?? STATE_CONFIG.Pending;
   const StateIcon = stateConfig.icon;
   const progress =
     asset.total_shares > 0n ? Math.round((Number(asset.sold_shares) / Number(asset.total_shares)) * 100) : 0;
+
+  const canApprove = state === "Pending";
+  const canTokenize = state === "Active" && asset.model.tag === "Fractional";
+  const canArchive = ARCHIVABLE_STATES.includes(state);
+  const canDelete = DELETABLE_STATES.includes(state);
+  const canBurn = BURNABLE_STATES.includes(state) && asset.model.tag === "Fractional";
 
   return (
     <div className="rounded-2xl border border-base-300 bg-base-100/50 backdrop-blur-sm p-5 hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5">
@@ -83,8 +104,8 @@ export function AdminAssetRow({ asset, onApprove, onTokenize, isApproving }: Rea
           )}
         </div>
 
-        <div className="flex gap-2 shrink-0">
-          {state === "Pending" && (
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {canApprove && (
             <button
               className="btn btn-success btn-sm gap-1.5"
               onClick={e => onApprove(e, asset.asset_id)}
@@ -98,10 +119,40 @@ export function AdminAssetRow({ asset, onApprove, onTokenize, isApproving }: Rea
               Approve
             </button>
           )}
-          {state === "Active" && asset.model.tag === "Fractional" && (
+          {canTokenize && (
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => onTokenize(asset)}>
               <CubeTransparentIcon className="h-4 w-4" />
               Tokenize
+            </button>
+          )}
+          {canBurn && (
+            <button
+              className="btn btn-warning btn-outline btn-sm gap-1.5"
+              onClick={() => onBurn(asset)}
+              title="Permanently retire fractional token supply"
+            >
+              <FireIcon className="h-4 w-4" />
+              Burn
+            </button>
+          )}
+          {canArchive && (
+            <button
+              className="btn btn-ghost btn-sm gap-1.5 text-base-content/60 hover:text-base-content"
+              onClick={() => onArchive(asset)}
+              title="Hide from marketplace"
+            >
+              <ArchiveBoxIcon className="h-4 w-4" />
+              Archive
+            </button>
+          )}
+          {canDelete && (
+            <button
+              className="btn btn-error btn-outline btn-sm gap-1.5"
+              onClick={() => onDelete(asset)}
+              title="Permanently delete asset record"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Delete
             </button>
           )}
         </div>

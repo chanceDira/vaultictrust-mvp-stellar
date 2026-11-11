@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { AdminAssetRow } from "./AdminAssetRow";
+import { ConfirmModal } from "./ConfirmModal";
 import { STATE_CONFIG } from "./constants";
 import { ArrowPathIcon, ArrowTopRightOnSquareIcon, BanknotesIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 import { VaulticLoader } from "~~/components/VaulticLoader";
@@ -10,13 +11,48 @@ import { getExplorerTxUrl } from "~~/scaffold.config";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import {
   approveAsset,
+  archiveAsset,
+  burnAsset,
+  deleteAsset,
   fetchAsset,
   fetchTotalAssets,
   getContractIds,
   sweepFees,
 } from "~~/services/stellar/sorobanService";
-import { AssetStateKey, OnChainAsset } from "~~/types/stellar";
+import type { AssetStateKey, OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/vaultic";
+
+type ConfirmAction = "archive" | "burn" | "delete";
+
+type PendingConfirm = {
+  action: ConfirmAction;
+  asset: OnChainAsset;
+};
+
+const CONFIRM_CONFIG: Record<
+  ConfirmAction,
+  { title: string; description: (name: string) => string; label: string; variant: "danger" | "warning" }
+> = {
+  archive: {
+    title: "Archive asset",
+    description: name => `"${name}" will be hidden from the marketplace. The on-chain record is preserved.`,
+    label: "Archive",
+    variant: "warning",
+  },
+  burn: {
+    title: "Burn asset",
+    description: name =>
+      `"${name}" will be permanently retired. This marks the token supply as burned. This cannot be undone.`,
+    label: "Burn",
+    variant: "danger",
+  },
+  delete: {
+    title: "Delete asset",
+    description: name => `"${name}" will be permanently removed from the registry. This cannot be undone.`,
+    label: "Delete",
+    variant: "danger",
+  },
+};
 
 type Props = {
   publicKey: string;
@@ -29,7 +65,9 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
   const [filter, setFilter] = useState<AssetStateKey | "All">("All");
   const [isApprovingAsset, setIsApprovingAsset] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
+  const [isActing, setIsActing] = useState(false);
   const [tokenizeTarget, setTokenizeTarget] = useState<OnChainAsset | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const lockApproving = useRef(false);
   const lockSweeping = useRef(false);
 
@@ -37,8 +75,11 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
     setIsLoading(true);
     try {
       const total = await fetchTotalAssets();
-      const fetched = await Promise.all(Array.from({ length: total }, (_, i) => fetchAsset(i + 1)));
-      setAssets(fetched.filter((a): a is OnChainAsset => a !== null).reverse());
+      const settled = await Promise.allSettled(Array.from({ length: total }, (_, i) => fetchAsset(i + 1)));
+      const fetched = settled
+        .filter((r): r is PromiseFulfilledResult<OnChainAsset> => r.status === "fulfilled" && r.value !== null)
+        .map(r => r.value);
+      setAssets(fetched.reverse());
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +96,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
       const { hash } = await approveAsset(assetId, publicKey);
       notification.success(
         <div className="flex flex-col gap-1">
-          <p className="font-bold">Asset approved! Status set to Active</p>
+          <p className="font-bold">Asset approved. Status set to Active</p>
           <a
             href={getExplorerTxUrl(hash)}
             target="_blank"
@@ -107,6 +148,47 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
     }
   };
 
+  const handleConfirmedAction = async () => {
+    if (!pendingConfirm || isActing) return;
+    const { action, asset } = pendingConfirm;
+    setIsActing(true);
+    const notifId = notification.loading(
+      `${action === "archive" ? "Archiving" : action === "burn" ? "Burning" : "Deleting"} asset...`,
+    );
+    try {
+      let hash: string;
+      if (action === "archive") {
+        ({ hash } = await archiveAsset(asset.asset_id, publicKey));
+      } else if (action === "burn") {
+        ({ hash } = await burnAsset(asset.asset_id, publicKey));
+      } else {
+        ({ hash } = await deleteAsset(asset.asset_id, publicKey));
+      }
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">
+            {action === "archive" ? "Asset archived" : action === "burn" ? "Asset burned" : "Asset deleted"}
+          </p>
+          <a
+            href={getExplorerTxUrl(hash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline flex items-center gap-1"
+          >
+            Verify on Explorer <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          </a>
+        </div>,
+      );
+      setPendingConfirm(null);
+      await loadAssets();
+    } catch (err: unknown) {
+      notification.error(`Action failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    } finally {
+      setIsActing(false);
+      notification.remove(notifId);
+    }
+  };
+
   const filteredAssets = filter === "All" ? assets : assets.filter(a => a.state.tag === filter);
   const counts = (Object.keys(STATE_CONFIG) as AssetStateKey[]).reduce(
     (acc, s) => ({ ...acc, [s]: assets.filter(a => a.state.tag === s).length }),
@@ -115,7 +197,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
         {(Object.keys(STATE_CONFIG) as AssetStateKey[]).map(state => {
           const cfg = STATE_CONFIG[state];
           const Icon = cfg.icon;
@@ -188,6 +270,9 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
               asset={asset}
               onApprove={handleApprove}
               onTokenize={setTokenizeTarget}
+              onArchive={asset => setPendingConfirm({ action: "archive", asset })}
+              onDelete={asset => setPendingConfirm({ action: "delete", asset })}
+              onBurn={asset => setPendingConfirm({ action: "burn", asset })}
               isApproving={isApprovingAsset}
             />
           ))}
@@ -203,6 +288,19 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
             setTokenizeTarget(null);
             await loadAssets();
           }}
+        />
+      )}
+
+      {pendingConfirm && (
+        <ConfirmModal
+          isOpen
+          title={CONFIRM_CONFIG[pendingConfirm.action].title}
+          description={CONFIRM_CONFIG[pendingConfirm.action].description(pendingConfirm.asset.asset_name)}
+          confirmLabel={CONFIRM_CONFIG[pendingConfirm.action].label}
+          variant={CONFIRM_CONFIG[pendingConfirm.action].variant}
+          isLoading={isActing}
+          onConfirm={handleConfirmedAction}
+          onClose={() => !isActing && setPendingConfirm(null)}
         />
       )}
     </>
