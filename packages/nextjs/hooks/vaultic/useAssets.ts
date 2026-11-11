@@ -3,7 +3,7 @@ import { fetchAsset, fetchTotalAssets } from "~~/services/stellar/sorobanService
 import type { OnChainAsset } from "~~/types/stellar";
 
 const PAGE_SIZE = 10;
-const ACTIVE_STATES = new Set(["Active", "Tokenized"]);
+const VISIBLE_STATES = new Set(["Active", "Tokenized"]);
 
 async function fetchAssetPage(pageIndex: number, total: number): Promise<OnChainAsset[]> {
   if (total === 0) return [];
@@ -16,7 +16,7 @@ async function fetchAssetPage(pageIndex: number, total: number): Promise<OnChain
   return settled
     .filter((r): r is PromiseFulfilledResult<OnChainAsset> => r.status === "fulfilled" && r.value !== null)
     .map(r => r.value)
-    .filter(a => ACTIVE_STATES.has(a.state.tag));
+    .filter(a => VISIBLE_STATES.has(a.state.tag));
 }
 
 export function useTotalAssets() {
