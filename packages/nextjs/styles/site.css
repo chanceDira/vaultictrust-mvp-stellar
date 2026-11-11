@@ -113,7 +113,7 @@
 }
 
 .live-showcase__valuation {
-  @apply border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 sm:p-8;
+  @apply border border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent;
 }
 
 .live-showcase__dot {
@@ -141,15 +141,15 @@
 }
 
 .stat-value {
-  @apply text-2xl font-extrabold tabular-nums sm:text-3xl;
+  @apply text-xl font-bold tabular-nums sm:text-2xl;
 }
 
 .brand-wordmark {
-  @apply text-xl font-black uppercase leading-none tracking-tighter text-base-content;
+  @apply text-lg font-bold uppercase leading-none tracking-tight text-base-content;
 }
 
 .brand-trust {
-  @apply text-primary italic;
+  @apply font-semibold text-primary;
 }
 
 .brand-tagline {

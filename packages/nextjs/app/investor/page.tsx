@@ -241,9 +241,9 @@ export default function InvestorPage() {
               <div className="rounded-3xl border border-base-300 bg-base-100/40 backdrop-blur-md p-6 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center gap-2 text-base-content/40 mb-2">
                   <CubeIcon className="h-4 w-4" />
-                  <span className="text-[10px] uppercase tracking-[0.2em] font-black">Total Assets Held</span>
+                  <span className="text-xs font-semibold text-base-content/60">Total assets held</span>
                 </div>
-                <p className="text-5xl font-black italic text-base-content leading-none">{enrichedHoldings.length}</p>
+                <p className="text-4xl font-bold leading-none text-base-content">{enrichedHoldings.length}</p>
                 <p className="mt-2 text-sm text-primary/80">On-chain positions</p>
               </div>
 
@@ -251,16 +251,16 @@ export default function InvestorPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-base-content/40">
                     <BanknotesIcon className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-black">Portfolio Valuation</span>
+                    <span className="text-xs font-semibold text-base-content/60">Portfolio valuation</span>
                   </div>
                   {isYieldLoading && <span className="loading loading-bars loading-xs text-primary" />}
                 </div>
                 <div className="flex items-end justify-between mt-3">
-                  <p className="text-4xl font-black text-success italic leading-none">
+                  <p className="text-3xl font-bold leading-none text-success">
                     {enrichedHoldings
                       .reduce((acc, curr) => acc + curr.value, 0)
                       .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                    <span className="text-xs font-bold opacity-60 not-italic tracking-widest">USDC</span>
+                    <span className="text-xs font-semibold text-base-content/60">USDC</span>
                   </p>
                   <p className="text-[10px] text-base-content/30 font-mono tracking-tighter">
                     {shortenStellarAddress(publicKey || "")}
@@ -345,13 +345,13 @@ export default function InvestorPage() {
                                 <p className="text-xs font-mono font-bold">${holding.price.toFixed(2)} USDC</p>
                               </div>
                               <div className="text-right">
-                                <p className="text-lg font-black text-base-content">
+                                <p className="text-base font-semibold text-base-content">
                                   {holding.balance.toLocaleString()}{" "}
                                   <span className="text-[10px] uppercase font-normal opacity-40 tracking-widest">
                                     Shares
                                   </span>
                                 </p>
-                                <p className="text-xs font-black text-primary">
+                                <p className="text-xs font-semibold text-primary">
                                   $
                                   {holding.value.toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
@@ -387,7 +387,7 @@ export default function InvestorPage() {
                   {yields.length === 0 ? (
                     <div className="text-center py-6">
                       <BanknotesIcon className="h-8 w-8 text-base-content/10 mx-auto mb-2" />
-                      <p className="text-xs text-base-content/40 italic">No unclaimed yield found for your holdings.</p>
+                      <p className="text-sm font-medium text-base-content/60">No unclaimed yield for your shares.</p>
                     </div>
                   ) : (
                     <div className="space-y-4 mb-6">

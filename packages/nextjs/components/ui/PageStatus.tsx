@@ -60,7 +60,7 @@ export function PageStatus({
     >
       {code && /^\d+$/.test(code) && (
         <span
-          className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center text-[7rem] font-black leading-none tracking-tighter text-base-content/[0.04] sm:text-[10rem]"
+          className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center text-[7rem] font-bold leading-none tracking-tight text-base-content/[0.04] sm:text-[10rem]"
           aria-hidden
         >
           {code}

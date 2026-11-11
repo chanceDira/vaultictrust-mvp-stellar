@@ -145,7 +145,7 @@ export function TokenizeModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control w-full">
               <label className="label pb-1">
-                <span className="label-text font-black uppercase tracking-widest text-[10px]">
+                <span className="label-text text-xs font-semibold">
                   Total Shares <span className="text-error">*</span>
                 </span>
               </label>
@@ -166,13 +166,13 @@ export function TokenizeModal({
             </div>
             <div className="form-control w-full">
               <label className="label pb-1">
-                <span className="label-text font-black uppercase tracking-widest text-[10px]">
+                <span className="label-text text-xs font-semibold">
                   Price per Share <span className="text-error">*</span>
                 </span>
                 <span className="label-text-alt text-base-content/40 font-bold uppercase text-[9px]">USDC</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/50 font-black pointer-events-none text-xs">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none text-xs font-semibold">
                   $
                 </span>
                 <input

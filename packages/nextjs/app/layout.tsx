@@ -8,7 +8,7 @@ validateEnv();
 
 const montserrat = Montserrat({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["500", "600", "700"],
   variable: "--font-montserrat",
   display: "swap",
 });
