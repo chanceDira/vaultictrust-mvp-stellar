@@ -10,6 +10,7 @@ const productLinks = [
 ];
 
 const legalLinks = [
+  { label: "Fees", href: "/fees" },
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Support", href: "/support" },

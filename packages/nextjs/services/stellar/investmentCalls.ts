@@ -4,6 +4,7 @@ import { simulateReadCall } from "./sorobanRead";
 import { getContractIds, getRpcServer } from "./sorobanRpc";
 import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { TESTNET_USDC_CONTRACT } from "~~/scaffold.config";
+import { parseProtocolFeeBps } from "~~/utils/vaultic/protocolFee";
 
 export async function fetchPool(assetId: number): Promise<any> {
   const { investmentManager } = getContractIds();
@@ -177,6 +178,14 @@ export async function increaseAllowance(amount: bigint, callerPublicKey: string,
     ],
     callerPublicKey,
   });
+}
+
+export async function fetchProtocolFeeBps(): Promise<bigint | null> {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) return null;
+
+  const instance: unknown = await getRpcServer().getContractInstance(investmentManager);
+  return parseProtocolFeeBps(instance);
 }
 
 export async function fetchTotalFees(): Promise<bigint> {

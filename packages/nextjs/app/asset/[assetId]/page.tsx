@@ -8,8 +8,8 @@ import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
 import { PageLoading } from "~~/components/ui/PageLoading";
 import { PageStatus } from "~~/components/ui/PageStatus";
-import { useListingActivity } from "~~/hooks/vaultic/useActivity";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
+import { useProtocolFee } from "~~/hooks/vaultic/useProtocolFee";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { formatListedDate } from "~~/services/stellar/assetMetadata";
 import { fetchAsset, fetchYieldRoundCount, purchaseWholeAsset } from "~~/services/stellar/sorobanService";
@@ -18,8 +18,6 @@ import { notification } from "~~/utils/vaultic";
 
 export default function AssetDetailsPage() {
   const { assetId } = useParams();
-  const listingId = typeof assetId === "string" ? Number.parseInt(assetId, 10) : Number.NaN;
-  const activity = useListingActivity(Number.isInteger(listingId) && listingId >= 0 ? listingId : null);
   const { publicKey, connect } = useStellarWallet();
   const [asset, setAsset] = useState<OnChainAsset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +27,7 @@ export default function AssetDetailsPage() {
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [buyingWhole, setBuyingWhole] = useState(false);
   const { metadata, unavailable, isLoading: metadataLoading } = useAssetMetadata(asset?.metadata_uri ?? "");
+  const fee = useProtocolFee(asset?.model.tag === "WholeOwnership");
 
   const loadData = useCallback(async () => {
     if (!assetId) return;
@@ -144,9 +143,9 @@ export default function AssetDetailsPage() {
         documents={metadata?.documents ?? []}
         documentsLoading={metadataLoading}
         documentsUnavailable={unavailable}
-        activityRows={activity.rows}
-        activityLoading={activity.loading}
-        activityUnavailable={activity.unavailable}
+        feeBps={fee.bps}
+        feeLoading={fee.loading}
+        feeUnavailable={fee.unavailable}
         listedOn={formatListedDate(asset.registered_at)}
         yieldRoundCount={yieldRoundCount}
         buyingWhole={buyingWhole}

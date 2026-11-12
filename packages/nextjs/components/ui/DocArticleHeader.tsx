@@ -4,14 +4,15 @@ import Link from "next/link";
 type DocArticleHeaderProps = {
   title: string;
   meta?: string;
+  brand?: boolean;
 };
 
-export function DocArticleHeader({ title, meta }: DocArticleHeaderProps) {
+export function DocArticleHeader({ title, meta, brand = true }: DocArticleHeaderProps) {
   return (
     <div className="mb-6 text-center sm:text-left">
-      <p className="text-sm font-semibold text-primary">VTrust Africa</p>
-      <h1 className="page-title mt-1">{title}</h1>
-      {meta && <p className="mt-1 text-sm font-semibold text-base-content/70">{meta}</p>}
+      {brand ? <p className="text-sm font-semibold text-primary">VTrust Africa</p> : null}
+      <h1 className={brand ? "page-title mt-1" : "page-title"}>{title}</h1>
+      {meta ? <p className="mt-1 text-sm font-semibold text-base-content/70">{meta}</p> : null}
     </div>
   );
 }

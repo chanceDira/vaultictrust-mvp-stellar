@@ -541,6 +541,10 @@ impl VaulticInvestmentManager {
     pub fn accumulated_fees(env: Env) -> i128 {
         env.storage().instance().get(&DataKey::AccumulatedFees).unwrap_or(0)
     }
+
+    pub fn get_protocol_fee_bps(env: Env) -> i128 {
+        env.storage().instance().get(&DataKey::ProtocolFeeBps).expect("not initialized")
+    }
 }
 
 #[cfg(test)]
@@ -728,6 +732,15 @@ mod test {
         let investor = Address::generate(&env);
         client.purchase_shares(&investor, &1u32, &1i128);
         assert_eq!(client.accumulated_fees(), 25_000000i128);
+    }
+
+    #[test]
+    fn test_get_protocol_fee_bps() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        assert_eq!(client.get_protocol_fee_bps(), 250i128);
+        client.set_protocol_fee(&admin, &50i128);
+        assert_eq!(client.get_protocol_fee_bps(), 50i128);
     }
 
     #[test]
