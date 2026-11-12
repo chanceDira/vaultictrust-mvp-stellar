@@ -15,6 +15,7 @@ import { uploadImageToIpfs, uploadListingDocument, uploadToIpfs } from "~~/servi
 import { registerAsset } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/vaultic";
 import { MAX_ASSET_PHOTO_BYTES, isAssetPhotoMime } from "~~/utils/vaultic/assetPhoto";
+import { rememberLatestListing } from "~~/utils/vaultic/listingCopyClient";
 import type { ListingDocument } from "~~/utils/vaultic/listingDocument";
 
 export function RegisterModal({
@@ -140,6 +141,7 @@ export function RegisterModal({
           </a>
         </div>,
       );
+      rememberLatestListing();
       onSuccess();
     } catch (e: any) {
       notification.error(`Registration failed: ${e.message}`);

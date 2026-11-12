@@ -13,6 +13,7 @@ type AssetBuyPanelProps = {
   feeLoading: boolean;
   feeUnavailable: boolean;
   busy: boolean;
+  chainUnavailable: boolean;
   onBuy: () => void;
 };
 
@@ -26,6 +27,7 @@ export function AssetBuyPanel({
   feeLoading,
   feeUnavailable,
   busy,
+  chainUnavailable,
   onBuy,
 }: AssetBuyPanelProps): ReactElement {
   const soldOut = availableShares <= 0 && !wholeAsset;
@@ -74,11 +76,17 @@ export function AssetBuyPanel({
           </div>
         </div>
       )}
-      {feeLine}
+      {chainUnavailable ? (
+        <p className="mt-4 text-sm font-medium text-base-content/60">
+          Buying is paused because the chain could not be read.
+        </p>
+      ) : (
+        feeLine
+      )}
       <button
         className="btn btn-primary mt-4 w-full gap-2 rounded-xl font-bold"
         onClick={onBuy}
-        disabled={soldOut || busy || (wholeAsset && fee === null)}
+        disabled={soldOut || busy || chainUnavailable || (wholeAsset && fee === null)}
       >
         {busy ? "Sending purchase" : `Buy ${assetCode}`}
         <BanknotesIcon className="h-5 w-5" />

@@ -21,6 +21,7 @@
     "@creit.tech/stellar-wallets-kit": "2.8.0",
     "@heroicons/react": "~2.1.5",
     "@stellar/stellar-sdk": "latest",
+    "@supabase/supabase-js": "2.119.0",
     "daisyui": "5.0.9",
     "next": "~15.2.8",
     "next-nprogress-bar": "~2.3.13",

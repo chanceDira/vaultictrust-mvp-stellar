@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { savePublicBytes } from "~~/services/stellar/listingCopyService";
 import { MAX_ASSET_PHOTO_BYTES, isAssetPhotoMime } from "~~/utils/vaultic/assetPhoto";
+import { isIpfsCid } from "~~/utils/vaultic/ipfsCid";
 
 const PINATA_JWT = process.env.PINATA_JWT;
 const PINATA_FILE_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
@@ -64,9 +66,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const result = (await response.json()) as { IpfsHash?: string };
-  if (!result.IpfsHash) {
+  if (!result.IpfsHash || !isIpfsCid(result.IpfsHash)) {
     return NextResponse.json({ error: "pinata upload failed" }, { status: 502 });
   }
 
+  await savePublicBytes(result.IpfsHash, photo.bytes, photo.mime);
   return NextResponse.json({ cid: `ipfs://${result.IpfsHash}` });
 }

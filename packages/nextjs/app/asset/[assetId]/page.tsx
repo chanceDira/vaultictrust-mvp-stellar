@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { AssetListingView } from "~~/components/asset/AssetListingView";
 import { BuySharesModal } from "~~/components/modals/BuySharesModal";
@@ -9,58 +9,25 @@ import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
 import { PageLoading } from "~~/components/ui/PageLoading";
 import { PageStatus } from "~~/components/ui/PageStatus";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
+import { useAssetRecord } from "~~/hooks/vaultic/useAssetRecord";
 import { useProtocolFee } from "~~/hooks/vaultic/useProtocolFee";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { formatListedDate } from "~~/services/stellar/assetMetadata";
-import { fetchAsset, fetchYieldRoundCount, purchaseWholeAsset } from "~~/services/stellar/sorobanService";
-import { OnChainAsset } from "~~/types/stellar";
+import { purchaseWholeAsset } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/vaultic";
 
 export default function AssetDetailsPage() {
   const { assetId } = useParams();
   const { publicKey, connect } = useStellarWallet();
-  const [asset, setAsset] = useState<OnChainAsset | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [yieldRoundCount, setYieldRoundCount] = useState(0);
+  const { asset, loading, loadError, fromCopy, yieldRoundCount, reload } = useAssetRecord(assetId);
   const [isTrustlineOpen, setIsTrustlineOpen] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [buyingWhole, setBuyingWhole] = useState(false);
   const { metadata, unavailable, isLoading: metadataLoading } = useAssetMetadata(asset?.metadata_uri ?? "");
   const fee = useProtocolFee(asset?.model.tag === "WholeOwnership");
 
-  const loadData = useCallback(async () => {
-    if (!assetId) return;
-    setLoading(true);
-    setLoadError(false);
-    try {
-      const id = parseInt(assetId as string, 10);
-      if (Number.isNaN(id) || id < 0) {
-        setAsset(null);
-        return;
-      }
-      const data = await fetchAsset(id);
-      if (data) {
-        setAsset(data);
-        setYieldRoundCount(await fetchYieldRoundCount(id));
-      } else {
-        setAsset(null);
-      }
-    } catch (e) {
-      console.error("[AssetDetails] Load error:", e);
-      setLoadError(true);
-      notification.error("Failed to load asset details");
-    } finally {
-      setLoading(false);
-    }
-  }, [assetId]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleBuy = async () => {
-    if (!asset) return;
+    if (!asset || fromCopy) return;
     if (!publicKey) {
       await connect();
       return;
@@ -87,7 +54,7 @@ export default function AssetDetailsPage() {
           Purchase sent. View the transaction.
         </a>,
       );
-      await loadData();
+      await reload();
     } catch (e: unknown) {
       notification.error(`Purchase failed: ${e instanceof Error ? e.message : "unknown error"}`);
     } finally {
@@ -104,7 +71,7 @@ export default function AssetDetailsPage() {
         variant="error"
         title="Could not load asset"
         description="We could not fetch this asset from the network. Check your connection and try again."
-        onRetry={loadData}
+        onRetry={reload}
         actions={[
           { label: "Marketplace", href: "/marketplace", primary: true },
           { label: "Go home", href: "/" },
@@ -149,6 +116,7 @@ export default function AssetDetailsPage() {
         listedOn={formatListedDate(asset.registered_at)}
         yieldRoundCount={yieldRoundCount}
         buyingWhole={buyingWhole}
+        fromCopy={fromCopy}
         onBuy={handleBuy}
       />
       <TrustlineModal
@@ -169,7 +137,7 @@ export default function AssetDetailsPage() {
         publicKey={publicKey ?? ""}
         onSuccess={() => {
           setIsBuyModalOpen(false);
-          loadData();
+          void reload();
         }}
       />
     </>

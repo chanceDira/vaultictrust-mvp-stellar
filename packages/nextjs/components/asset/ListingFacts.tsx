@@ -9,7 +9,7 @@ type ListingFactsProps = {
   totalShares: number;
   soldShares: number;
   availableShares: number;
-  yieldRoundCount: number;
+  yieldRoundCount: number | null;
   assetCode: string;
   owner: string;
   issuer: string | null;
@@ -47,7 +47,7 @@ export function ListingFacts({
         <Fact label="Sale" value={saleType} />
         <Fact label="Listing" value={`#${listingNumber}`} />
         <Fact label="Share code" value={assetCode} />
-        <Fact label="Yield rounds" value={String(yieldRoundCount)} />
+        <Fact label="Yield rounds" value={yieldRoundCount === null ? "Unavailable" : String(yieldRoundCount)} />
         <Fact label="Total shares" value={totalShares.toLocaleString()} />
         <Fact label="Sold" value={soldShares.toLocaleString()} />
         <Fact label="Available" value={availableShares.toLocaleString()} />
