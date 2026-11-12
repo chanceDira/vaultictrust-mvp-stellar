@@ -78,7 +78,7 @@ export function ListingFacts({
             Share asset on Stellar Expert
           </a>
         ) : null}
-        <Link href="/contracts" className="text-sm font-semibold text-primary">
+        <Link href="/risks#contracts" className="text-sm font-semibold text-primary">
           Contract addresses
         </Link>
       </div>

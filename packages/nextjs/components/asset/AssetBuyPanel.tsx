@@ -94,9 +94,14 @@ export function AssetBuyPanel({
       <p className="mt-3 text-sm font-medium leading-relaxed text-base-content/75">
         Verify your identity before you buy. Share prices can fall, and you can lose money.
       </p>
-      <Link href="/fees" className="mt-3 inline-block text-sm font-semibold text-primary">
-        Fee schedule
-      </Link>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+        <Link href="/fees" className="text-sm font-semibold text-primary">
+          Fee schedule
+        </Link>
+        <Link href="/risks" className="text-sm font-semibold text-primary">
+          Risks
+        </Link>
+      </div>
     </aside>
   );
 }
