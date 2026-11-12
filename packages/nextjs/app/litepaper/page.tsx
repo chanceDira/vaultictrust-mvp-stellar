@@ -12,7 +12,7 @@ const LitepaperPage: NextPage = () => {
   return (
     <div className="flex min-h-0 flex-col">
       <article className="mx-auto w-full max-w-3xl px-5 py-8 text-center sm:px-8 sm:py-10 sm:text-left [&_p]:font-semibold">
-        <DocArticleHeader title="Litepaper" meta="November 2026" />
+        <DocArticleHeader title="Litepaper" meta="November 2026" brand={false} />
 
         <p className="text-base leading-relaxed text-base-content/85">
           VTrust Africa lets an owner list a real asset, and lets an investor buy shares in it. The shares live on

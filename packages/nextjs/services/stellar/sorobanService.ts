@@ -26,6 +26,7 @@ export {
   sweepFees,
   increaseAllowance,
   fetchTotalFees,
+  fetchProtocolFeeBps,
 } from "./investmentCalls";
 export { fetchYieldRound, fetchClaimableYield, fetchYieldRoundCount, depositYield, claimAllYield } from "./yieldCalls";
 export {
