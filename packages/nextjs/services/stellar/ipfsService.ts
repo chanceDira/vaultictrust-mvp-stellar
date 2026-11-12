@@ -1,4 +1,6 @@
 import { notification } from "~~/utils/vaultic";
+import { type ListingDocument, displayDocumentName } from "~~/utils/vaultic/listingDocument";
+import { sha256Hex } from "~~/utils/vaultic/sha256";
 
 const IPFS_GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/"];
 
@@ -98,4 +100,35 @@ export async function uploadImageToIpfs(file: File): Promise<string> {
 
   const result = await response.json();
   return (result as { cid: string }).cid;
+}
+
+export async function uploadListingDocument(file: File): Promise<ListingDocument> {
+  const bytes = await file.arrayBuffer();
+  const sha256 = await sha256Hex(bytes);
+  const dataUrl = await readFileAsDataUrl(file);
+  const response = await fetch("/api/ipfs/upload-document", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataUrl, fileName: file.name, sha256 }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: "upload failed" }));
+    const message = (err as { error?: string }).error ?? "upload failed";
+    notification.error(`File upload failed: ${message}`);
+    throw new Error(message);
+  }
+
+  const result = (await response.json()) as { cid?: string; sha256?: string };
+  if (!result.cid || result.sha256 !== sha256) {
+    notification.error("File upload failed: file hash did not match");
+    throw new Error("file hash did not match");
+  }
+
+  return {
+    name: displayDocumentName(file.name),
+    cid: result.cid,
+    sha256,
+    addedAt: new Date().toISOString(),
+  };
 }

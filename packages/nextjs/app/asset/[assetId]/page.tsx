@@ -138,6 +138,9 @@ export default function AssetDetailsPage() {
         description={description}
         imageUrl={metadata?.imageUrl ?? null}
         location={metadata?.location ?? ""}
+        documents={metadata?.documents ?? []}
+        documentsLoading={metadataLoading}
+        documentsUnavailable={unavailable}
         listedOn={formatListedDate(asset.registered_at)}
         yieldRoundCount={yieldRoundCount}
         buyingWhole={buyingWhole}

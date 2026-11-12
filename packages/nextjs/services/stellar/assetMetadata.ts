@@ -1,9 +1,11 @@
 import { fetchFromIpfs, toIpfsGatewayUrl } from "~~/services/stellar/ipfsService";
+import { type ListingDocument, readListingDocuments } from "~~/utils/vaultic/listingDocument";
 
 export type AssetMetadata = {
   description: string;
   location: string;
   imageUrl: string | null;
+  documents: ListingDocument[];
 };
 
 function readText(record: Record<string, unknown>, key: string): string {
@@ -23,8 +25,9 @@ export function parseAssetMetadata(payload: unknown): AssetMetadata | null {
   const description = readText(record, "description");
   const location = readText(record, "location");
   const imageUrl = readImageUrl(record);
-  if (!description && !location && !imageUrl) return null;
-  return { description, location, imageUrl };
+  const documents = readListingDocuments(record.documents);
+  if (!description && !location && !imageUrl && documents.length === 0) return null;
+  return { description, location, imageUrl, documents };
 }
 
 export type AssetMetadataLoad = {

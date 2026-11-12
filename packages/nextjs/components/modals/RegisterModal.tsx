@@ -9,11 +9,13 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { ListingDocumentField } from "~~/components/asset/ListingDocumentField";
 import { getExplorerTxUrl } from "~~/scaffold.config";
-import { uploadImageToIpfs, uploadToIpfs } from "~~/services/stellar/ipfsService";
+import { uploadImageToIpfs, uploadListingDocument, uploadToIpfs } from "~~/services/stellar/ipfsService";
 import { registerAsset } from "~~/services/stellar/sorobanService";
 import { notification } from "~~/utils/vaultic";
 import { MAX_ASSET_PHOTO_BYTES, isAssetPhotoMime } from "~~/utils/vaultic/assetPhoto";
+import type { ListingDocument } from "~~/utils/vaultic/listingDocument";
 
 export function RegisterModal({
   onClose,
@@ -32,6 +34,7 @@ export function RegisterModal({
   const [location, setLocation] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [publicFiles, setPublicFiles] = useState<File[]>([]);
   const [model, setModel] = useState<"Fractional" | "WholeOwnership">("Fractional");
   const [loading, setLoading] = useState(false);
   const isSubmitting = useRef(false);
@@ -90,6 +93,10 @@ export function RegisterModal({
     const id = notification.loading(`Uploading the listing and registering ${name}`);
     try {
       const image = photo ? await uploadImageToIpfs(photo) : undefined;
+      const documents: ListingDocument[] = [];
+      for (const file of publicFiles) {
+        documents.push(await uploadListingDocument(file));
+      }
       const metadataUri = await uploadToIpfs(
         {
           name,
@@ -102,6 +109,7 @@ export function RegisterModal({
           createdAt: new Date().toISOString(),
           platform: "VTrust Africa v1",
           ...(image ? { image } : {}),
+          ...(documents.length > 0 ? { documents } : {}),
         },
         `metadata_${code.toUpperCase()}.json`,
       );
@@ -312,6 +320,8 @@ export function RegisterModal({
             ) : null}
           </div>
 
+          <ListingDocumentField files={publicFiles} disabled={loading} onChange={setPublicFiles} />
+
           <div className="form-control w-full">
             <label className="label pb-1">
               <span className="label-text font-semibold">Ownership Model</span>
@@ -361,7 +371,8 @@ export function RegisterModal({
             <InformationCircleIcon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div className="text-base-content/60 text-xs leading-relaxed">
               <span className="font-semibold text-base-content/80">After you submit</span>, VTrust Africa reviews the
-              asset before anyone can buy it. The description and photo are stored on IPFS.
+              asset before anyone can buy it. The description, photo, and public files are stored on IPFS. Do not upload
+              identity documents here.
             </div>
           </div>
         </div>
