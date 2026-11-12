@@ -8,8 +8,8 @@ import type { OnChainAsset } from "~~/types/stellar";
 import { marqueeRows } from "~~/utils/vaultic/marqueeRows";
 import { shareOffer } from "~~/utils/vaultic/shareOffer";
 
-const TICKER_SECONDS_PER_ROW = 1.6;
-const MIN_TICKER_SECONDS = 28;
+const TICKER_SECONDS_PER_ROW = 3.2;
+const MIN_TICKER_SECONDS = 56;
 
 function assetKey(asset: OnChainAsset): string {
   return String(asset.asset_id);

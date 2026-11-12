@@ -1,5 +1,4 @@
 -- Availability copy. Chain and IPFS stay canonical.
--- Run once in the Supabase SQL editor. Safe to run again.
 
 create table if not exists public.listings (
   asset_id integer primary key,

@@ -10,6 +10,7 @@ const COPIED_RESET_MS = 1600;
 type CopyAddressProps = {
   address: string;
   label: string;
+  full?: boolean;
 };
 
 function copyWithSelection(address: string): boolean {
@@ -34,8 +35,14 @@ async function writeAddress(address: string): Promise<boolean> {
   }
 }
 
-export function CopyAddress({ address, label }: CopyAddressProps): ReactElement {
+export function CopyAddress({ address, label, full = false }: CopyAddressProps): ReactElement {
   const [copied, setCopied] = useState(false);
+  const rowClass = full
+    ? "flex min-w-0 items-start justify-between gap-3"
+    : "flex min-w-0 items-center justify-between gap-3";
+  const addressClass = full
+    ? "break-all font-mono text-xs font-semibold leading-relaxed text-base-content"
+    : "truncate font-mono text-xs font-semibold text-base-content";
 
   const copyAddress = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -47,11 +54,11 @@ export function CopyAddress({ address, label }: CopyAddressProps): ReactElement 
   };
 
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3">
+    <div className={rowClass}>
       <div className="min-w-0 text-left">
-        <p className="text-xs font-medium text-base-content/55">{label}</p>
-        <p className="truncate font-mono text-xs font-semibold text-base-content" title={address}>
-          {shortenStellarAddress(address, 6)}
+        {full ? null : <p className="text-xs font-medium text-base-content/55">{label}</p>}
+        <p className={addressClass} title={address}>
+          {full ? address : shortenStellarAddress(address, 6)}
         </p>
       </div>
       <button

@@ -10,8 +10,8 @@ import { useMarketplaceAssets } from "~~/hooks/vaultic/useAssets";
 import type { OnChainAsset } from "~~/types/stellar";
 import { marqueeRows } from "~~/utils/vaultic/marqueeRows";
 
-const CARD_SECONDS_PER_ROW = 2.4;
-const MIN_CARD_SECONDS = 40;
+const CARD_SECONDS_PER_ROW = 4.8;
+const MIN_CARD_SECONDS = 80;
 
 function assetKey(asset: OnChainAsset): string {
   return String(asset.asset_id);

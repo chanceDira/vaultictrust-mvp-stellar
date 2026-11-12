@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
+import Link from "next/link";
 import { CopyAddress } from "~~/components/ui/CopyAddress";
+import { getExplorerAssetUrl } from "~~/scaffold.config";
 
 type ListingFactsProps = {
   listedOn: string;
@@ -54,11 +56,31 @@ export function ListingFacts({
       </dl>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <CopyAddress label="Owner" address={owner} />
-        {issuer && !sameIssuer ? (
+        {issuer ? (
           <CopyAddress label="Share issuer" address={issuer} />
         ) : (
-          <Fact label="Share issuer" value={sameIssuer ? "Same as owner" : "Not issued"} />
+          <Fact label="Share issuer" value="Not issued" />
         )}
+      </div>
+      {sameIssuer ? (
+        <p className="mt-2 text-xs font-medium text-base-content/60">
+          The share issuer is the same account as the owner.
+        </p>
+      ) : null}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+        {issuer ? (
+          <a
+            href={getExplorerAssetUrl(assetCode, issuer)}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-primary"
+          >
+            Share asset on Stellar Expert
+          </a>
+        ) : null}
+        <Link href="/contracts" className="text-sm font-semibold text-primary">
+          Contract addresses
+        </Link>
       </div>
     </div>
   );

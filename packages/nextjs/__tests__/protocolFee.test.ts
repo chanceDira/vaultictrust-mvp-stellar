@@ -5,6 +5,8 @@ import {
   formatUsdcAmount,
   parseProtocolFeeBps,
   protocolFee,
+  readInstanceAddress,
+  readInstanceI128,
 } from "~~/utils/vaultic/protocolFee";
 
 const LIVE_INSTANCE = {
@@ -46,5 +48,20 @@ describe("feeExample", () => {
     expect(formatFeePercent(50n)).toBe("0.5%");
     expect(formatUsdcAmount(example.feeStroops)).toBe("0.50");
     expect(formatUsdcAmount(example.totalStroops)).toBe("100.00");
+  });
+});
+
+describe("instance fields", () => {
+  it("reads the fee treasury and accumulated fees from instance storage", () => {
+    const treasury = "GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI";
+    const instance = {
+      storage: [
+        { key: { vec: [{ symbol: "FeeTreasury" }] }, val: { address: treasury } },
+        { key: { vec: [{ symbol: "AccumulatedFees" }] }, val: { i128: "10250000" } },
+      ],
+    };
+    expect(readInstanceAddress(instance, "FeeTreasury")).toBe(treasury);
+    expect(readInstanceI128(instance, "AccumulatedFees")).toBe(10_250_000n);
+    expect(readInstanceAddress(instance, "Missing")).toBeNull();
   });
 });

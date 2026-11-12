@@ -71,6 +71,12 @@ const explorerNetworkSlug = (networkId: StellarNetworkId) => (networkId === "mai
 export const getExplorerTxUrl = (hash: string, networkId: StellarNetworkId = targetNetworkId) =>
   `https://stellar.expert/explorer/${explorerNetworkSlug(networkId)}/tx/${hash}`;
 
+export const getExplorerContractUrl = (contractId: string, networkId: StellarNetworkId = targetNetworkId) =>
+  `https://stellar.expert/explorer/${explorerNetworkSlug(networkId)}/contract/${contractId}`;
+
+export const getExplorerAccountUrl = (account: string, networkId: StellarNetworkId = targetNetworkId) =>
+  `https://stellar.expert/explorer/${explorerNetworkSlug(networkId)}/account/${account}`;
+
 export const getExplorerAssetUrl = (code: string, issuer: string, networkId: StellarNetworkId = targetNetworkId) =>
   `https://stellar.expert/explorer/${explorerNetworkSlug(networkId)}/asset/${code}-${issuer}`;
 
