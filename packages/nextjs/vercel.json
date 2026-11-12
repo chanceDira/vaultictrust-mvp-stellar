@@ -1,9 +1,3 @@
 {
-  "installCommand": "yarn install",
-  "crons": [
-    {
-      "path": "/api/chain/sync",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "installCommand": "yarn install"
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { PurchasesPauseControl } from "./PurchasesPauseControl";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import { fetchAdmins, setAdmins } from "~~/services/stellar/sorobanService";
@@ -145,6 +146,7 @@ export function AdminGovernanceTab({ publicKey }: Readonly<Props>) {
       </div>
 
       <div className="space-y-6">
+        <PurchasesPauseControl publicKey={publicKey} />
         <div className="rounded-[2.5rem] bg-base-100/40 p-8 border border-base-300 shadow-2xl backdrop-blur-xl">
           <h3 className="mb-4 text-lg font-semibold">Administrative log</h3>
           <p className="border-l-2 border-primary/20 py-2 pl-4 text-sm font-medium text-base-content/70">

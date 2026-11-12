@@ -12,6 +12,7 @@ import {
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { PAGE_SIZE, useAssets } from "~~/hooks/vaultic/useAssets";
 import { useChainData } from "~~/hooks/vaultic/useChainData";
+import { usePurchasesPaused } from "~~/hooks/vaultic/usePurchasesPaused";
 import { getContractIds } from "~~/services/stellar/sorobanService";
 
 export default function MarketplacePage() {
@@ -22,6 +23,7 @@ export default function MarketplacePage() {
   const isDeployed = !!contracts.registry;
 
   const { assets, isLoading, total, fromCopy } = useAssets(pageIndex);
+  const { paused: purchasesPaused } = usePurchasesPaused();
   const { usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -37,6 +39,9 @@ export default function MarketplacePage() {
     <div className="flex flex-col grow">
       <section className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
         <MarketplaceHeader stats={stats} />
+        {purchasesPaused === true ? (
+          <p className="mb-6 text-sm font-medium text-base-content/70">Purchases are paused.</p>
+        ) : null}
 
         {!isDeployed ? (
           <div className="alert alert-info shadow-lg mb-10 border-blue-500/30 bg-blue-500/5">

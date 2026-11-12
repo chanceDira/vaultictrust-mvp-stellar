@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { fetchAsset, fetchTotalAssets } from "~~/services/stellar/sorobanService";
+import { fetchAsset, fetchTotalAssets, fetchTotalAssetsResult } from "~~/services/stellar/sorobanService";
 import type { OnChainAsset } from "~~/types/stellar";
 import { fetchStoredListings, rememberListingsOnce } from "~~/utils/vaultic/listingCopyClient";
 
@@ -41,29 +41,39 @@ export function useTotalAssets(): number {
   return data ?? 0;
 }
 
-async function fetchMarketplaceAssets(): Promise<OnChainAsset[]> {
-  const total = await fetchTotalAssets();
-  if (total === 0) return [];
+async function fetchMarketplaceAssets(): Promise<{ assets: OnChainAsset[]; complete: boolean }> {
+  const total = await fetchTotalAssetsResult();
+  if (total === null) throw new Error("asset count failed");
+  if (total === 0) return { assets: [], complete: true };
 
   const ids = Array.from({ length: total }, (_, index) => index + 1);
   const settled = await Promise.allSettled(ids.map(id => fetchAsset(id)));
   const assets = visibleAssets(settled).reverse();
-  if (assets.length === 0 && settled.some(result => result.status === "rejected")) {
-    throw new Error("asset reads failed");
-  }
+  const complete = settled.every(result => result.status === "fulfilled" && result.value !== null);
+  if (!complete && assets.length === 0) throw new Error("asset reads failed");
   rememberListingsOnce(assets.map(asset => asset.asset_id));
-  return assets;
+  return { assets, complete };
 }
 
-export function useMarketplaceAssets(): { assets: OnChainAsset[]; isLoading: boolean; fromCopy: boolean } {
+export function useMarketplaceAssets(): {
+  assets: OnChainAsset[];
+  isLoading: boolean;
+  fromCopy: boolean;
+  complete: boolean;
+} {
   const chain = useSWR("marketplace-assets", fetchMarketplaceAssets, chainListOptions);
   const stored = useSWR(chain.error ? "stored-listings" : null, fetchStoredListings, chainListOptions);
 
   if (chain.error) {
-    return { assets: stored.data ?? [], isLoading: stored.isLoading, fromCopy: true };
+    return { assets: stored.data ?? [], isLoading: stored.isLoading, fromCopy: true, complete: false };
   }
 
-  return { assets: chain.data ?? [], isLoading: chain.isLoading, fromCopy: false };
+  return {
+    assets: chain.data?.assets ?? [],
+    isLoading: chain.isLoading,
+    fromCopy: false,
+    complete: chain.data?.complete ?? false,
+  };
 }
 
 export function useAssets(pageIndex = 0): {

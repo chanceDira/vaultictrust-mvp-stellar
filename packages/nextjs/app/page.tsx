@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { NextPage } from "next";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { FeaturedAssetsShowcase } from "~~/components/home/FeaturedAssetsShowcase";
+import { LiveTotalsStrip } from "~~/components/home/LiveTotalsStrip";
 import { EARLY_ACCESS_FORM_URL } from "~~/scaffold.config";
 
 const STEPS = [
@@ -64,6 +65,7 @@ const Home: NextPage = () => {
         </div>
       </section>
 
+      <LiveTotalsStrip />
       <FeaturedAssetsShowcase />
 
       <section className="border-t border-base-300/80 bg-base-200/40 py-12 sm:py-16">

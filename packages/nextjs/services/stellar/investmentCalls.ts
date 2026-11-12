@@ -4,7 +4,7 @@ import { simulateReadCall } from "./sorobanRead";
 import { getContractIds, getRpcServer } from "./sorobanRpc";
 import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { TESTNET_USDC_CONTRACT } from "~~/scaffold.config";
-import { parseProtocolFeeBps } from "~~/utils/vaultic/protocolFee";
+import { parseProtocolFeeBps, parsePurchasesPaused } from "~~/utils/vaultic/protocolFee";
 
 export async function fetchPool(assetId: number): Promise<any> {
   const { investmentManager } = getContractIds();
@@ -186,6 +186,26 @@ export async function fetchProtocolFeeBps(): Promise<bigint | null> {
 
   const instance: unknown = await getRpcServer().getContractInstance(investmentManager);
   return parseProtocolFeeBps(instance);
+}
+
+export async function fetchPurchasesPaused(): Promise<boolean | null> {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) return null;
+
+  const instance: unknown = await getRpcServer().getContractInstance(investmentManager);
+  return parsePurchasesPaused(instance);
+}
+
+export async function setPurchasesPaused(paused: boolean, callerPublicKey: string) {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  return callContract({
+    contractId: investmentManager,
+    method: "set_purchases_paused",
+    args: [new Address(callerPublicKey).toScVal(), nativeToScVal(paused)],
+    callerPublicKey,
+  });
 }
 
 export async function fetchTotalFees(): Promise<bigint> {

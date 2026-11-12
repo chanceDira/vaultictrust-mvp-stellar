@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BanknotesIcon, RocketLaunchIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { usePurchasesPaused } from "~~/hooks/vaultic/usePurchasesPaused";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { fetchQuotePurchase, purchaseShares } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
@@ -16,6 +17,7 @@ interface BuySharesModalProps {
 }
 
 export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }: BuySharesModalProps) {
+  const { paused: purchasesPaused } = usePurchasesPaused();
   const [sharesAmount, setSharesAmount] = useState<string>("1");
   const [isQuoting, setIsQuoting] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -49,7 +51,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
       e.preventDefault();
       e.stopPropagation();
     }
-    if (!sharesAmount || isNaN(Number(sharesAmount)) || isPurchasing || isSubmitting.current) return;
+    if (!sharesAmount || isNaN(Number(sharesAmount)) || isPurchasing || isSubmitting.current || purchasesPaused) return;
 
     isSubmitting.current = true;
     setIsPurchasing(true);
@@ -90,13 +92,14 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
     }
   };
 
-  if (!isOpen) return null;
+  const availableShares = Number(asset.total_shares - asset.sold_shares);
+  const confirmBlocked =
+    purchasesPaused === true || isPurchasing || isQuoting || !quote || Number(sharesAmount) > availableShares;
 
+  if (!isOpen) return null;
   const grossUsdc = quote ? Number(quote.gross) / 1e7 : 0;
   const feeUsdc = quote ? Number(quote.fee) / 1e7 : 0;
   const totalUsdc = grossUsdc;
-
-  const availableShares = Number(asset.total_shares - asset.sold_shares);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -176,7 +179,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
             <button
               className="btn btn-primary flex-[2] gap-3 rounded-2xl shadow-lg shadow-primary/20"
               onClick={handlePurchase}
-              disabled={isPurchasing || isQuoting || !quote || Number(sharesAmount) > availableShares}
+              disabled={confirmBlocked}
             >
               {isPurchasing ? (
                 <span className="loading loading-bars loading-xs" />

@@ -4,6 +4,7 @@ import {
   formatFeePercent,
   formatUsdcAmount,
   parseProtocolFeeBps,
+  parsePurchasesPaused,
   protocolFee,
   readInstanceAddress,
   readInstanceI128,
@@ -63,5 +64,19 @@ describe("instance fields", () => {
     expect(readInstanceAddress(instance, "FeeTreasury")).toBe(treasury);
     expect(readInstanceI128(instance, "AccumulatedFees")).toBe(10_250_000n);
     expect(readInstanceAddress(instance, "Missing")).toBeNull();
+  });
+
+  it("treats a missing pause flag as open and reads a stored flag", () => {
+    expect(parsePurchasesPaused({ storage: [] })).toBe(false);
+    expect(
+      parsePurchasesPaused({
+        storage: [{ key: { vec: [{ symbol: "PurchasesPaused" }] }, val: { bool: true } }],
+      }),
+    ).toBe(true);
+    expect(
+      parsePurchasesPaused({
+        storage: [{ key: { vec: [{ symbol: "PurchasesPaused" }] }, val: { bool: "yes" } }],
+      }),
+    ).toBeNull();
   });
 });
