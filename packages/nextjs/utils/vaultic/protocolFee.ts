@@ -77,18 +77,44 @@ function readI128(value: unknown): bigint | null {
   return null;
 }
 
-export function parseProtocolFeeBps(instance: unknown): bigint | null {
-  if (!instance || typeof instance !== "object" || !("storage" in instance)) return null;
+const STELLAR_ACCOUNT = /^[GC][A-Z2-7]{55}$/;
+
+function findInstanceValue(instance: unknown, key: string): unknown | undefined {
+  if (!instance || typeof instance !== "object" || !("storage" in instance)) return undefined;
   const storage = (instance as { storage?: unknown }).storage;
-  if (!Array.isArray(storage)) return null;
+  if (!Array.isArray(storage)) return undefined;
 
   for (const entry of storage) {
     if (!entry || typeof entry !== "object") continue;
     const row = entry as { key?: unknown; val?: unknown };
-    if (symbolName(row.key) !== PROTOCOL_FEE_KEY) continue;
-    const feeBps = readI128(row.val);
-    if (feeBps === null || feeBps < 0n || feeBps > MAX_PROTOCOL_FEE_BPS) return null;
-    return feeBps;
+    if (symbolName(row.key) === key) return row.val;
+  }
+  return undefined;
+}
+
+function readAddressValue(value: unknown): string | null {
+  const data = plain(value);
+  if (typeof data === "string" && STELLAR_ACCOUNT.test(data)) return data;
+  if (data && typeof data === "object" && "address" in data) {
+    return readAddressValue((data as { address: unknown }).address);
   }
   return null;
+}
+
+export function readInstanceI128(instance: unknown, key: string): bigint | null {
+  const value = findInstanceValue(instance, key);
+  if (value === undefined) return null;
+  return readI128(value);
+}
+
+export function readInstanceAddress(instance: unknown, key: string): string | null {
+  const value = findInstanceValue(instance, key);
+  if (value === undefined) return null;
+  return readAddressValue(value);
+}
+
+export function parseProtocolFeeBps(instance: unknown): bigint | null {
+  const feeBps = readInstanceI128(instance, PROTOCOL_FEE_KEY);
+  if (feeBps === null || feeBps < 0n || feeBps > MAX_PROTOCOL_FEE_BPS) return null;
+  return feeBps;
 }

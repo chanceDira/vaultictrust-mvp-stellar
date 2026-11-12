@@ -26,7 +26,7 @@ export function listingCopyConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
-function adminClient(): SupabaseClient | null {
+export function getSupabaseAdmin(): SupabaseClient | null {
   if (!listingCopyConfigured()) return null;
   if (admin) return admin;
   const url = process.env.SUPABASE_URL;
@@ -42,7 +42,7 @@ function adminClient(): SupabaseClient | null {
 }
 
 export async function savePublicBytes(cid: string, bytes: Uint8Array, mime: string): Promise<boolean> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   const sniffed = listingFileType(bytes);
   if (
     !client ||
@@ -79,7 +79,7 @@ export async function savePublicBytes(cid: string, bytes: Uint8Array, mime: stri
 }
 
 export async function readStoredFile(cid: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   if (!client || !isIpfsCid(cid)) return null;
   try {
     const meta = await client.from("public_files").select("mime").eq("cid", cid).maybeSingle();
@@ -96,7 +96,7 @@ export async function readStoredFile(cid: string): Promise<{ bytes: Uint8Array; 
 }
 
 export async function storedFileUrl(cid: string): Promise<string | null> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   const supabaseUrl = process.env.SUPABASE_URL;
   if (!client || !supabaseUrl || !isIpfsCid(cid)) return null;
   try {
@@ -135,7 +135,7 @@ export async function loadPublicFile(cid: string): Promise<{ bytes: Uint8Array; 
 }
 
 export async function persistOffchainDocument(cid: string, content: unknown): Promise<void> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   if (!client || !isIpfsCid(cid)) return;
   const copy = classifyOffchainPayload(content);
   if (!copy) return;
@@ -171,7 +171,7 @@ export async function persistOffchainDocument(cid: string, content: unknown): Pr
 }
 
 export async function readListingMetadata(cid: string): Promise<Record<string, unknown> | null> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   if (!client || !isIpfsCid(cid)) return null;
   try {
     const result = await client
@@ -197,7 +197,7 @@ export async function readListingMetadata(cid: string): Promise<Record<string, u
 export async function readEncryptedDocument(
   cid: string,
 ): Promise<{ encryptedDocument: { ciphertext: string; iv: string; encryptedKey: string; salt: string } } | null> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   if (!client || !isIpfsCid(cid)) return null;
   try {
     const result = await client
@@ -224,7 +224,7 @@ export async function presentListingMetadata(payload: Record<string, unknown>): 
 }
 
 export async function saveListing(asset: unknown): Promise<boolean> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   const row = listingRowFromAsset(asset);
   if (!client || !row) return false;
   try {
@@ -238,7 +238,7 @@ export async function saveListing(asset: unknown): Promise<boolean> {
 }
 
 export async function readListing(assetId: number): Promise<OnChainAsset | null> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   if (!client || !Number.isInteger(assetId) || assetId < 0) return null;
   try {
     const result = await client.from("listings").select("*").eq("asset_id", assetId).maybeSingle();
@@ -250,7 +250,7 @@ export async function readListing(assetId: number): Promise<OnChainAsset | null>
 }
 
 export async function readVisibleListingRows(): Promise<ListingRow[]> {
-  const client = adminClient();
+  const client = getSupabaseAdmin();
   if (!client) return [];
   try {
     const result = await client

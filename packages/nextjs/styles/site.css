@@ -99,7 +99,7 @@
 .asset-marquee__track {
   display: flex;
   width: max-content;
-  animation: asset-marquee 40s linear infinite;
+  animation: asset-marquee 80s linear infinite;
 }
 
 .asset-marquee__set {

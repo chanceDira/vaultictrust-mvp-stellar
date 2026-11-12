@@ -3,6 +3,7 @@ import { parseSorobanError } from "./sorobanErrors";
 import { getRpcServer, getTxGuard } from "./sorobanRpc";
 import { signWalletTransaction } from "./walletKit";
 import { Contract, TransactionBuilder, rpc, xdr } from "@stellar/stellar-sdk";
+import { rememberChainTx } from "~~/utils/vaultic/rememberChainTx";
 
 export async function callContract({
   contractId,
@@ -74,6 +75,7 @@ export async function callContract({
       pollResult = await server.getTransaction(response.hash);
     } catch (xdrErr: any) {
       if (isXdrDecodeError(xdrErr)) {
+        rememberChainTx(response.hash);
         return { result: null, hash: response.hash };
       }
       throw xdrErr;
@@ -85,6 +87,7 @@ export async function callContract({
         pollResult = await server.getTransaction(response.hash);
       } catch (xdrErr: any) {
         if (isXdrDecodeError(xdrErr)) {
+          rememberChainTx(response.hash);
           return { result: null, hash: response.hash };
         }
         throw xdrErr;
@@ -98,6 +101,7 @@ export async function callContract({
         const rawResult = (pollResult as rpc.Api.GetSuccessfulTransactionResponse).returnValue;
         if (rawResult) result = rawResult;
       } catch (e) {}
+      rememberChainTx(response.hash);
       return { result, hash: response.hash };
     }
 

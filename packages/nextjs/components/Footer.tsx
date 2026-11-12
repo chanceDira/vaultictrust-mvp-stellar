@@ -7,6 +7,7 @@ const productLinks = [
   { label: "Asset owners", href: "/owner" },
   { label: "Investors", href: "/investor" },
   { label: "Litepaper", href: "/litepaper" },
+  { label: "Contracts", href: "/contracts" },
 ];
 
 const legalLinks = [
