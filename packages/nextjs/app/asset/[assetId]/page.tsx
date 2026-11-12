@@ -8,6 +8,7 @@ import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { TrustlineModal } from "~~/components/stellar/TrustlineModal";
 import { PageLoading } from "~~/components/ui/PageLoading";
 import { PageStatus } from "~~/components/ui/PageStatus";
+import { useListingActivity } from "~~/hooks/vaultic/useActivity";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { formatListedDate } from "~~/services/stellar/assetMetadata";
@@ -17,6 +18,8 @@ import { notification } from "~~/utils/vaultic";
 
 export default function AssetDetailsPage() {
   const { assetId } = useParams();
+  const listingId = typeof assetId === "string" ? Number.parseInt(assetId, 10) : Number.NaN;
+  const activity = useListingActivity(Number.isInteger(listingId) && listingId >= 0 ? listingId : null);
   const { publicKey, connect } = useStellarWallet();
   const [asset, setAsset] = useState<OnChainAsset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,6 +144,9 @@ export default function AssetDetailsPage() {
         documents={metadata?.documents ?? []}
         documentsLoading={metadataLoading}
         documentsUnavailable={unavailable}
+        activityRows={activity.rows}
+        activityLoading={activity.loading}
+        activityUnavailable={activity.unavailable}
         listedOn={formatListedDate(asset.registered_at)}
         yieldRoundCount={yieldRoundCount}
         buyingWhole={buyingWhole}
