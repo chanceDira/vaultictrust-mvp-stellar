@@ -92,6 +92,7 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
     }
   };
 
+  const availableShares = Number(asset.total_shares - asset.sold_shares);
   const confirmBlocked =
     purchasesPaused === true || isPurchasing || isQuoting || !quote || Number(sharesAmount) > availableShares;
 
@@ -99,8 +100,6 @@ export function BuySharesModal({ asset, isOpen, onClose, onSuccess, publicKey }:
   const grossUsdc = quote ? Number(quote.gross) / 1e7 : 0;
   const feeUsdc = quote ? Number(quote.fee) / 1e7 : 0;
   const totalUsdc = grossUsdc;
-
-  const availableShares = Number(asset.total_shares - asset.sold_shares);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
