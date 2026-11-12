@@ -1,11 +1,13 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ActivityFeed } from "~~/components/activity/ActivityFeed";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
 import { DocumentRoom } from "~~/components/asset/DocumentRoom";
 import { ListingFacts } from "~~/components/asset/ListingFacts";
 import { ListingPlate } from "~~/components/marketplace/ListingPlate";
 import { OnChainAsset } from "~~/types/stellar";
+import type { ActivityRow } from "~~/utils/vaultic/activityRecord";
 import type { ListingDocument } from "~~/utils/vaultic/listingDocument";
 import { listingStatusLabel, saleTypeLabel } from "~~/utils/vaultic/listingLabels";
 
@@ -17,6 +19,9 @@ type AssetListingViewProps = {
   documents: ListingDocument[];
   documentsLoading: boolean;
   documentsUnavailable: boolean;
+  activityRows: ActivityRow[];
+  activityLoading: boolean;
+  activityUnavailable: boolean;
   listedOn: string;
   yieldRoundCount: number;
   buyingWhole: boolean;
@@ -34,6 +39,9 @@ export function AssetListingView({
   documents,
   documentsLoading,
   documentsUnavailable,
+  activityRows,
+  activityLoading,
+  activityUnavailable,
   listedOn,
   yieldRoundCount,
   buyingWhole,
@@ -109,6 +117,14 @@ export function AssetListingView({
                 ) : null}
               </div>
               <DocumentRoom documents={documents} loading={documentsLoading} unavailable={documentsUnavailable} />
+              <ActivityFeed
+                rows={activityRows}
+                loading={activityLoading}
+                unavailable={activityUnavailable}
+                showAsset={false}
+                empty="No purchases or yield payments are recorded for this listing yet."
+                note="Recent purchases and yield payments for this listing."
+              />
               <ListingFacts
                 listedOn={listedOn}
                 location={location}

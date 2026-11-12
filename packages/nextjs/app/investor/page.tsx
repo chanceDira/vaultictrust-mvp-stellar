@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowPathIcon, ArrowRightIcon, ArrowTopRightOnSquareIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { VaulticLoader } from "~~/components/VaulticLoader";
+import { PortfolioActivity } from "~~/components/activity/PortfolioActivity";
 import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
@@ -390,6 +391,7 @@ export default function InvestorPage() {
                 </button>
               </div>
             </div>
+            {publicKey ? <PortfolioActivity account={publicKey} /> : null}
           </div>
         )}
       </section>
