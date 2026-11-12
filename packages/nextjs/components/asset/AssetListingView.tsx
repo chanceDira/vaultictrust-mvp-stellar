@@ -2,9 +2,11 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
+import { DocumentRoom } from "~~/components/asset/DocumentRoom";
 import { ListingFacts } from "~~/components/asset/ListingFacts";
 import { ListingPlate } from "~~/components/marketplace/ListingPlate";
 import { OnChainAsset } from "~~/types/stellar";
+import type { ListingDocument } from "~~/utils/vaultic/listingDocument";
 import { listingStatusLabel, saleTypeLabel } from "~~/utils/vaultic/listingLabels";
 
 type AssetListingViewProps = {
@@ -12,6 +14,9 @@ type AssetListingViewProps = {
   description: string;
   imageUrl: string | null;
   location: string;
+  documents: ListingDocument[];
+  documentsLoading: boolean;
+  documentsUnavailable: boolean;
   listedOn: string;
   yieldRoundCount: number;
   buyingWhole: boolean;
@@ -26,6 +31,9 @@ export function AssetListingView({
   description,
   imageUrl,
   location,
+  documents,
+  documentsLoading,
+  documentsUnavailable,
   listedOn,
   yieldRoundCount,
   buyingWhole,
@@ -100,6 +108,7 @@ export function AssetListingView({
                   </p>
                 ) : null}
               </div>
+              <DocumentRoom documents={documents} loading={documentsLoading} unavailable={documentsUnavailable} />
               <ListingFacts
                 listedOn={listedOn}
                 location={location}
