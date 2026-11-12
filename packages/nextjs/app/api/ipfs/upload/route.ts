@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { persistOffchainDocument } from "~~/services/stellar/listingCopyService";
+import { isIpfsCid } from "~~/utils/vaultic/ipfsCid";
 
 const PINATA_JWT = process.env.PINATA_JWT;
 const PINATA_PIN_URL = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
@@ -45,6 +47,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await response.json();
+  const result = (await response.json()) as { IpfsHash?: string };
+  if (!result.IpfsHash || !isIpfsCid(result.IpfsHash)) {
+    return NextResponse.json({ error: "pinata upload failed" }, { status: 502 });
+  }
+
+  await persistOffchainDocument(result.IpfsHash, content);
   return NextResponse.json({ cid: `ipfs://${result.IpfsHash}` });
 }

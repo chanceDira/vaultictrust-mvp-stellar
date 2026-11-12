@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "gateway.pinata.cloud", pathname: "/ipfs/**" },
       { protocol: "https", hostname: "dweb.link", pathname: "/ipfs/**" },
       { protocol: "https", hostname: "ipfs.io", pathname: "/ipfs/**" },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/listing-files/**",
+      },
     ],
   },
 };

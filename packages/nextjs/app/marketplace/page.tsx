@@ -10,7 +10,7 @@ import {
   WalletPreparationBanner,
 } from "~~/components/marketplace/MarketplaceLayout";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
-import { PAGE_SIZE, useAssets, useTotalAssets } from "~~/hooks/vaultic/useAssets";
+import { PAGE_SIZE, useAssets } from "~~/hooks/vaultic/useAssets";
 import { useChainData } from "~~/hooks/vaultic/useChainData";
 import { getContractIds } from "~~/services/stellar/sorobanService";
 
@@ -21,8 +21,7 @@ export default function MarketplacePage() {
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
-  const { assets, isLoading } = useAssets(pageIndex);
-  const total = useTotalAssets();
+  const { assets, isLoading, total, fromCopy } = useAssets(pageIndex);
   const { usdcStatus, refreshUsdc } = useChainData(isConnected ? publicKey : null, isDeployed);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -56,10 +55,17 @@ export default function MarketplacePage() {
             <MarketplaceLoading />
           ) : assets.length === 0 && isDeployed ? (
             <div className="rounded-2xl border border-dashed border-base-300 bg-base-100 p-8 text-center text-base-content/70 sm:p-10">
-              No listings are open right now.
+              {fromCopy
+                ? "The chain could not be read, and there is no saved copy yet."
+                : "No listings are open right now."}
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {fromCopy ? (
+                <p className="text-sm font-medium text-base-content/70 sm:col-span-2 xl:col-span-3">
+                  Showing saved listings. The chain could not be read.
+                </p>
+              ) : null}
               {assets.map(asset => (
                 <AssetCard key={asset.asset_id} asset={asset} />
               ))}

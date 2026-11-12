@@ -21,8 +21,9 @@ type AssetListingViewProps = {
   feeLoading: boolean;
   feeUnavailable: boolean;
   listedOn: string;
-  yieldRoundCount: number;
+  yieldRoundCount: number | null;
   buyingWhole: boolean;
+  fromCopy: boolean;
   onBuy: () => void;
 };
 
@@ -43,6 +44,7 @@ export function AssetListingView({
   listedOn,
   yieldRoundCount,
   buyingWhole,
+  fromCopy,
   onBuy,
 }: AssetListingViewProps): ReactElement {
   const totalShares = Number(asset.total_shares);
@@ -61,6 +63,11 @@ export function AssetListingView({
           <ArrowLeftIcon className="h-3 w-3" />
           Back to Marketplace
         </Link>
+        {fromCopy ? (
+          <p className="mb-4 text-sm font-medium text-base-content/70">
+            Saved copy. The chain could not be read, so buying is paused.
+          </p>
+        ) : null}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <article className="overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm">
             <ListingPlate
@@ -140,6 +147,7 @@ export function AssetListingView({
             feeLoading={feeLoading}
             feeUnavailable={feeUnavailable}
             busy={buyingWhole}
+            chainUnavailable={fromCopy}
             onBuy={onBuy}
           />
         </div>

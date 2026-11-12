@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { savePublicBytes } from "~~/services/stellar/listingCopyService";
 import { isIpfsCid } from "~~/utils/vaultic/ipfsCid";
 import {
   MAX_LISTING_DOCUMENT_BYTES,
@@ -74,5 +75,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "pinata upload failed" }, { status: 502 });
   }
 
+  await savePublicBytes(result.IpfsHash, document.bytes, document.mime);
   return NextResponse.json({ cid: `ipfs://${result.IpfsHash}`, sha256: actualHash });
 }
