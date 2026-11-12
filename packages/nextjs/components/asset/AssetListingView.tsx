@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ActivityFeed } from "~~/components/activity/ActivityFeed";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
 import { DocumentRoom } from "~~/components/asset/DocumentRoom";
 import { ListingFacts } from "~~/components/asset/ListingFacts";
@@ -137,6 +138,7 @@ export function AssetListingView({
                 owner={asset.asset_owner}
                 issuer={asset.issuer}
               />
+              <ActivityFeed assetId={asset.asset_id} />
             </div>
           </article>
           <AssetBuyPanel
