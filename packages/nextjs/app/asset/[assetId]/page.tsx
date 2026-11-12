@@ -11,6 +11,7 @@ import { PageStatus } from "~~/components/ui/PageStatus";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
 import { useAssetRecord } from "~~/hooks/vaultic/useAssetRecord";
 import { useProtocolFee } from "~~/hooks/vaultic/useProtocolFee";
+import { usePurchasesPaused } from "~~/hooks/vaultic/usePurchasesPaused";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { formatListedDate } from "~~/services/stellar/assetMetadata";
 import { purchaseWholeAsset } from "~~/services/stellar/sorobanService";
@@ -25,9 +26,10 @@ export default function AssetDetailsPage() {
   const [buyingWhole, setBuyingWhole] = useState(false);
   const { metadata, unavailable, isLoading: metadataLoading } = useAssetMetadata(asset?.metadata_uri ?? "");
   const fee = useProtocolFee(asset?.model.tag === "WholeOwnership");
+  const { paused: purchasesPaused } = usePurchasesPaused();
 
   const handleBuy = async () => {
-    if (!asset || fromCopy) return;
+    if (!asset || fromCopy || purchasesPaused) return;
     if (!publicKey) {
       await connect();
       return;
@@ -117,6 +119,7 @@ export default function AssetDetailsPage() {
         yieldRoundCount={yieldRoundCount}
         buyingWhole={buyingWhole}
         fromCopy={fromCopy}
+        purchasesPaused={purchasesPaused === true}
         onBuy={handleBuy}
       />
       <TrustlineModal

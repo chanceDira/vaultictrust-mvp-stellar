@@ -4,16 +4,23 @@ import { simulateReadCall } from "./sorobanRead";
 import { getContractIds } from "./sorobanRpc";
 import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 
-export async function fetchTotalAssets(): Promise<number> {
+export async function fetchTotalAssetsResult(): Promise<number | null> {
   const { registry } = getContractIds();
-  if (!registry) return 0;
+  if (!registry) return null;
 
   const result = await simulateReadCall({
     contractId: registry,
     method: "total_assets",
     args: [],
   });
-  return result ? Number(safeScValToNative(result) ?? 0) : 0;
+  if (!result) return null;
+  const total = Number(safeScValToNative(result));
+  if (!Number.isInteger(total) || total < 0) return null;
+  return total;
+}
+
+export async function fetchTotalAssets(): Promise<number> {
+  return (await fetchTotalAssetsResult()) ?? 0;
 }
 
 export async function fetchAsset(assetId: number): Promise<any> {

@@ -4,6 +4,7 @@ export { parseSorobanError } from "./sorobanErrors";
 export { setupUsdcTrustline, fetchUsdcTrustlineStatus } from "./usdcTrustline";
 export {
   fetchTotalAssets,
+  fetchTotalAssetsResult,
   fetchAsset,
   fetchAssetsByOwner,
   fetchFundingProgress,
@@ -27,6 +28,8 @@ export {
   increaseAllowance,
   fetchTotalFees,
   fetchProtocolFeeBps,
+  fetchPurchasesPaused,
+  setPurchasesPaused,
 } from "./investmentCalls";
 export { fetchYieldRound, fetchClaimableYield, fetchYieldRoundCount, depositYield, claimAllYield } from "./yieldCalls";
 export {

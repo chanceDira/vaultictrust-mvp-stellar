@@ -1,8 +1,8 @@
 #![no_std]
 use soroban_sdk::{
     auth::{ContractContext, InvokerContractAuthEntry, SubContractInvocation},
-    contract, contractimpl, contracttype, token, Address, BytesN, Env, IntoVal, Symbol, Vec, symbol_short,
-    vec,
+    contract, contractimpl, contracttype, symbol_short, token, vec, Address, BytesN, Env, IntoVal,
+    Symbol, Vec,
 };
 
 mod registry {
@@ -20,23 +20,22 @@ mod user_registry {
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct AssetInvestmentPool {
-    
     pub total_shares: i128,
-    
+
     pub sold_shares: i128,
-    
+
     pub price_per_share: i128,
-    
+
     pub investor_cap: i128,
-    
+
     pub rwa_issuer: Address,
-    
+
     pub rwa_asset_code: soroban_sdk::String,
-    
+
     pub is_fully_subscribed: bool,
-    
+
     pub proceeds_collected: i128,
-    
+
     pub proceeds_withdrawn: i128,
 }
 
@@ -52,6 +51,7 @@ pub enum DataKey {
     Pool(u32),
     InvestorHoldings(u32, Address),
     InvestorList(u32),
+    PurchasesPaused,
 }
 
 #[contract]
@@ -59,10 +59,15 @@ pub struct VaulticInvestmentManager;
 
 const BPS_DENOMINATOR: i128 = 10_000;
 
+fn purchases_are_paused(env: &Env) -> bool {
+    env.storage()
+        .instance()
+        .get(&DataKey::PurchasesPaused)
+        .unwrap_or(false)
+}
+
 #[contractimpl]
 impl VaulticInvestmentManager {
-
-    
     pub fn initialize(
         env: Env,
         admins: Vec<Address>,
@@ -83,11 +88,21 @@ impl VaulticInvestmentManager {
         }
         env.storage().instance().set(&DataKey::Admins, &admins);
         env.storage().instance().set(&DataKey::Registry, &registry);
-        env.storage().instance().set(&DataKey::UserRegistry, &user_registry);
-        env.storage().instance().set(&DataKey::PaymentToken, &payment_token);
-        env.storage().instance().set(&DataKey::FeeTreasury, &fee_treasury);
-        env.storage().instance().set(&DataKey::ProtocolFeeBps, &protocol_fee_bps);
-        env.storage().instance().set(&DataKey::AccumulatedFees, &0i128);
+        env.storage()
+            .instance()
+            .set(&DataKey::UserRegistry, &user_registry);
+        env.storage()
+            .instance()
+            .set(&DataKey::PaymentToken, &payment_token);
+        env.storage()
+            .instance()
+            .set(&DataKey::FeeTreasury, &fee_treasury);
+        env.storage()
+            .instance()
+            .set(&DataKey::ProtocolFeeBps, &protocol_fee_bps);
+        env.storage()
+            .instance()
+            .set(&DataKey::AccumulatedFees, &0i128);
     }
 
     pub fn set_protocol_fee(env: Env, caller: Address, new_fee_bps: i128) {
@@ -99,7 +114,9 @@ impl VaulticInvestmentManager {
         if new_fee_bps > 1_000 {
             panic!("fee exceeds max (10%)");
         }
-        env.storage().instance().set(&DataKey::ProtocolFeeBps, &new_fee_bps);
+        env.storage()
+            .instance()
+            .set(&DataKey::ProtocolFeeBps, &new_fee_bps);
     }
 
     pub fn set_fee_treasury(env: Env, caller: Address, new_treasury: Address) {
@@ -108,13 +125,18 @@ impl VaulticInvestmentManager {
         if !admins.contains(&caller) {
             panic!("not an admin");
         }
-        env.storage().instance().set(&DataKey::FeeTreasury, &new_treasury);
+        env.storage()
+            .instance()
+            .set(&DataKey::FeeTreasury, &new_treasury);
     }
 
-    
     pub fn set_admins(env: Env, caller: Address, new_admins: Vec<Address>) {
         caller.require_auth();
-        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admins)
+            .expect("not initialized");
         if !admins.contains(&caller) {
             panic!("not an admin");
         }
@@ -122,13 +144,17 @@ impl VaulticInvestmentManager {
             panic!("at least one admin required");
         }
         env.storage().instance().set(&DataKey::Admins, &new_admins);
-        env.events().publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
+        env.events()
+            .publish((symbol_short!("adm_xfr"),), env.ledger().timestamp());
     }
 
-    
     pub fn upgrade(env: Env, caller: Address, new_wasm_hash: BytesN<32>) {
         caller.require_auth();
-        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admins)
+            .expect("not initialized");
         if !admins.contains(&caller) {
             panic!("not an admin");
         }
@@ -136,10 +162,12 @@ impl VaulticInvestmentManager {
     }
 
     pub fn get_admins(env: Env) -> Vec<Address> {
-        env.storage().instance().get(&DataKey::Admins).expect("not initialized")
+        env.storage()
+            .instance()
+            .get(&DataKey::Admins)
+            .expect("not initialized")
     }
 
-    
     pub fn tokenize_asset(
         env: Env,
         caller: Address,
@@ -164,14 +192,15 @@ impl VaulticInvestmentManager {
         }
 
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
-        
+
         env.authorize_as_current_contract(vec![
             &env,
             InvokerContractAuthEntry::Contract(SubContractInvocation {
                 context: ContractContext {
                     contract: registry_addr.clone(),
                     fn_name: Symbol::new(&env, "record_tokenization"),
-                    args: (asset_id, rwa_issuer.clone(), total_shares, price_per_share).into_val(&env),
+                    args: (asset_id, rwa_issuer.clone(), total_shares, price_per_share)
+                        .into_val(&env),
                 },
                 sub_invocations: vec![&env],
             }),
@@ -197,15 +226,26 @@ impl VaulticInvestmentManager {
             proceeds_withdrawn: 0,
         };
 
-        env.storage().persistent().set(&DataKey::Pool(asset_id), &pool);
-        env.events().publish((symbol_short!("tokenized"), asset_id, rwa_issuer), total_shares);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Pool(asset_id), &pool);
+        env.events().publish(
+            (symbol_short!("tokenized"), asset_id, rwa_issuer),
+            total_shares,
+        );
     }
 
-    
     pub fn purchase_shares(env: Env, investor: Address, asset_id: u32, share_amount: i128) {
         investor.require_auth();
+        if purchases_are_paused(&env) {
+            panic!("purchases are paused");
+        }
 
-        let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
+        let user_registry_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::UserRegistry)
+            .unwrap();
         let user_registry_client = user_registry::Client::new(&env, &user_registry_addr);
         if !user_registry_client.is_verified(&investor) {
             panic!("investor not KYC verified");
@@ -242,11 +282,19 @@ impl VaulticInvestmentManager {
         }
 
         let gross_cost = pool.price_per_share * share_amount;
-        let fee_bps: i128 = env.storage().instance().get(&DataKey::ProtocolFeeBps).unwrap();
+        let fee_bps: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::ProtocolFeeBps)
+            .unwrap();
         let fee = (gross_cost * fee_bps) / BPS_DENOMINATOR;
         let net_cost = gross_cost - fee;
 
-        let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&investor, &env.current_contract_address(), &gross_cost);
 
@@ -256,9 +304,15 @@ impl VaulticInvestmentManager {
             pool.is_fully_subscribed = true;
         }
 
-        let mut fees: i128 = env.storage().instance().get(&DataKey::AccumulatedFees).unwrap();
+        let mut fees: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::AccumulatedFees)
+            .unwrap();
         fees += fee;
-        env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
+        env.storage()
+            .instance()
+            .set(&DataKey::AccumulatedFees, &fees);
 
         let current_holding: i128 = env
             .storage()
@@ -272,7 +326,9 @@ impl VaulticInvestmentManager {
                 .get(&DataKey::InvestorList(asset_id))
                 .unwrap_or(Vec::new(&env));
             investor_list.push_back(investor.clone());
-            env.storage().persistent().set(&DataKey::InvestorList(asset_id), &investor_list);
+            env.storage()
+                .persistent()
+                .set(&DataKey::InvestorList(asset_id), &investor_list);
         }
         env.storage().persistent().set(
             &DataKey::InvestorHoldings(asset_id, investor.clone()),
@@ -296,7 +352,9 @@ impl VaulticInvestmentManager {
         let registry_client = registry::Client::new(&env, &registry_addr);
         registry_client.record_shares_sold(&asset_id, &share_amount);
 
-        env.storage().persistent().set(&DataKey::Pool(asset_id), &pool);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Pool(asset_id), &pool);
 
         if pool.is_fully_subscribed {
             env.authorize_as_current_contract(vec![
@@ -319,11 +377,17 @@ impl VaulticInvestmentManager {
         );
     }
 
-    
     pub fn purchase_whole_asset(env: Env, buyer: Address, asset_id: u32) {
         buyer.require_auth();
+        if purchases_are_paused(&env) {
+            panic!("purchases are paused");
+        }
 
-        let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
+        let user_registry_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::UserRegistry)
+            .unwrap();
         let user_registry_client = user_registry::Client::new(&env, &user_registry_addr);
         if !user_registry_client.is_verified(&buyer) {
             panic!("buyer not KYC verified");
@@ -338,18 +402,36 @@ impl VaulticInvestmentManager {
         }
 
         let gross_payment = asset.valuation;
-        let fee_bps: i128 = env.storage().instance().get(&DataKey::ProtocolFeeBps).unwrap();
+        let fee_bps: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::ProtocolFeeBps)
+            .unwrap();
         let fee = (gross_payment * fee_bps) / BPS_DENOMINATOR;
         let net_to_seller = gross_payment - fee;
 
-        let mut fees: i128 = env.storage().instance().get(&DataKey::AccumulatedFees).unwrap();
+        let mut fees: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::AccumulatedFees)
+            .unwrap();
         fees += fee;
-        env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
+        env.storage()
+            .instance()
+            .set(&DataKey::AccumulatedFees, &fees);
 
-        let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&buyer, &env.current_contract_address(), &gross_payment);
-        payment_client.transfer(&env.current_contract_address(), &asset.asset_owner, &net_to_seller);
+        payment_client.transfer(
+            &env.current_contract_address(),
+            &asset.asset_owner,
+            &net_to_seller,
+        );
 
         env.authorize_as_current_contract(vec![
             &env,
@@ -379,7 +461,6 @@ impl VaulticInvestmentManager {
         );
     }
 
-    
     pub fn withdraw_proceeds(env: Env, asset_id: u32) {
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
         let registry_client = registry::Client::new(&env, &registry_addr);
@@ -399,11 +480,21 @@ impl VaulticInvestmentManager {
         }
 
         pool.proceeds_withdrawn += withdrawable;
-        env.storage().persistent().set(&DataKey::Pool(asset_id), &pool);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Pool(asset_id), &pool);
 
-        let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
-        payment_client.transfer(&env.current_contract_address(), &asset.asset_owner, &withdrawable);
+        payment_client.transfer(
+            &env.current_contract_address(),
+            &asset.asset_owner,
+            &withdrawable,
+        );
 
         env.events().publish(
             (symbol_short!("withdrw"), asset_id, asset.asset_owner),
@@ -411,7 +502,6 @@ impl VaulticInvestmentManager {
         );
     }
 
-    
     pub fn sweep_fees(env: Env, caller: Address) {
         caller.require_auth();
         let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).unwrap();
@@ -419,15 +509,25 @@ impl VaulticInvestmentManager {
             panic!("not an admin");
         }
 
-        let fees: i128 = env.storage().instance().get(&DataKey::AccumulatedFees).unwrap();
+        let fees: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::AccumulatedFees)
+            .unwrap();
         if fees <= 0 {
             panic!("no fees to sweep");
         }
 
-        env.storage().instance().set(&DataKey::AccumulatedFees, &0i128);
+        env.storage()
+            .instance()
+            .set(&DataKey::AccumulatedFees, &0i128);
 
         let treasury: Address = env.storage().instance().get(&DataKey::FeeTreasury).unwrap();
-        let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&env.current_contract_address(), &treasury, &fees);
 
@@ -448,8 +548,12 @@ impl VaulticInvestmentManager {
     ) {
         caller.require_auth();
 
-        if new_total_shares <= 0 { panic!("invalid share supply"); }
-        if new_price_per_share <= 0 { panic!("invalid price"); }
+        if new_total_shares <= 0 {
+            panic!("invalid share supply");
+        }
+        if new_price_per_share <= 0 {
+            panic!("invalid price");
+        }
 
         let registry_addr: Address = env.storage().instance().get(&DataKey::Registry).unwrap();
         let registry_client = registry::Client::new(&env, &registry_addr);
@@ -483,9 +587,13 @@ impl VaulticInvestmentManager {
             proceeds_collected: 0,
             proceeds_withdrawn: 0,
         };
-        env.storage().persistent().set(&DataKey::Pool(asset_id), &pool);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Pool(asset_id), &pool);
 
-        env.storage().persistent().set(&DataKey::InvestorList(asset_id), &Vec::<Address>::new(&env));
+        env.storage()
+            .persistent()
+            .set(&DataKey::InvestorList(asset_id), &Vec::<Address>::new(&env));
 
         registry_client.record_tokenization(
             &asset_id,
@@ -502,11 +610,18 @@ impl VaulticInvestmentManager {
     }
 
     pub fn get_pool(env: Env, asset_id: u32) -> AssetInvestmentPool {
-        env.storage().persistent().get(&DataKey::Pool(asset_id)).expect("not found")
+        env.storage()
+            .persistent()
+            .get(&DataKey::Pool(asset_id))
+            .expect("not found")
     }
 
     pub fn get_withdrawable_proceeds(env: Env, asset_id: u32) -> i128 {
-        let pool: AssetInvestmentPool = env.storage().persistent().get(&DataKey::Pool(asset_id)).unwrap();
+        let pool: AssetInvestmentPool = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Pool(asset_id))
+            .unwrap();
         pool.proceeds_collected - pool.proceeds_withdrawn
     }
 
@@ -525,35 +640,70 @@ impl VaulticInvestmentManager {
     }
 
     pub fn available_shares(env: Env, asset_id: u32) -> i128 {
-        let pool: AssetInvestmentPool = env.storage().persistent().get(&DataKey::Pool(asset_id)).unwrap();
+        let pool: AssetInvestmentPool = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Pool(asset_id))
+            .unwrap();
         pool.total_shares - pool.sold_shares
     }
 
     pub fn quote_purchase(env: Env, asset_id: u32, share_amount: i128) -> (i128, i128, i128) {
-        let pool: AssetInvestmentPool = env.storage().persistent().get(&DataKey::Pool(asset_id)).unwrap();
+        let pool: AssetInvestmentPool = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Pool(asset_id))
+            .unwrap();
         let gross_cost = pool.price_per_share * share_amount;
-        let fee_bps: i128 = env.storage().instance().get(&DataKey::ProtocolFeeBps).unwrap();
+        let fee_bps: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::ProtocolFeeBps)
+            .unwrap();
         let fee = (gross_cost * fee_bps) / BPS_DENOMINATOR;
         let net_cost = gross_cost - fee;
         (gross_cost, fee, net_cost)
     }
 
     pub fn accumulated_fees(env: Env) -> i128 {
-        env.storage().instance().get(&DataKey::AccumulatedFees).unwrap_or(0)
+        env.storage()
+            .instance()
+            .get(&DataKey::AccumulatedFees)
+            .unwrap_or(0)
     }
 
     pub fn get_protocol_fee_bps(env: Env) -> i128 {
-        env.storage().instance().get(&DataKey::ProtocolFeeBps).expect("not initialized")
+        env.storage()
+            .instance()
+            .get(&DataKey::ProtocolFeeBps)
+            .expect("not initialized")
+    }
+
+    pub fn set_purchases_paused(env: Env, caller: Address, paused: bool) {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admins)
+            .expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        env.storage()
+            .instance()
+            .set(&DataKey::PurchasesPaused, &paused);
+        env.events().publish((symbol_short!("pause"),), paused);
+    }
+
+    pub fn get_purchases_paused(env: Env) -> bool {
+        purchases_are_paused(&env)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use soroban_sdk::{
-        testutils::Address as _,
-        Env, String,
-    };
+    use soroban_sdk::{testutils::Address as _, Env, String};
 
     #[contract]
     struct MockUserRegistry;
@@ -568,11 +718,20 @@ mod test {
     struct MockAssetRegistry;
     #[contractimpl]
     impl MockAssetRegistry {
-        pub fn record_tokenization(_env: Env, _asset_id: u32, _rwa_issuer: Address, _total_shares: i128, _price_per_share: i128) {}
+        pub fn record_tokenization(
+            _env: Env,
+            _asset_id: u32,
+            _rwa_issuer: Address,
+            _total_shares: i128,
+            _price_per_share: i128,
+        ) {
+        }
         pub fn record_shares_sold(_env: Env, _asset_id: u32, _share_amount: i128) {}
         pub fn close_asset(_env: Env, _asset_id: u32, _caller: Address) {}
         pub fn relist_asset(_env: Env, _asset_id: u32, _valuation: i128, _metadata_uri: String) {}
-        pub fn get_relist_count(_env: Env, _asset_id: u32) -> u32 { 1 }
+        pub fn get_relist_count(_env: Env, _asset_id: u32) -> u32 {
+            1
+        }
     }
 
     #[contract]
@@ -580,10 +739,20 @@ mod test {
     #[contractimpl]
     impl MockToken {
         pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: i128) {}
-        pub fn balance(_env: Env, _addr: Address) -> i128 { 1_000_000_000_i128 }
+        pub fn balance(_env: Env, _addr: Address) -> i128 {
+            1_000_000_000_i128
+        }
     }
 
-    fn setup(env: &Env) -> (VaulticInvestmentManagerClient, Address, Address, Address, Address) {
+    fn setup(
+        env: &Env,
+    ) -> (
+        VaulticInvestmentManagerClient,
+        Address,
+        Address,
+        Address,
+        Address,
+    ) {
         env.mock_all_auths();
         let admin = Address::generate(env);
         let treasury = Address::generate(env);
@@ -605,7 +774,15 @@ mod test {
         (client, admin, registry_id, ur_id, token_id)
     }
 
-    fn open_pool(client: &VaulticInvestmentManagerClient, env: &Env, admin: &Address, asset_id: u32, total_shares: i128, price: i128, cap: i128) {
+    fn open_pool(
+        client: &VaulticInvestmentManagerClient,
+        env: &Env,
+        admin: &Address,
+        asset_id: u32,
+        total_shares: i128,
+        price: i128,
+        cap: i128,
+    ) {
         let issuer = Address::generate(env);
         client.tokenize_asset(
             admin,
@@ -750,5 +927,50 @@ mod test {
         let (client, _, _, _, _) = setup(&env);
         let stranger = Address::generate(&env);
         client.set_protocol_fee(&stranger, &100i128);
+    }
+
+    #[test]
+    fn test_purchases_start_open_and_an_admin_can_resume_them() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        assert!(!client.get_purchases_paused());
+        client.set_purchases_paused(&admin, &true);
+        assert!(client.get_purchases_paused());
+        client.set_purchases_paused(&admin, &false);
+        assert!(!client.get_purchases_paused());
+
+        open_pool(&client, &env, &admin, 1, 10, 10_0000000i128, 0);
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &1i128);
+        assert_eq!(client.get_pool(&1u32).sold_shares, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "purchases are paused")]
+    fn test_paused_share_purchase_panics() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        client.set_purchases_paused(&admin, &true);
+        let investor = Address::generate(&env);
+        client.purchase_shares(&investor, &1u32, &1i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "purchases are paused")]
+    fn test_paused_whole_asset_purchase_panics() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        client.set_purchases_paused(&admin, &true);
+        let buyer = Address::generate(&env);
+        client.purchase_whole_asset(&buyer, &1u32);
+    }
+
+    #[test]
+    #[should_panic(expected = "not an admin")]
+    fn test_set_purchases_paused_non_admin_panics() {
+        let env = Env::default();
+        let (client, _, _, _, _) = setup(&env);
+        let stranger = Address::generate(&env);
+        client.set_purchases_paused(&stranger, &true);
     }
 }

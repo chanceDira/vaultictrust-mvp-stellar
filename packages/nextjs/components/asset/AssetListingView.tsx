@@ -24,6 +24,7 @@ type AssetListingViewProps = {
   yieldRoundCount: number | null;
   buyingWhole: boolean;
   fromCopy: boolean;
+  purchasesPaused: boolean;
   onBuy: () => void;
 };
 
@@ -45,6 +46,7 @@ export function AssetListingView({
   yieldRoundCount,
   buyingWhole,
   fromCopy,
+  purchasesPaused,
   onBuy,
 }: AssetListingViewProps): ReactElement {
   const totalShares = Number(asset.total_shares);
@@ -148,6 +150,7 @@ export function AssetListingView({
             feeUnavailable={feeUnavailable}
             busy={buyingWhole}
             chainUnavailable={fromCopy}
+            purchasesPaused={purchasesPaused}
             onBuy={onBuy}
           />
         </div>

@@ -14,6 +14,7 @@ type AssetBuyPanelProps = {
   feeUnavailable: boolean;
   busy: boolean;
   chainUnavailable: boolean;
+  purchasesPaused: boolean;
   onBuy: () => void;
 };
 
@@ -28,6 +29,7 @@ export function AssetBuyPanel({
   feeUnavailable,
   busy,
   chainUnavailable,
+  purchasesPaused,
   onBuy,
 }: AssetBuyPanelProps): ReactElement {
   const soldOut = availableShares <= 0 && !wholeAsset;
@@ -86,11 +88,12 @@ export function AssetBuyPanel({
       <button
         className="btn btn-primary mt-4 w-full gap-2 rounded-xl font-bold"
         onClick={onBuy}
-        disabled={soldOut || busy || chainUnavailable || (wholeAsset && fee === null)}
+        disabled={soldOut || busy || chainUnavailable || purchasesPaused || (wholeAsset && fee === null)}
       >
         {busy ? "Sending purchase" : `Buy ${assetCode}`}
         <BanknotesIcon className="h-5 w-5" />
       </button>
+      {purchasesPaused ? <p className="mt-3 text-sm font-medium text-base-content/70">Purchases are paused.</p> : null}
       <p className="mt-3 text-sm font-medium leading-relaxed text-base-content/75">
         Verify your identity before you buy. Share prices can fall, and you can lose money.
       </p>

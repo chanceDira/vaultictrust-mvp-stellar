@@ -19,6 +19,7 @@ const ERROR_MAP: Record<string, string> = {
   "insufficient shares available": "Not enough shares remaining.",
   "offering fully subscribed": "Sold out! This offering is closed.",
   "zero purchase amount": "Please enter a valid amount.",
+  "purchases are paused": "Purchases are paused.",
   "invalid valuation": "Asset valuation must be positive.",
   "invalid transition": "Invalid Action: Asset state doesn't permit this (e.g. already tokenized).",
   "already registered": "This asset ID is already registered.",

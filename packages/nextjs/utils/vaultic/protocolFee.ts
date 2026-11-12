@@ -118,3 +118,21 @@ export function parseProtocolFeeBps(instance: unknown): bigint | null {
   if (feeBps === null || feeBps < 0n || feeBps > MAX_PROTOCOL_FEE_BPS) return null;
   return feeBps;
 }
+
+const PURCHASES_PAUSED_KEY = "PurchasesPaused";
+
+function readBool(value: unknown): boolean | null {
+  const data = plain(value);
+  if (typeof data === "boolean") return data;
+  if (data && typeof data === "object" && "bool" in data) {
+    const flag = (data as { bool: unknown }).bool;
+    if (typeof flag === "boolean") return flag;
+  }
+  return null;
+}
+
+export function parsePurchasesPaused(instance: unknown): boolean | null {
+  const value = findInstanceValue(instance, PURCHASES_PAUSED_KEY);
+  if (value === undefined) return false;
+  return readBool(value);
+}
