@@ -22,15 +22,27 @@ const COPY_TIMEOUT_MS = 4_000;
 
 let admin: SupabaseClient | null = null;
 
+type SupabaseKeyEnv = {
+  SUPABASE_SECRET_KEY?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+};
+
+export function readSupabaseAdminKey(env: NodeJS.ProcessEnv | SupabaseKeyEnv = process.env): string | null {
+  const secret = env.SUPABASE_SECRET_KEY?.trim();
+  if (secret) return secret;
+  const legacy = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  return legacy ? legacy : null;
+}
+
 export function listingCopyConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(process.env.SUPABASE_URL && readSupabaseAdminKey());
 }
 
 export function getSupabaseAdmin(): SupabaseClient | null {
   if (!listingCopyConfigured()) return null;
   if (admin) return admin;
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = readSupabaseAdminKey();
   if (!url || !key) return null;
   admin = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },

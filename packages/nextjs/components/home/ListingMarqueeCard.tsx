@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import type { OnChainAsset } from "~~/types/stellar";
 import { shareOffer } from "~~/utils/vaultic/shareOffer";
+import { shareSplit } from "~~/utils/vaultic/shareSplit";
 
 type ListingMarqueeCardProps = {
   asset: OnChainAsset;
@@ -10,6 +11,7 @@ type ListingMarqueeCardProps = {
 
 export function ListingMarqueeCard({ asset, decorative = false }: ListingMarqueeCardProps): ReactElement {
   const offer = shareOffer(asset);
+  const split = asset.model.tag === "Fractional" ? shareSplit(asset.total_shares, asset.sold_shares) : null;
 
   return (
     <Link
@@ -38,6 +40,11 @@ export function ListingMarqueeCard({ asset, decorative = false }: ListingMarquee
           <p className="text-sm font-semibold text-base-content/50">Approved</p>
         )}
       </div>
+      {split && offer.forSale ? (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-primary/20" aria-hidden>
+          <div className="h-full bg-primary" style={{ width: `${split.soldTenths / 10}%` }} />
+        </div>
+      ) : null}
     </Link>
   );
 }
