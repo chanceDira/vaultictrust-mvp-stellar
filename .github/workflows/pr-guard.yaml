@@ -36,5 +36,5 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "$PR_TITLE" | grep -Eq \
-            "^\[?(feat|fix|chore|refactor|docs|test|perf|ci|build|revert)\]?(\(.+\))?: .{3,}" \
+            "^\[?(feat|fix|chore|refactor|docs|test|perf|ci|build|revert|upgrade|update)\]?(\(.+\))?: .{3,}" \
             || (echo "PR title must follow: type: description" && exit 1)
