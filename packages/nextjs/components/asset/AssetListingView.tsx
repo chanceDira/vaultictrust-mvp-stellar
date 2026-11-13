@@ -5,6 +5,7 @@ import { ActivityFeed } from "~~/components/activity/ActivityFeed";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
 import { DocumentRoom } from "~~/components/asset/DocumentRoom";
 import { ListingFacts } from "~~/components/asset/ListingFacts";
+import { ShareResaleSection } from "~~/components/asset/ShareResaleSection";
 import { ListingPlate } from "~~/components/marketplace/ListingPlate";
 import { OnChainAsset } from "~~/types/stellar";
 import type { ListingDocument } from "~~/utils/vaultic/listingDocument";
@@ -156,6 +157,16 @@ export function AssetListingView({
             onBuy={onBuy}
           />
         </div>
+        {asset.model.tag === "Fractional" &&
+        (asset.state.tag === "Tokenized" || asset.state.tag === "Closed" || asset.state.tag === "Relisted") ? (
+          <ShareResaleSection
+            assetId={asset.asset_id}
+            feeBps={feeBps}
+            feeLoading={feeLoading}
+            purchasesPaused={purchasesPaused}
+            chainUnavailable={fromCopy}
+          />
+        ) : null}
       </section>
     </div>
   );

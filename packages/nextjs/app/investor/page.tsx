@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowPathIcon, ArrowRightIcon, ArrowTopRightOnSquareIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { ActivityFeed } from "~~/components/activity/ActivityFeed";
+import { WalletOffers } from "~~/components/investor/WalletOffers";
 import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
@@ -57,6 +58,10 @@ export default function InvestorPage() {
 
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry && !!contracts.investmentManager;
+  const offerHoldings = useMemo(
+    () => enrichedHoldings.map(holding => ({ assetId: holding.assetId, assetCode: holding.assetCode })),
+    [enrichedHoldings],
+  );
 
   const loadContractPositions = useCallback(async () => {
     if (!publicKey || !isDeployed) return;
@@ -391,6 +396,7 @@ export default function InvestorPage() {
                 </button>
               </div>
             </div>
+            {publicKey ? <WalletOffers holdings={offerHoldings} holdingsLoading={isHoldingsLoading} /> : null}
             {publicKey ? <ActivityFeed account={publicKey} exportCsv /> : null}
           </div>
         )}

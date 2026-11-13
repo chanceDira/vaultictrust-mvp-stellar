@@ -68,6 +68,27 @@ pub enum DataKey {
 pub struct VaulticInvestmentManager;
 
 const BPS_DENOMINATOR: i128 = 10_000;
+// The share contract rejects an approval that lasts longer than this many ledgers.
+const SHARE_ALLOWANCE_LEDGERS: u32 = 535_680;
+
+fn approve_share_allowance(env: &Env, seller: &Address, asset_id: u32, amount: i128) {
+    let share_token: Address = env
+        .storage()
+        .persistent()
+        .get(&DataKey::ShareToken(asset_id))
+        .expect("share token is not set");
+    let share_client = token::Client::new(env, &share_token);
+    let expiration = env
+        .ledger()
+        .sequence()
+        .saturating_add(SHARE_ALLOWANCE_LEDGERS);
+    share_client.approve(
+        seller,
+        &env.current_contract_address(),
+        &amount,
+        &expiration,
+    );
+}
 
 fn purchases_are_paused(env: &Env) -> bool {
     env.storage()
@@ -77,14 +98,24 @@ fn purchases_are_paused(env: &Env) -> bool {
 }
 
 fn require_verified(env: &Env, account: &Address) {
-    let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
+    let user_registry_addr: Address = env
+        .storage()
+        .instance()
+        .get(&DataKey::UserRegistry)
+        .unwrap();
     let user_registry_client = user_registry::Client::new(env, &user_registry_addr);
     if !user_registry_client.is_verified(account) {
         panic!("investor not KYC verified");
     }
 }
 
-fn apply_holding_transfer(env: &Env, asset_id: u32, seller: &Address, buyer: &Address, share_amount: i128) {
+fn apply_holding_transfer(
+    env: &Env,
+    asset_id: u32,
+    seller: &Address,
+    buyer: &Address,
+    share_amount: i128,
+) {
     if !env.storage().persistent().has(&DataKey::Pool(asset_id)) {
         panic!("no investment pool for this asset");
     }
@@ -772,7 +803,9 @@ impl VaulticInvestmentManager {
     }
 
     pub fn get_share_token(env: Env, asset_id: u32) -> Option<Address> {
-        env.storage().persistent().get(&DataKey::ShareToken(asset_id))
+        env.storage()
+            .persistent()
+            .get(&DataKey::ShareToken(asset_id))
     }
 
     pub fn create_share_offer(
@@ -809,6 +842,8 @@ impl VaulticInvestmentManager {
             panic!("offer already open");
         }
 
+        approve_share_allowance(&env, &seller, asset_id, shares);
+
         env.storage().persistent().set(
             &DataKey::ShareOffer(asset_id, seller.clone()),
             &ShareOffer {
@@ -830,6 +865,7 @@ impl VaulticInvestmentManager {
             .persistent()
             .get(&DataKey::ShareOffer(asset_id, seller.clone()))
             .expect("offer not found");
+        approve_share_allowance(&env, &seller, asset_id, 0);
         env.storage()
             .persistent()
             .remove(&DataKey::ShareOffer(asset_id, seller.clone()));
@@ -845,8 +881,8 @@ impl VaulticInvestmentManager {
         asset_id: u32,
         share_amount: i128,
     ) {
+        // The seller approved these shares when the offer opened, so only the buyer signs.
         buyer.require_auth();
-        seller.require_auth();
         if purchases_are_paused(&env) {
             panic!("purchases are paused");
         }
@@ -883,13 +919,52 @@ impl VaulticInvestmentManager {
         let fee = (gross * fee_bps) / BPS_DENOMINATOR;
         let net_to_seller = gross - fee;
 
-        let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
         payment_client.transfer(&buyer, &env.current_contract_address(), &gross);
-        payment_client.transfer(&env.current_contract_address(), &seller, &net_to_seller);
 
+        env.authorize_as_current_contract(vec![
+            &env,
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: payment_addr.clone(),
+                    fn_name: Symbol::new(&env, "transfer"),
+                    args: (
+                        env.current_contract_address(),
+                        seller.clone(),
+                        net_to_seller,
+                    )
+                        .into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: share_token.clone(),
+                    fn_name: Symbol::new(&env, "transfer_from"),
+                    args: (
+                        env.current_contract_address(),
+                        seller.clone(),
+                        buyer.clone(),
+                        share_amount,
+                    )
+                        .into_val(&env),
+                },
+                sub_invocations: vec![&env],
+            }),
+        ]);
+        payment_client.transfer(&env.current_contract_address(), &seller, &net_to_seller);
         let share_client = token::Client::new(&env, &share_token);
-        share_client.transfer(&seller, &buyer, &share_amount);
+        share_client.transfer_from(
+            &env.current_contract_address(),
+            &seller,
+            &buyer,
+            &share_amount,
+        );
 
         apply_holding_transfer(&env, asset_id, &seller, &buyer, share_amount);
 
@@ -915,7 +990,9 @@ impl VaulticInvestmentManager {
             .get(&DataKey::AccumulatedFees)
             .unwrap();
         fees += fee;
-        env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
+        env.storage()
+            .instance()
+            .set(&DataKey::AccumulatedFees, &fees);
 
         env.events().publish(
             (symbol_short!("sell_sh"), asset_id, seller, buyer),
@@ -1068,6 +1145,26 @@ mod test {
     struct MockToken;
     #[contractimpl]
     impl MockToken {
+        pub fn approve(
+            env: Env,
+            from: Address,
+            spender: Address,
+            amount: i128,
+            expiration_ledger: u32,
+        ) {
+            env.storage()
+                .persistent()
+                .set(&(from, spender), &(amount, expiration_ledger));
+        }
+        pub fn transfer_from(
+            env: Env,
+            _spender: Address,
+            from: Address,
+            to: Address,
+            amount: i128,
+        ) {
+            Self::transfer(env, from, to, amount);
+        }
         pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
             let count: u32 = env
                 .storage()
@@ -1079,7 +1176,9 @@ mod test {
                 .set(&symbol_short!("xfers"), &(count + 1));
             env.storage().instance().set(&symbol_short!("xfrom"), &from);
             env.storage().instance().set(&symbol_short!("xto"), &to);
-            env.storage().instance().set(&symbol_short!("xamt"), &amount);
+            env.storage()
+                .instance()
+                .set(&symbol_short!("xamt"), &amount);
         }
         pub fn transfer_count(env: Env) -> u32 {
             env.storage()
@@ -1089,9 +1188,15 @@ mod test {
         }
         pub fn last_transfer(env: Env) -> (Address, Address, i128) {
             (
-                env.storage().instance().get(&symbol_short!("xfrom")).unwrap(),
+                env.storage()
+                    .instance()
+                    .get(&symbol_short!("xfrom"))
+                    .unwrap(),
                 env.storage().instance().get(&symbol_short!("xto")).unwrap(),
-                env.storage().instance().get(&symbol_short!("xamt")).unwrap(),
+                env.storage()
+                    .instance()
+                    .get(&symbol_short!("xamt"))
+                    .unwrap(),
             )
         }
         pub fn balance(_env: Env, _addr: Address) -> i128 {
@@ -1394,7 +1499,11 @@ mod test {
         client.transfer_investor_holdings(&seller, &buyer, &1u32, &10i128);
     }
 
-    fn open_resale(env: &Env, client: &VaulticInvestmentManagerClient, admin: &Address) -> (Address, Address) {
+    fn open_resale(
+        env: &Env,
+        client: &VaulticInvestmentManagerClient,
+        admin: &Address,
+    ) -> (Address, Address) {
         open_pool(client, env, admin, 1, 1_000, 10_0000000i128, 0);
         let share_token = env.register_contract(None, MockToken);
         client.set_share_token(admin, &1u32, &share_token);
@@ -1408,9 +1517,7 @@ mod test {
     fn test_share_offer_can_be_cancelled_without_moving_shares() {
         let env = Env::default();
         let (client, admin, _, _, _) = setup(&env);
-        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
-        let seller = Address::generate(&env);
-        client.purchase_shares(&seller, &1u32, &100i128);
+        let (seller, _) = open_resale(&env, &client, &admin);
         client.create_share_offer(&seller, &1u32, &40i128, &1_000i128);
 
         let offer = client.get_share_offer(&1u32, &seller).unwrap();
@@ -1494,9 +1601,7 @@ mod test {
     fn test_create_share_offer_rejects_a_second_open_offer() {
         let env = Env::default();
         let (client, admin, _, _, _) = setup(&env);
-        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
-        let seller = Address::generate(&env);
-        client.purchase_shares(&seller, &1u32, &100i128);
+        let (seller, _) = open_resale(&env, &client, &admin);
         client.create_share_offer(&seller, &1u32, &10i128, &1_000i128);
         client.create_share_offer(&seller, &1u32, &10i128, &2_000i128);
     }

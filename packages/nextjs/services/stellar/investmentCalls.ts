@@ -5,6 +5,7 @@ import { getContractIds, getRpcServer } from "./sorobanRpc";
 import { Address, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { TESTNET_USDC_CONTRACT } from "~~/scaffold.config";
 import { parseProtocolFeeBps, parsePurchasesPaused } from "~~/utils/vaultic/protocolFee";
+import { type ResaleOffer, parseResaleOffer, parseSellerList } from "~~/utils/vaultic/resaleOffer";
 
 export async function fetchPool(assetId: number): Promise<any> {
   const { investmentManager } = getContractIds();
@@ -204,6 +205,108 @@ export async function setPurchasesPaused(paused: boolean, callerPublicKey: strin
     contractId: investmentManager,
     method: "set_purchases_paused",
     args: [new Address(callerPublicKey).toScVal(), nativeToScVal(paused)],
+    callerPublicKey,
+  });
+}
+
+export async function fetchOfferSellers(assetId: number): Promise<string[]> {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  const result = await simulateReadCall({
+    contractId: investmentManager,
+    method: "get_offer_sellers",
+    args: [nativeToScVal(assetId, { type: "u32" })],
+  });
+  const sellers = parseSellerList(result ? safeScValToNative(result) : null);
+  if (!sellers) throw new Error("offer sellers unreadable");
+  return sellers;
+}
+
+export async function fetchShareOffer(assetId: number, seller: string): Promise<ResaleOffer | null> {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  const result = await simulateReadCall({
+    contractId: investmentManager,
+    method: "get_share_offer",
+    args: [nativeToScVal(assetId, { type: "u32" }), new Address(seller).toScVal()],
+  });
+  if (!result) return null;
+  const native = safeScValToNative(result);
+  if (native == null) return null;
+  const offer = parseResaleOffer(seller, native);
+  if (!offer) throw new Error("offer unreadable");
+  return offer;
+}
+
+export async function createShareOffer(
+  params: { seller: string; assetId: number; shares: bigint; priceStroops: bigint },
+  callerPublicKey: string,
+) {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  return callContract({
+    contractId: investmentManager,
+    method: "create_share_offer",
+    args: [
+      new Address(params.seller).toScVal(),
+      nativeToScVal(params.assetId, { type: "u32" }),
+      nativeToScVal(params.shares, { type: "i128" }),
+      nativeToScVal(params.priceStroops, { type: "i128" }),
+    ],
+    callerPublicKey,
+  });
+}
+
+export async function cancelShareOffer(params: { seller: string; assetId: number }, callerPublicKey: string) {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  return callContract({
+    contractId: investmentManager,
+    method: "cancel_share_offer",
+    args: [new Address(params.seller).toScVal(), nativeToScVal(params.assetId, { type: "u32" })],
+    callerPublicKey,
+  });
+}
+
+export async function setShareToken(
+  params: { caller: string; assetId: number; token: string },
+  callerPublicKey: string,
+) {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  return callContract({
+    contractId: investmentManager,
+    method: "set_share_token",
+    args: [
+      new Address(params.caller).toScVal(),
+      nativeToScVal(params.assetId, { type: "u32" }),
+      new Address(params.token).toScVal(),
+    ],
+    callerPublicKey,
+  });
+}
+
+export async function fillShareOffer(
+  params: { buyer: string; seller: string; assetId: number; shares: bigint },
+  callerPublicKey: string,
+) {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) throw new Error("Investment manager is not deployed");
+
+  return callContract({
+    contractId: investmentManager,
+    method: "fill_share_offer",
+    args: [
+      new Address(params.buyer).toScVal(),
+      new Address(params.seller).toScVal(),
+      nativeToScVal(params.assetId, { type: "u32" }),
+      nativeToScVal(params.shares, { type: "i128" }),
+    ],
     callerPublicKey,
   });
 }

@@ -276,6 +276,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
               onDelete={asset => setPendingConfirm({ action: "delete", asset })}
               onBurn={asset => setPendingConfirm({ action: "burn", asset })}
               isApproving={isApprovingAsset}
+              publicKey={publicKey}
             />
           ))}
         </div>
