@@ -151,10 +151,10 @@ impl VaulticAssetRegistry {
     }
 
 
-    /* @notice Registers a new real-world asset. Admin only.
+    /* @notice Registers a new real-world asset. The owner signs. Status stays Pending until an admin approves it.
      * @param env The Soroban environment.
      * @param asset_owner The initial owner of the asset record.
-     * @param caller The administrator registering the asset.
+     * @param caller The account registering the asset. Must be the owner.
      * @param asset_name The human-readable name of the asset.
      * @param asset_category The classification of the asset (e.g. "Mining").
      * @param asset_code The token symbol to be used upon tokenization.
@@ -175,9 +175,8 @@ impl VaulticAssetRegistry {
         model: OwnershipModel,
     ) -> u32 {
         caller.require_auth();
-        let admins: Vec<Address> = env.storage().instance().get(&DataKey::Admins).expect("not initialized");
-        if !admins.contains(&caller) {
-            panic!("not an admin");
+        if caller != asset_owner {
+            panic!("not asset owner");
         }
 
         if valuation <= 0 {
@@ -646,12 +645,12 @@ mod test {
     fn register_pending(
         env: &Env,
         client: &VaulticAssetRegistryClient,
-        admin: &Address,
+        _admin: &Address,
         owner: &Address,
     ) -> u32 {
         client.register_asset(
             owner,
-            admin,
+            owner,
             &String::from_str(env, "Test Asset"),
             &String::from_str(env, "Real Estate"),
             &String::from_str(env, "VTTEST"),
@@ -659,6 +658,25 @@ mod test {
             &500_000i128,
             &OwnershipModel::WholeOwnership,
         )
+    }
+
+    #[test]
+    #[should_panic(expected = "not asset owner")]
+    fn test_register_asset_rejects_a_different_caller() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let (client, admin, _) = setup_registry(&env);
+        let owner = Address::generate(&env);
+        client.register_asset(
+            &owner,
+            &admin,
+            &String::from_str(&env, "Plot A"),
+            &String::from_str(&env, "Real Estate"),
+            &String::from_str(&env, "VTPLT"),
+            &String::from_str(&env, "ipfs://Qm123"),
+            &500_000i128,
+            &OwnershipModel::WholeOwnership,
+        );
     }
 
     #[test]
@@ -688,7 +706,7 @@ mod test {
 
         let asset_id = client.register_asset(
             &owner,
-            &admin,
+            &owner,
             &String::from_str(&env, "Gold Mine Shares"),
             &String::from_str(&env, "Mining"),
             &String::from_str(&env, "VTGOLD"),
@@ -731,13 +749,13 @@ mod test {
     fn test_transfer_ownership() {
         let env = Env::default();
         env.mock_all_auths();
-        let (client, admin, _) = setup_registry(&env);
+        let (client, _admin, _) = setup_registry(&env);
         let owner = Address::generate(&env);
         let new_owner = Address::generate(&env);
 
         let asset_id = client.register_asset(
             &owner,
-            &admin,
+            &owner,
             &String::from_str(&env, "Plot A"),
             &String::from_str(&env, "Real Estate"),
             &String::from_str(&env, "VTPLT"),
@@ -799,7 +817,7 @@ mod test {
 
         let asset_id = client.register_asset(
             &owner,
-            &admin,
+            &owner,
             &String::from_str(&env, "Gold Fund"),
             &String::from_str(&env, "Mining"),
             &String::from_str(&env, "VTGOLD"),
@@ -864,7 +882,7 @@ mod test {
 
         let asset_id = client.register_asset(
             &owner,
-            &admin,
+            &owner,
             &String::from_str(&env, "Silver Fund"),
             &String::from_str(&env, "Mining"),
             &String::from_str(&env, "VTSILV"),
@@ -897,12 +915,12 @@ mod test {
     fn test_burn_pending_fractional_panics() {
         let env = Env::default();
         env.mock_all_auths();
-        let (client, admin, _) = setup_registry(&env);
+        let (client, _admin, _) = setup_registry(&env);
         let owner = Address::generate(&env);
 
         let asset_id = client.register_asset(
             &owner,
-            &admin,
+            &owner,
             &String::from_str(&env, "Copper Fund"),
             &String::from_str(&env, "Mining"),
             &String::from_str(&env, "VTCOPP"),
