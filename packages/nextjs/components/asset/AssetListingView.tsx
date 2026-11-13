@@ -5,11 +5,14 @@ import { ActivityFeed } from "~~/components/activity/ActivityFeed";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
 import { DocumentRoom } from "~~/components/asset/DocumentRoom";
 import { ListingFacts } from "~~/components/asset/ListingFacts";
+import { ListingHistory } from "~~/components/asset/ListingHistory";
 import { ShareResaleSection } from "~~/components/asset/ShareResaleSection";
+import { ShareSplitChart } from "~~/components/asset/ShareSplitChart";
 import { ListingPlate } from "~~/components/marketplace/ListingPlate";
 import { OnChainAsset } from "~~/types/stellar";
 import type { ListingDocument } from "~~/utils/vaultic/listingDocument";
 import { listingStatusLabel, saleTypeLabel } from "~~/utils/vaultic/listingLabels";
+import { shareSplit } from "~~/utils/vaultic/shareSplit";
 
 type AssetListingViewProps = {
   asset: OnChainAsset;
@@ -59,6 +62,9 @@ export function AssetListingView({
   const forSale = asset.state.tag === "Tokenized";
   const valuationUsdc = Number(asset.valuation) / 1e7;
   const pricePerShare = Number(asset.price_per_share) / 1e7;
+  const split = asset.model.tag === "Fractional" ? shareSplit(asset.total_shares, asset.sold_shares) : null;
+  const recordedHistory =
+    asset.state.tag === "Tokenized" || asset.state.tag === "Closed" || asset.state.tag === "Relisted";
 
   return (
     <div className="flex grow flex-col pb-16">
@@ -105,7 +111,12 @@ export function AssetListingView({
                   <p className="text-xs font-medium text-base-content/50">{forSale ? "USDC" : "Soon"}</p>
                 </div>
               </div>
-              {forSale ? (
+              {split ? <ShareSplitChart split={split} /> : null}
+              {asset.model.tag === "Fractional" && !split && asset.total_shares > 0n ? (
+                <p className="text-sm font-medium text-base-content/70">The share split is unavailable.</p>
+              ) : null}
+              {recordedHistory ? <ListingHistory assetId={asset.asset_id} /> : null}
+              {!split && forSale ? (
                 <div>
                   <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-base-content/55">
                     <span>{soldPercent}% sold</span>
