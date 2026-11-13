@@ -30,6 +30,12 @@ export {
   fetchProtocolFeeBps,
   fetchPurchasesPaused,
   setPurchasesPaused,
+  fetchOfferSellers,
+  fetchShareOffer,
+  createShareOffer,
+  cancelShareOffer,
+  setShareToken,
+  fillShareOffer,
 } from "./investmentCalls";
 export { fetchYieldRound, fetchClaimableYield, fetchYieldRoundCount, depositYield, claimAllYield } from "./yieldCalls";
 export {

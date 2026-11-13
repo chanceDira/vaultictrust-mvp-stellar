@@ -14,8 +14,9 @@ const FeesPage: NextPage = () => {
       <article className="mx-auto w-full max-w-3xl px-5 py-8 text-center sm:px-8 sm:py-10 sm:text-left [&_p]:font-semibold">
         <DocArticleHeader title="Fees" brand={false} />
         <p className="text-base leading-relaxed text-base-content/85">
-          Buying shares, or buying a whole asset, pays USDC to the seller. A protocol fee is taken from that payment and
-          kept for the treasury. Admins can change the rate. This page does not set it.
+          Buying shares, buying a whole asset, or buying shares from another investor pays USDC to the seller. A
+          protocol fee is taken from that payment and kept for the treasury. Admins can change the rate. This page does
+          not set it.
         </p>
         <FeeSchedule />
         <DocArticleFooter>

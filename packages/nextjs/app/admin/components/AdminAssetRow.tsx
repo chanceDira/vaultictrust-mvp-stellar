@@ -1,5 +1,6 @@
 "use client";
 
+import { ShareTokenButton } from "./ShareTokenButton";
 import { STATE_CONFIG } from "./constants";
 import { ArchiveBoxIcon, CheckCircleIcon, CubeTransparentIcon, FireIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
@@ -14,6 +15,7 @@ type Props = {
   onDelete: (asset: OnChainAsset) => void;
   onBurn: (asset: OnChainAsset) => void;
   isApproving: boolean;
+  publicKey: string;
 };
 
 const ARCHIVABLE_STATES: AssetStateKey[] = ["Pending", "Active", "Tokenized", "Closed", "Relisted"];
@@ -28,6 +30,7 @@ export function AdminAssetRow({
   onDelete,
   onBurn,
   isApproving,
+  publicKey,
 }: Readonly<Props>) {
   const state = asset.state.tag as AssetStateKey;
   const stateConfig = STATE_CONFIG[state] ?? STATE_CONFIG.Pending;
@@ -119,6 +122,7 @@ export function AdminAssetRow({
               Approve
             </button>
           )}
+          <ShareTokenButton asset={asset} publicKey={publicKey} />
           {canTokenize && (
             <button className="btn btn-primary btn-sm gap-1.5" onClick={() => onTokenize(asset)}>
               <CubeTransparentIcon className="h-4 w-4" />

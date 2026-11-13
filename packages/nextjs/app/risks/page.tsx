@@ -52,8 +52,13 @@ const RisksPage: NextPage = () => {
         <h2 className="mt-8 text-xl font-semibold text-base-content">Selling again</h2>
         <p className="mt-2 text-base leading-relaxed text-base-content/85">
           A whole-asset buyer becomes the owner. They can list that asset again as one asset, or split it into shares. A
-          share holder cannot yet sell those shares to another person inside the app. That sale is planned, and it stays
-          between two verified investors. It is not an exchange.
+          share holder can offer those shares to one verified investor. The seller approves that offer, and the buyer
+          signs the purchase. It is not an exchange. An offer lasts about 30 days. After that, the holder cancels it and
+          can offer the shares again.
+        </p>
+        <p className="mt-4 text-base leading-relaxed text-base-content/85">
+          Shares issued without issuer authorization can still move in a wallet. Yield inside the app will not follow
+          that transfer.
         </p>
 
         <h2 className="mt-8 text-xl font-semibold text-base-content">What this site does not do</h2>
