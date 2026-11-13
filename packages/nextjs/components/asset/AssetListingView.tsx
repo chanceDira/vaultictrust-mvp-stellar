@@ -4,6 +4,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { ActivityFeed } from "~~/components/activity/ActivityFeed";
 import { AssetBuyPanel } from "~~/components/asset/AssetBuyPanel";
 import { DocumentRoom } from "~~/components/asset/DocumentRoom";
+import { HolderChart } from "~~/components/asset/HolderChart";
 import { ListingFacts } from "~~/components/asset/ListingFacts";
 import { ListingHistory } from "~~/components/asset/ListingHistory";
 import { ShareResaleSection } from "~~/components/asset/ShareResaleSection";
@@ -116,6 +117,9 @@ export function AssetListingView({
                 <p className="text-sm font-medium text-base-content/70">The share split is unavailable.</p>
               ) : null}
               {recordedHistory ? <ListingHistory assetId={asset.asset_id} /> : null}
+              {recordedHistory && asset.model.tag === "Fractional" && asset.issuer ? (
+                <HolderChart assetId={asset.asset_id} />
+              ) : null}
               {!split && forSale ? (
                 <div>
                   <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-base-content/55">
