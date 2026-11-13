@@ -3,5 +3,6 @@
   "buildCommand": "yarn workspace @vaultic/nextjs build",
   "outputDirectory": "packages/nextjs/.next",
   "installCommand": "yarn install --immutable",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- packages/nextjs/"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- packages/nextjs/",
+  "crons": [{ "path": "/api/holders/snapshot", "schedule": "0 4 * * *" }]
 }

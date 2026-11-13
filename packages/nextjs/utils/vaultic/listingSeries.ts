@@ -26,6 +26,17 @@ export type PayoutSeries = {
   undatedClaimed: bigint;
 };
 
+export type LastSalePoint = {
+  day: string;
+  priceStroops: bigint;
+  shares: bigint;
+};
+
+export type LastSaleSeries = {
+  points: LastSalePoint[];
+  undated: number;
+};
+
 function dayOf(occurredAt: string | null): string | null {
   if (!occurredAt) return null;
   const match = DAY.exec(occurredAt);
@@ -91,5 +102,34 @@ export function payoutSeries(rows: readonly ActivityFeedRow[]): PayoutSeries {
     points: [...byDay.values()].sort((left, right) => left.day.localeCompare(right.day)),
     undatedDeposited,
     undatedClaimed,
+  };
+}
+
+export function lastSaleSeries(rows: readonly ActivityFeedRow[]): LastSaleSeries {
+  const byDay = new Map<string, LastSalePoint & { at: string; ledger: number }>();
+  let undated = 0;
+
+  for (const row of rows) {
+    if (row.kind !== "sell_sh") continue;
+    const shares = stroops(row.shares);
+    const usdc = stroops(row.usdcStroops);
+    if (shares === null || usdc === null || shares <= 0n || usdc < 0n) continue;
+    const day = dayOf(row.occurredAt);
+    if (!day || !row.occurredAt) {
+      undated += 1;
+      continue;
+    }
+    const next = { day, priceStroops: usdc / shares, shares, at: row.occurredAt, ledger: row.ledger };
+    const current = byDay.get(day);
+    if (!current || next.at > current.at || (next.at === current.at && next.ledger >= current.ledger)) {
+      byDay.set(day, next);
+    }
+  }
+
+  return {
+    points: [...byDay.values()]
+      .sort((left, right) => left.day.localeCompare(right.day))
+      .map(({ day, priceStroops, shares }) => ({ day, priceStroops, shares })),
+    undated,
   };
 }

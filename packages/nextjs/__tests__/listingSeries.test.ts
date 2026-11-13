@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ActivityFeedRow } from "~~/utils/vaultic/activityFeed";
-import { payoutSeries, salesSeries } from "~~/utils/vaultic/listingSeries";
+import { lastSaleSeries, payoutSeries, salesSeries } from "~~/utils/vaultic/listingSeries";
 
 function row(overrides: Partial<ActivityFeedRow>): ActivityFeedRow {
   return {
@@ -46,5 +46,29 @@ describe("listingSeries", () => {
     ]);
 
     expect(series.points).toEqual([{ day: "2026-11-01", deposited: 15_000_000n, claimed: 5_000_000n }]);
+  });
+
+  it("keeps the later resale on a day and ignores a primary purchase", () => {
+    const series = lastSaleSeries([
+      row({ kind: "buy_sh", shares: "10", usdcStroops: "1000000000" }),
+      row({
+        eventId: "early",
+        kind: "sell_sh",
+        occurredAt: "2026-11-01T08:00:00.000Z",
+        shares: "10",
+        usdcStroops: "1000000000",
+      }),
+      row({
+        eventId: "late",
+        kind: "sell_sh",
+        occurredAt: "2026-11-01T18:00:00.000Z",
+        shares: "5",
+        usdcStroops: "1000000000",
+      }),
+      row({ eventId: "nodate", kind: "sell_sh", occurredAt: null, shares: "2", usdcStroops: "400000000" }),
+    ]);
+
+    expect(series.points).toEqual([{ day: "2026-11-01", priceStroops: 200_000_000n, shares: 5n }]);
+    expect(series.undated).toBe(1);
   });
 });

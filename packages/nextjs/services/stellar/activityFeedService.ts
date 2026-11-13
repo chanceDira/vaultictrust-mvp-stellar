@@ -3,6 +3,7 @@ import vaulticConfig from "~~/scaffold.config";
 import { getSupabaseAdmin } from "~~/services/stellar/listingCopyService";
 import { ACTIVITY_FEED_KINDS, ACTIVITY_FEED_LIMIT, activityFeedFromStored } from "~~/utils/vaultic/activityFeed";
 import type { ActivityFeedRow } from "~~/utils/vaultic/activityFeed";
+import type { StoredYieldDeposit } from "~~/utils/vaultic/yieldDepositNote";
 
 const ACTIVITY_COLUMNS =
   "event_id, ledger, ledger_closed_at, tx_hash, kind, asset_id, account, counterparty, amount, amount_secondary, amount_tertiary";
@@ -44,4 +45,48 @@ export async function readActivityFeed(filter: { assetId: number } | { account: 
     rows,
     truncated: result.data.length > ACTIVITY_FEED_LIMIT,
   };
+}
+
+const MAX_YIELD_NOTE_ASSETS = 40;
+
+export type YieldDepositRead =
+  | { status: "skipped" }
+  | { status: "failed" }
+  | { status: "ready"; deposits: StoredYieldDeposit[] };
+
+export async function readLatestYieldDeposits(assetIds: readonly number[]): Promise<YieldDepositRead> {
+  const client = getSupabaseAdmin();
+  if (!client) return { status: "skipped" };
+  if (assetIds.length > MAX_YIELD_NOTE_ASSETS) return { status: "failed" };
+
+  const network = vaulticConfig.targetNetwork;
+  const reads = await Promise.all(assetIds.map(assetId => latestDeposit(client, network, assetId)));
+  const deposits: StoredYieldDeposit[] = [];
+  for (const read of reads) {
+    if (read === "failed") return { status: "failed" };
+    if (read) deposits.push(read);
+  }
+  return { status: "ready", deposits };
+}
+
+async function latestDeposit(
+  client: SupabaseClient,
+  network: string,
+  assetId: number,
+): Promise<StoredYieldDeposit | null | "failed"> {
+  const result = await client
+    .from("activities")
+    .select("ledger, ledger_closed_at, asset_id")
+    .eq("network", network)
+    .eq("kind", "yld_dep")
+    .eq("asset_id", assetId)
+    .order("ledger", { ascending: false })
+    .limit(1);
+  if (result.error || !Array.isArray(result.data)) return "failed";
+  const entry = result.data[0];
+  if (!entry) return null;
+  const ledger = entry.ledger;
+  if (typeof ledger !== "number" || !Number.isInteger(ledger) || entry.asset_id !== assetId) return "failed";
+  const occurredAt = typeof entry.ledger_closed_at === "string" ? entry.ledger_closed_at : null;
+  return { assetId, occurredAt, ledger };
 }
