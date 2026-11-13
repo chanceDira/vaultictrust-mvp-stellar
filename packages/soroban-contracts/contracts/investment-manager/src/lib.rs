@@ -40,6 +40,13 @@ pub struct AssetInvestmentPool {
 }
 
 #[contracttype]
+#[derive(Clone, Debug)]
+pub struct ShareOffer {
+    pub shares: i128,
+    pub price_per_share: i128,
+}
+
+#[contracttype]
 pub enum DataKey {
     Admins,
     Registry,
@@ -52,6 +59,9 @@ pub enum DataKey {
     InvestorHoldings(u32, Address),
     InvestorList(u32),
     PurchasesPaused,
+    ShareOffer(u32, Address),
+    OfferSellers(u32),
+    ShareToken(u32),
 }
 
 #[contract]
@@ -64,6 +74,112 @@ fn purchases_are_paused(env: &Env) -> bool {
         .instance()
         .get(&DataKey::PurchasesPaused)
         .unwrap_or(false)
+}
+
+fn require_verified(env: &Env, account: &Address) {
+    let user_registry_addr: Address = env.storage().instance().get(&DataKey::UserRegistry).unwrap();
+    let user_registry_client = user_registry::Client::new(env, &user_registry_addr);
+    if !user_registry_client.is_verified(account) {
+        panic!("investor not KYC verified");
+    }
+}
+
+fn apply_holding_transfer(env: &Env, asset_id: u32, seller: &Address, buyer: &Address, share_amount: i128) {
+    if !env.storage().persistent().has(&DataKey::Pool(asset_id)) {
+        panic!("no investment pool for this asset");
+    }
+    let pool: AssetInvestmentPool = env
+        .storage()
+        .persistent()
+        .get(&DataKey::Pool(asset_id))
+        .unwrap();
+
+    let seller_holding: i128 = env
+        .storage()
+        .persistent()
+        .get(&DataKey::InvestorHoldings(asset_id, seller.clone()))
+        .unwrap_or(0);
+    if seller_holding < share_amount {
+        panic!("insufficient holdings");
+    }
+
+    let buyer_holding: i128 = env
+        .storage()
+        .persistent()
+        .get(&DataKey::InvestorHoldings(asset_id, buyer.clone()))
+        .unwrap_or(0);
+    if pool.investor_cap > 0 && buyer_holding + share_amount > pool.investor_cap {
+        panic!("investor cap exceeded");
+    }
+
+    let seller_remaining = seller_holding - share_amount;
+    env.storage().persistent().set(
+        &DataKey::InvestorHoldings(asset_id, seller.clone()),
+        &seller_remaining,
+    );
+    if buyer_holding == 0 {
+        let mut investor_list: Vec<Address> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorList(asset_id))
+            .unwrap_or(Vec::new(env));
+        investor_list.push_back(buyer.clone());
+        env.storage()
+            .persistent()
+            .set(&DataKey::InvestorList(asset_id), &investor_list);
+    }
+    env.storage().persistent().set(
+        &DataKey::InvestorHoldings(asset_id, buyer.clone()),
+        &(buyer_holding + share_amount),
+    );
+
+    if seller_remaining == 0 {
+        let current: Vec<Address> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorList(asset_id))
+            .unwrap_or(Vec::new(env));
+        let mut remaining: Vec<Address> = Vec::new(env);
+        for holder in current.iter() {
+            if holder != seller.clone() {
+                remaining.push_back(holder);
+            }
+        }
+        env.storage()
+            .persistent()
+            .set(&DataKey::InvestorList(asset_id), &remaining);
+    }
+}
+
+fn remember_offer_seller(env: &Env, asset_id: u32, seller: &Address) {
+    let mut sellers: Vec<Address> = env
+        .storage()
+        .persistent()
+        .get(&DataKey::OfferSellers(asset_id))
+        .unwrap_or(Vec::new(env));
+    if !sellers.contains(seller) {
+        sellers.push_back(seller.clone());
+        env.storage()
+            .persistent()
+            .set(&DataKey::OfferSellers(asset_id), &sellers);
+    }
+}
+
+fn forget_offer_seller(env: &Env, asset_id: u32, seller: &Address) {
+    let current: Vec<Address> = env
+        .storage()
+        .persistent()
+        .get(&DataKey::OfferSellers(asset_id))
+        .unwrap_or(Vec::new(env));
+    let mut remaining: Vec<Address> = Vec::new(env);
+    for holder in current.iter() {
+        if holder != seller.clone() {
+            remaining.push_back(holder);
+        }
+    }
+    env.storage()
+        .persistent()
+        .set(&DataKey::OfferSellers(asset_id), &remaining);
 }
 
 #[contractimpl]
@@ -609,6 +725,217 @@ impl VaulticInvestmentManager {
         );
     }
 
+    pub fn transfer_investor_holdings(
+        env: Env,
+        seller: Address,
+        buyer: Address,
+        asset_id: u32,
+        share_amount: i128,
+    ) {
+        seller.require_auth();
+        buyer.require_auth();
+
+        if seller == buyer {
+            panic!("seller and buyer are the same");
+        }
+        if share_amount <= 0 {
+            panic!("zero transfer amount");
+        }
+
+        require_verified(&env, &seller);
+        require_verified(&env, &buyer);
+        apply_holding_transfer(&env, asset_id, &seller, &buyer, share_amount);
+
+        // The share asset and the USDC payment move in the resale fill, not here.
+        env.events().publish(
+            (symbol_short!("hold_mv"), asset_id, seller),
+            (buyer, share_amount),
+        );
+    }
+
+    pub fn set_share_token(env: Env, caller: Address, asset_id: u32, token: Address) {
+        caller.require_auth();
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admins)
+            .expect("not initialized");
+        if !admins.contains(&caller) {
+            panic!("not an admin");
+        }
+        if !env.storage().persistent().has(&DataKey::Pool(asset_id)) {
+            panic!("no investment pool for this asset");
+        }
+        env.storage()
+            .persistent()
+            .set(&DataKey::ShareToken(asset_id), &token);
+    }
+
+    pub fn get_share_token(env: Env, asset_id: u32) -> Option<Address> {
+        env.storage().persistent().get(&DataKey::ShareToken(asset_id))
+    }
+
+    pub fn create_share_offer(
+        env: Env,
+        seller: Address,
+        asset_id: u32,
+        shares: i128,
+        price_per_share: i128,
+    ) {
+        seller.require_auth();
+        if purchases_are_paused(&env) {
+            panic!("purchases are paused");
+        }
+        if shares <= 0 {
+            panic!("zero offer amount");
+        }
+        if price_per_share <= 0 {
+            panic!("invalid price");
+        }
+        require_verified(&env, &seller);
+        let holding: i128 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorHoldings(asset_id, seller.clone()))
+            .unwrap_or(0);
+        if holding < shares {
+            panic!("insufficient holdings");
+        }
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::ShareOffer(asset_id, seller.clone()))
+        {
+            panic!("offer already open");
+        }
+
+        env.storage().persistent().set(
+            &DataKey::ShareOffer(asset_id, seller.clone()),
+            &ShareOffer {
+                shares,
+                price_per_share,
+            },
+        );
+        remember_offer_seller(&env, asset_id, &seller);
+        env.events().publish(
+            (symbol_short!("off_new"), asset_id, seller),
+            (shares, price_per_share),
+        );
+    }
+
+    pub fn cancel_share_offer(env: Env, seller: Address, asset_id: u32) {
+        seller.require_auth();
+        let offer: ShareOffer = env
+            .storage()
+            .persistent()
+            .get(&DataKey::ShareOffer(asset_id, seller.clone()))
+            .expect("offer not found");
+        env.storage()
+            .persistent()
+            .remove(&DataKey::ShareOffer(asset_id, seller.clone()));
+        forget_offer_seller(&env, asset_id, &seller);
+        env.events()
+            .publish((symbol_short!("off_can"), asset_id, seller), offer.shares);
+    }
+
+    pub fn fill_share_offer(
+        env: Env,
+        buyer: Address,
+        seller: Address,
+        asset_id: u32,
+        share_amount: i128,
+    ) {
+        buyer.require_auth();
+        seller.require_auth();
+        if purchases_are_paused(&env) {
+            panic!("purchases are paused");
+        }
+        if buyer == seller {
+            panic!("seller and buyer are the same");
+        }
+        if share_amount <= 0 {
+            panic!("zero transfer amount");
+        }
+        require_verified(&env, &seller);
+        require_verified(&env, &buyer);
+
+        let offer: ShareOffer = env
+            .storage()
+            .persistent()
+            .get(&DataKey::ShareOffer(asset_id, seller.clone()))
+            .expect("offer not found");
+        if share_amount > offer.shares {
+            panic!("insufficient offer");
+        }
+
+        let share_token: Address = env
+            .storage()
+            .persistent()
+            .get(&DataKey::ShareToken(asset_id))
+            .expect("share token is not set");
+
+        let gross = offer.price_per_share * share_amount;
+        let fee_bps: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::ProtocolFeeBps)
+            .unwrap();
+        let fee = (gross * fee_bps) / BPS_DENOMINATOR;
+        let net_to_seller = gross - fee;
+
+        let payment_addr: Address = env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_client = token::Client::new(&env, &payment_addr);
+        payment_client.transfer(&buyer, &env.current_contract_address(), &gross);
+        payment_client.transfer(&env.current_contract_address(), &seller, &net_to_seller);
+
+        let share_client = token::Client::new(&env, &share_token);
+        share_client.transfer(&seller, &buyer, &share_amount);
+
+        apply_holding_transfer(&env, asset_id, &seller, &buyer, share_amount);
+
+        let shares_left = offer.shares - share_amount;
+        if shares_left == 0 {
+            env.storage()
+                .persistent()
+                .remove(&DataKey::ShareOffer(asset_id, seller.clone()));
+            forget_offer_seller(&env, asset_id, &seller);
+        } else {
+            env.storage().persistent().set(
+                &DataKey::ShareOffer(asset_id, seller.clone()),
+                &ShareOffer {
+                    shares: shares_left,
+                    price_per_share: offer.price_per_share,
+                },
+            );
+        }
+
+        let mut fees: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::AccumulatedFees)
+            .unwrap();
+        fees += fee;
+        env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
+
+        env.events().publish(
+            (symbol_short!("sell_sh"), asset_id, seller, buyer),
+            (share_amount, gross, fee),
+        );
+    }
+
+    pub fn get_share_offer(env: Env, asset_id: u32, seller: Address) -> Option<ShareOffer> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::ShareOffer(asset_id, seller))
+    }
+
+    pub fn get_offer_sellers(env: Env, asset_id: u32) -> Vec<Address> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::OfferSellers(asset_id))
+            .unwrap_or(Vec::new(&env))
+    }
+
     pub fn get_pool(env: Env, asset_id: u32) -> AssetInvestmentPool {
         env.storage()
             .persistent()
@@ -709,8 +1036,11 @@ mod test {
     struct MockUserRegistry;
     #[contractimpl]
     impl MockUserRegistry {
-        pub fn is_verified(_env: Env, _user: Address) -> bool {
-            true
+        pub fn is_verified(env: Env, user: Address) -> bool {
+            env.storage().persistent().get(&user).unwrap_or(true)
+        }
+        pub fn set_verified(env: Env, user: Address, verified: bool) {
+            env.storage().persistent().set(&user, &verified);
         }
     }
 
@@ -738,7 +1068,32 @@ mod test {
     struct MockToken;
     #[contractimpl]
     impl MockToken {
-        pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: i128) {}
+        pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
+            let count: u32 = env
+                .storage()
+                .instance()
+                .get(&symbol_short!("xfers"))
+                .unwrap_or(0);
+            env.storage()
+                .instance()
+                .set(&symbol_short!("xfers"), &(count + 1));
+            env.storage().instance().set(&symbol_short!("xfrom"), &from);
+            env.storage().instance().set(&symbol_short!("xto"), &to);
+            env.storage().instance().set(&symbol_short!("xamt"), &amount);
+        }
+        pub fn transfer_count(env: Env) -> u32 {
+            env.storage()
+                .instance()
+                .get(&symbol_short!("xfers"))
+                .unwrap_or(0)
+        }
+        pub fn last_transfer(env: Env) -> (Address, Address, i128) {
+            (
+                env.storage().instance().get(&symbol_short!("xfrom")).unwrap(),
+                env.storage().instance().get(&symbol_short!("xto")).unwrap(),
+                env.storage().instance().get(&symbol_short!("xamt")).unwrap(),
+            )
+        }
         pub fn balance(_env: Env, _addr: Address) -> i128 {
             1_000_000_000_i128
         }
@@ -963,6 +1318,211 @@ mod test {
         client.set_purchases_paused(&admin, &true);
         let buyer = Address::generate(&env);
         client.purchase_whole_asset(&buyer, &1u32);
+    }
+
+    #[test]
+    fn test_transfer_investor_holdings_moves_the_recorded_balance() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+
+        client.transfer_investor_holdings(&seller, &buyer, &1u32, &40i128);
+
+        assert_eq!(client.get_investor_holdings(&1u32, &seller), 60i128);
+        assert_eq!(client.get_investor_holdings(&1u32, &buyer), 40i128);
+        assert_eq!(client.available_shares(&1u32), 900i128);
+        let holders = client.get_investor_list(&1u32);
+        assert_eq!(holders.len(), 2);
+    }
+
+    #[test]
+    fn test_transfer_investor_holdings_removes_a_seller_who_keeps_none() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+
+        client.transfer_investor_holdings(&seller, &buyer, &1u32, &100i128);
+
+        assert_eq!(client.get_investor_holdings(&1u32, &seller), 0i128);
+        assert_eq!(client.get_investor_holdings(&1u32, &buyer), 100i128);
+        let holders = client.get_investor_list(&1u32);
+        assert_eq!(holders.len(), 1);
+        assert_eq!(holders.get(0).unwrap(), buyer);
+    }
+
+    #[test]
+    #[should_panic(expected = "insufficient holdings")]
+    fn test_transfer_investor_holdings_cannot_exceed_the_balance() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+        client.transfer_investor_holdings(&seller, &buyer, &1u32, &101i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "investor cap exceeded")]
+    fn test_transfer_investor_holdings_respects_the_cap() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 50);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &40i128);
+        client.purchase_shares(&buyer, &1u32, &20i128);
+        client.transfer_investor_holdings(&seller, &buyer, &1u32, &31i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "investor not KYC verified")]
+    fn test_transfer_investor_holdings_rejects_an_unverified_buyer() {
+        let env = Env::default();
+        let (client, admin, _, ur_id, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+        MockUserRegistryClient::new(&env, &ur_id).set_verified(&buyer, &false);
+        client.transfer_investor_holdings(&seller, &buyer, &1u32, &10i128);
+    }
+
+    fn open_resale(env: &Env, client: &VaulticInvestmentManagerClient, admin: &Address) -> (Address, Address) {
+        open_pool(client, env, admin, 1, 1_000, 10_0000000i128, 0);
+        let share_token = env.register_contract(None, MockToken);
+        client.set_share_token(admin, &1u32, &share_token);
+        let seller = Address::generate(env);
+        let buyer = Address::generate(env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+        (seller, buyer)
+    }
+
+    #[test]
+    fn test_share_offer_can_be_cancelled_without_moving_shares() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+        client.create_share_offer(&seller, &1u32, &40i128, &1_000i128);
+
+        let offer = client.get_share_offer(&1u32, &seller).unwrap();
+        assert_eq!(offer.shares, 40);
+        assert_eq!(offer.price_per_share, 1_000);
+        assert_eq!(client.get_investor_holdings(&1u32, &seller), 100);
+        assert_eq!(client.get_offer_sellers(&1u32).len(), 1);
+
+        client.cancel_share_offer(&seller, &1u32);
+        assert!(client.get_share_offer(&1u32, &seller).is_none());
+        assert_eq!(client.get_offer_sellers(&1u32).len(), 0);
+        assert_eq!(client.get_investor_holdings(&1u32, &seller), 100);
+    }
+
+    #[test]
+    fn test_fill_share_offer_pays_the_seller_and_moves_the_recorded_shares() {
+        let env = Env::default();
+        let (client, admin, _, _, token_id) = setup(&env);
+        let (seller, buyer) = open_resale(&env, &client, &admin);
+        client.create_share_offer(&seller, &1u32, &80i128, &1_000i128);
+        let fees_before = client.accumulated_fees();
+        let payment = MockTokenClient::new(&env, &token_id);
+        let payment_before = payment.transfer_count();
+        let share_token = client.get_share_token(&1u32).unwrap();
+        let shares = MockTokenClient::new(&env, &share_token);
+
+        client.fill_share_offer(&buyer, &seller, &1u32, &30i128);
+
+        assert_eq!(client.get_investor_holdings(&1u32, &seller), 70);
+        assert_eq!(client.get_investor_holdings(&1u32, &buyer), 30);
+        assert_eq!(client.get_share_offer(&1u32, &seller).unwrap().shares, 50);
+        assert_eq!(client.available_shares(&1u32), 900);
+        assert_eq!(client.accumulated_fees(), fees_before + 750);
+        assert_eq!(payment.transfer_count(), payment_before + 2);
+        let (from, to, amount) = payment.last_transfer();
+        assert_eq!(from, client.address);
+        assert_eq!(to, seller);
+        assert_eq!(amount, 29_250);
+        let (share_from, share_to, share_amount) = shares.last_transfer();
+        assert_eq!(share_from, seller);
+        assert_eq!(share_to, buyer);
+        assert_eq!(share_amount, 30);
+    }
+
+    #[test]
+    fn test_fill_share_offer_removes_a_completed_offer() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        let (seller, buyer) = open_resale(&env, &client, &admin);
+        client.create_share_offer(&seller, &1u32, &40i128, &1_000i128);
+        client.fill_share_offer(&buyer, &seller, &1u32, &40i128);
+        assert!(client.get_share_offer(&1u32, &seller).is_none());
+        assert_eq!(client.get_offer_sellers(&1u32).len(), 0);
+        assert_eq!(client.get_investor_holdings(&1u32, &buyer), 40);
+    }
+
+    #[test]
+    #[should_panic(expected = "insufficient offer")]
+    fn test_fill_share_offer_cannot_exceed_the_offer() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        let (seller, buyer) = open_resale(&env, &client, &admin);
+        client.create_share_offer(&seller, &1u32, &10i128, &1_000i128);
+        client.fill_share_offer(&buyer, &seller, &1u32, &11i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "insufficient holdings")]
+    fn test_fill_share_offer_fails_when_the_seller_no_longer_holds_the_shares() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        let (seller, buyer) = open_resale(&env, &client, &admin);
+        let other = Address::generate(&env);
+        client.create_share_offer(&seller, &1u32, &100i128, &1_000i128);
+        client.transfer_investor_holdings(&seller, &other, &1u32, &90i128);
+        client.fill_share_offer(&buyer, &seller, &1u32, &20i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "offer already open")]
+    fn test_create_share_offer_rejects_a_second_open_offer() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+        client.create_share_offer(&seller, &1u32, &10i128, &1_000i128);
+        client.create_share_offer(&seller, &1u32, &10i128, &2_000i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "purchases are paused")]
+    fn test_fill_share_offer_respects_the_pause() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        let (seller, buyer) = open_resale(&env, &client, &admin);
+        client.create_share_offer(&seller, &1u32, &10i128, &1_000i128);
+        client.set_purchases_paused(&admin, &true);
+        client.fill_share_offer(&buyer, &seller, &1u32, &10i128);
+    }
+
+    #[test]
+    #[should_panic(expected = "share token is not set")]
+    fn test_fill_share_offer_requires_the_share_token() {
+        let env = Env::default();
+        let (client, admin, _, _, _) = setup(&env);
+        open_pool(&client, &env, &admin, 1, 1_000, 10_0000000i128, 0);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        client.purchase_shares(&seller, &1u32, &100i128);
+        client.create_share_offer(&seller, &1u32, &10i128, &1_000i128);
+        client.fill_share_offer(&buyer, &seller, &1u32, &10i128);
     }
 
     #[test]
