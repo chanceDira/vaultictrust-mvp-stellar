@@ -10,9 +10,9 @@ import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
-import { ADMIN_ADDRESSES } from "~~/scaffold.config";
 import { getContractIds } from "~~/services/stellar/sorobanService";
 import { UserTab } from "~~/types/stellar";
+import { adminAddresses } from "~~/utils/vaultic/adminAddresses";
 
 const TABS: { key: UserTab; label: string }[] = [
   { key: "assets", label: "Assets" },
@@ -54,7 +54,7 @@ export default function AdminPage() {
   const { isConnected, publicKey } = useStellarWallet();
   const [activeTab, setActiveTab] = useState<UserTab>("assets");
 
-  const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
+  const isAdmin = publicKey && adminAddresses().includes(publicKey);
   const contracts = getContractIds();
   const isDeployed = !!contracts.registry;
 
