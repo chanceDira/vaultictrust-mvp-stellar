@@ -12,10 +12,10 @@ The current Soroban deployment used by the frontend:
 
 | Contract | Role | Contract ID (Soroban) | Explorer |
 | :--- | :--- | :--- | :--- |
-| **VaulticAssetRegistry** | Canonical asset registry | `CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAUISC56SF5EFPLV33KRXWWU63JU7UATLKTMQVEEVONJPGTSZMITESWB) |
-| **VaulticUserRegistry** | On-chain KYC registry | `CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR) |
-| **VaulticInvestmentManager** | KYC-gated investment engine | `CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAWR3VTTADC6Y3CE2N3DORX7NRSTXPFRHQ35SXO5VKGDX43TGTASGPCG) |
-| **VaulticDividendManager** | Yield and dividend distribution | `CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBXBIPIRTZFZTO7YLX36JCH72TTND4IUQF7HBMWI4W2K36F5HMZLNJFF) |
+| **VaulticAssetRegistry** | Canonical asset registry | `CDHHMAJ4WECQYOLHAEWIYJNZ2OPPNY5L5OU6GM2ER6JJ6UYT6JFAADBW` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDHHMAJ4WECQYOLHAEWIYJNZ2OPPNY5L5OU6GM2ER6JJ6UYT6JFAADBW) |
+| **VaulticUserRegistry** | On-chain KYC registry | `CDLBST2RYQHFTLDLB6TA242K3WAHV6KQ6YB7K5UGBCBJN6IN34ZQLVCI` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDLBST2RYQHFTLDLB6TA242K3WAHV6KQ6YB7K5UGBCBJN6IN34ZQLVCI) |
+| **VaulticInvestmentManager** | KYC-gated investment engine | `CBKJ53DIHOWBMYBIIVM66NVWXSGI3SXJH224VQYR57YZJIL4RC4W7PRR` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBKJ53DIHOWBMYBIIVM66NVWXSGI3SXJH224VQYR57YZJIL4RC4W7PRR) |
+| **VaulticDividendManager** | Yield and dividend distribution | `CBDRQYD77GPIQFRGIPIGT64ZDY6C7PCYF72RU7BYSSOEZSG2A2A5XMD3` | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBDRQYD77GPIQFRGIPIGT64ZDY6C7PCYF72RU7BYSSOEZSG2A2A5XMD3) |
 
 Contract IDs are also configured in `packages/nextjs/scaffold.config.ts`.
 
