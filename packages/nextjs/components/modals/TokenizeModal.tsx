@@ -7,6 +7,11 @@ import { tokenizeAsset } from "~~/services/stellar/sorobanService";
 import { OnChainAsset } from "~~/types/stellar";
 import { notification } from "~~/utils/vaultic";
 
+function ownerIssuer(owner: string): string {
+  if (owner.startsWith("G") && owner.length === 56) return owner;
+  return "";
+}
+
 export function TokenizeModal({
   asset,
   onClose,
@@ -21,7 +26,7 @@ export function TokenizeModal({
   const [totalShares, setTotalShares] = useState("10000");
   const [priceUsdc, setPriceUsdc] = useState("");
   const [investorCap, setInvestorCap] = useState("0");
-  const [rwaIssuer, setRwaIssuer] = useState("");
+  const [rwaIssuer, setRwaIssuer] = useState(ownerIssuer(asset.asset_owner));
   const [loading, setLoading] = useState(false);
   const isSubmitting = useRef(false);
 
@@ -252,8 +257,8 @@ export function TokenizeModal({
             />
             <label className="label pt-1">
               <span className="label-text-alt text-base-content/40">
-                The Stellar account that will issue and distribute native{" "}
-                <span className="font-mono">{asset.asset_code}</span> tokens to investors
+                Starts as the asset owner. That account issues <span className="font-mono">{asset.asset_code}</span>.
+                Change it if another account should.
               </span>
             </label>
           </div>
