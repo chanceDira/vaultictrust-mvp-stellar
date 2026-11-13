@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminAssetRow } from "./AdminAssetRow";
 import { ConfirmModal } from "./ConfirmModal";
 import { STATE_CONFIG } from "./constants";
@@ -62,6 +62,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
   const contracts = getContractIds();
   const [assets, setAssets] = useState<OnChainAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<AssetStateKey | "All">("All");
   const [isApprovingAsset, setIsApprovingAsset] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
@@ -73,17 +74,28 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
 
   const loadAssets = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const total = await fetchTotalAssets();
       const settled = await Promise.allSettled(Array.from({ length: total }, (_, i) => fetchAsset(i + 1)));
+      if (total > 0 && settled.every(result => result.status === "rejected")) {
+        throw new Error("asset reads failed");
+      }
       const fetched = settled
         .filter((r): r is PromiseFulfilledResult<OnChainAsset> => r.status === "fulfilled" && r.value !== null)
         .map(r => r.value);
       setAssets(fetched.reverse());
+    } catch {
+      setAssets([]);
+      setLoadError("Assets are unavailable right now.");
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    void loadAssets();
+  }, [loadAssets]);
 
   const handleApprove = async (e: React.MouseEvent, assetId: number) => {
     e.preventDefault();
@@ -261,7 +273,7 @@ export function AdminAssetsTab({ publicKey }: Readonly<Props>) {
         <div className="rounded-xl border border-dashed border-base-300 p-10 text-center">
           <ChartBarIcon className="h-10 w-10 text-base-content/20 mx-auto mb-3" />
           <p className="font-bold text-base-content/50">
-            {filter === "All" ? "No assets registered yet." : `No ${filter} assets.`}
+            {loadError ?? (filter === "All" ? "No assets registered yet." : `No ${filter} assets.`)}
           </p>
         </div>
       ) : (

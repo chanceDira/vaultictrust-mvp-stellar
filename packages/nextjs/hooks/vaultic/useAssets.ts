@@ -31,6 +31,11 @@ async function fetchAssetPage(pageIndex: number, total: number): Promise<OnChain
   return assets;
 }
 
+export function assetListLoading(count: number | undefined, pageLoading: boolean): boolean {
+  if (count === undefined) return true;
+  return count > 0 && pageLoading;
+}
+
 const chainListOptions = {
   revalidateOnFocus: false,
   dedupingInterval: 15_000,
@@ -112,7 +117,7 @@ export function useAssets(pageIndex = 0): {
   return {
     assets: chainPage.data ?? [],
     total,
-    isLoading: total === 0 || totalQuery.isLoading || chainPage.isLoading,
+    isLoading: assetListLoading(totalQuery.data, chainPage.isLoading),
     error: chainPage.error as Error | undefined,
     fromCopy: false,
     refresh: () => {
