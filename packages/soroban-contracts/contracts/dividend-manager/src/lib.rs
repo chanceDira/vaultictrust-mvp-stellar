@@ -34,6 +34,56 @@ pub enum DataKey {
     YieldRoundCount(u32),
     YieldRound(u32, u32),
     Claimed(u32, u32, Address),
+    HolderShares(u32, u32, Address),
+    RoundSnapshotted(u32, u32),
+}
+
+fn snapshot_holders(env: &Env, asset_id: u32, round_index: u32) -> i128 {
+    let im_addr: Address = env.storage().instance().get(&DataKey::InvestmentManager).unwrap();
+    let im_client = investment_manager::Client::new(env, &im_addr);
+    let investors = im_client.get_investor_list(&asset_id);
+    let mut recorded: i128 = 0;
+    for investor in investors.iter() {
+        let shares = im_client.get_investor_holdings(&asset_id, &investor);
+        if shares <= 0 {
+            continue;
+        }
+        env.storage().persistent().set(
+            &DataKey::HolderShares(asset_id, round_index, investor),
+            &shares,
+        );
+        recorded += shares;
+    }
+    env.storage()
+        .persistent()
+        .set(&DataKey::RoundSnapshotted(asset_id, round_index), &true);
+    recorded
+}
+
+fn shares_for_round(env: &Env, asset_id: u32, round_index: u32, investor: &Address) -> i128 {
+    let snapshotted: bool = env
+        .storage()
+        .persistent()
+        .get(&DataKey::RoundSnapshotted(asset_id, round_index))
+        .unwrap_or(false);
+    if snapshotted {
+        return env
+            .storage()
+            .persistent()
+            .get(&DataKey::HolderShares(asset_id, round_index, investor.clone()))
+            .unwrap_or(0);
+    }
+    // Rounds stored before holder snapshots existed still pay the live balance.
+    let im_addr: Address = env.storage().instance().get(&DataKey::InvestmentManager).unwrap();
+    let im_client = investment_manager::Client::new(env, &im_addr);
+    im_client.get_investor_holdings(&asset_id, investor)
+}
+
+fn yield_for_shares(shares: i128, round: &YieldRound) -> i128 {
+    if shares <= 0 || round.total_shares_snapshot <= 0 {
+        return 0;
+    }
+    (shares * round.total_yield) / round.total_shares_snapshot
 }
 
 #[contract]
@@ -76,20 +126,26 @@ impl VaulticDividendManager {
             panic!("no shares outstanding");
         }
 
-        let payment_addr: Address =
-            env.storage().instance().get(&DataKey::PaymentToken).unwrap();
-        let payment_client = token::Client::new(&env, &payment_addr);
-        payment_client.transfer(&caller, &env.current_contract_address(), &amount);
-
         let round_count: u32 = env
             .storage()
             .persistent()
             .get(&DataKey::YieldRoundCount(asset_id))
             .unwrap_or(0);
+        // The caller total is not the record date. Holdings are read from the investment manager.
+        let recorded_shares = snapshot_holders(&env, asset_id, round_count);
+        if recorded_shares <= 0 {
+            panic!("no shares outstanding");
+        }
+
+        let payment_addr: Address =
+            env.storage().instance().get(&DataKey::PaymentToken).unwrap();
+        let payment_client = token::Client::new(&env, &payment_addr);
+        payment_client.transfer(&caller, &env.current_contract_address(), &amount);
+
         let yield_round = YieldRound {
             asset_id,
             total_yield: amount,
-            total_shares_snapshot: total_shares_outstanding,
+            total_shares_snapshot: recorded_shares,
             deposited_at: env.ledger().timestamp(),
             round_index: round_count,
         };
@@ -129,17 +185,12 @@ impl VaulticDividendManager {
             .get(&DataKey::YieldRound(asset_id, round_index))
             .expect("yield round not found");
 
-        let im_addr: Address =
-            env.storage().instance().get(&DataKey::InvestmentManager).unwrap();
-        let im_client = investment_manager::Client::new(&env, &im_addr);
-        let investor_shares = im_client.get_investor_holdings(&asset_id, &investor);
-
+        let investor_shares = shares_for_round(&env, asset_id, round_index, &investor);
         if investor_shares <= 0 {
             panic!("no shares held");
         }
 
-        let investor_yield =
-            (investor_shares * yield_round.total_yield) / yield_round.total_shares_snapshot;
+        let investor_yield = yield_for_shares(investor_shares, &yield_round);
         if investor_yield <= 0 {
             panic!("yield too small");
         }
@@ -178,14 +229,6 @@ impl VaulticDividendManager {
             return 0;
         }
 
-        let im_addr: Address =
-            env.storage().instance().get(&DataKey::InvestmentManager).unwrap();
-        let im_client = investment_manager::Client::new(&env, &im_addr);
-        let investor_shares = im_client.get_investor_holdings(&asset_id, &investor);
-        if investor_shares <= 0 {
-            panic!("no shares held");
-        }
-
         let payment_addr: Address =
             env.storage().instance().get(&DataKey::PaymentToken).unwrap();
         let payment_client = token::Client::new(&env, &payment_addr);
@@ -206,8 +249,8 @@ impl VaulticDividendManager {
                 .persistent()
                 .get(&DataKey::YieldRound(asset_id, i))
                 .unwrap();
-            let investor_yield =
-                (investor_shares * yield_round.total_yield) / yield_round.total_shares_snapshot;
+            let investor_shares = shares_for_round(&env, asset_id, i, &investor);
+            let investor_yield = yield_for_shares(investor_shares, &yield_round);
 
             if investor_yield > 0 {
                 env.storage()
@@ -239,14 +282,6 @@ impl VaulticDividendManager {
             .persistent()
             .get(&DataKey::YieldRoundCount(asset_id))
             .unwrap_or(0);
-        let im_addr: Address =
-            env.storage().instance().get(&DataKey::InvestmentManager).unwrap();
-        let im_client = investment_manager::Client::new(&env, &im_addr);
-        let investor_shares = im_client.get_investor_holdings(&asset_id, &investor);
-        if investor_shares <= 0 {
-            return 0;
-        }
-
         let mut total: i128 = 0;
         for i in 0..round_count {
             let claimed: bool = env
@@ -260,7 +295,8 @@ impl VaulticDividendManager {
                     .persistent()
                     .get(&DataKey::YieldRound(asset_id, i))
                     .unwrap();
-                total += (investor_shares * round.total_yield) / round.total_shares_snapshot;
+                let shares = shares_for_round(&env, asset_id, i, &investor);
+                total += yield_for_shares(shares, &round);
             }
         }
         total
@@ -320,8 +356,25 @@ mod test {
                 .get(&(asset_id, investor))
                 .unwrap_or(0i128)
         }
+        pub fn get_investor_list(env: Env, asset_id: u32) -> Vec<Address> {
+            env.storage()
+                .persistent()
+                .get(&(asset_id, true))
+                .unwrap_or(Vec::new(&env))
+        }
         pub fn set_holdings(env: Env, asset_id: u32, investor: Address, amount: i128) {
-            env.storage().persistent().set(&(asset_id, investor), &amount);
+            env.storage()
+                .persistent()
+                .set(&(asset_id, investor.clone()), &amount);
+            let mut holders: Vec<Address> = env
+                .storage()
+                .persistent()
+                .get(&(asset_id, true))
+                .unwrap_or(Vec::new(&env));
+            if !holders.contains(&investor) {
+                holders.push_back(investor);
+                env.storage().persistent().set(&(asset_id, true), &holders);
+            }
         }
     }
 
@@ -379,7 +432,9 @@ mod test {
     #[test]
     fn test_deposit_yield_increments_round_count() {
         let env = Env::default();
-        let (client, admin, _, _) = setup(&env);
+        let (client, admin, im_id, _) = setup(&env);
+        let investor = Address::generate(&env);
+        MockInvestmentManagerClient::new(&env, &im_id).set_holdings(&1u32, &investor, &10_000i128);
         client.deposit_yield(&admin, &1u32, &1_000_0000000i128, &10_000i128);
         assert_eq!(client.get_yield_round_count(&1u32), 1u32);
     }
@@ -390,8 +445,10 @@ mod test {
         let (client, admin, im_id, _) = setup(&env);
 
         let investor = Address::generate(&env);
+        let other = Address::generate(&env);
         let im_client = MockInvestmentManagerClient::new(&env, &im_id);
         im_client.set_holdings(&1u32, &investor, &500i128);
+        im_client.set_holdings(&1u32, &other, &9_500i128);
 
         client.deposit_yield(&admin, &1u32, &10_000_0000000i128, &10_000i128);
 
@@ -421,8 +478,10 @@ mod test {
         let (client, admin, im_id, _) = setup(&env);
 
         let investor = Address::generate(&env);
+        let other = Address::generate(&env);
         let im_client = MockInvestmentManagerClient::new(&env, &im_id);
         im_client.set_holdings(&1u32, &investor, &1_000i128);
+        im_client.set_holdings(&1u32, &other, &9_000i128);
 
         client.deposit_yield(&admin, &1u32, &10_000_0000000i128, &10_000i128);
         client.deposit_yield(&admin, &1u32, &5_000_0000000i128, &10_000i128);
@@ -450,5 +509,58 @@ mod test {
         client.claim_all_yield(&investor, &1u32);
 
         assert_eq!(client.get_claimable_yield(&1u32, &investor), 0i128);
+    }
+
+    #[test]
+    fn test_claim_pays_the_balance_from_deposit_day() {
+        let env = Env::default();
+        let (client, admin, im_id, _) = setup(&env);
+        let seller = Address::generate(&env);
+        let buyer = Address::generate(&env);
+        let im_client = MockInvestmentManagerClient::new(&env, &im_id);
+        im_client.set_holdings(&1u32, &seller, &500i128);
+        im_client.set_holdings(&1u32, &buyer, &500i128);
+
+        client.deposit_yield(&admin, &1u32, &1_000i128, &1_000i128);
+        im_client.set_holdings(&1u32, &seller, &0i128);
+        im_client.set_holdings(&1u32, &buyer, &1_000i128);
+
+        assert_eq!(client.get_claimable_yield(&1u32, &seller), 500i128);
+        assert_eq!(client.get_claimable_yield(&1u32, &buyer), 500i128);
+        assert_eq!(client.claim_all_yield(&seller, &1u32), 500i128);
+        assert_eq!(client.claim_all_yield(&buyer, &1u32), 500i128);
+
+        client.deposit_yield(&admin, &1u32, &1_000i128, &1_000i128);
+        assert_eq!(client.get_claimable_yield(&1u32, &seller), 0i128);
+        assert_eq!(client.get_claimable_yield(&1u32, &buyer), 1_000i128);
+    }
+
+    #[test]
+    fn test_round_without_a_snapshot_uses_the_live_balance() {
+        let env = Env::default();
+        let (client, _, im_id, _) = setup(&env);
+        let investor = Address::generate(&env);
+        let im_client = MockInvestmentManagerClient::new(&env, &im_id);
+        im_client.set_holdings(&1u32, &investor, &250i128);
+
+        let round = YieldRound {
+            asset_id: 1,
+            total_yield: 1_000,
+            total_shares_snapshot: 1_000,
+            deposited_at: 0,
+            round_index: 0,
+        };
+        env.as_contract(&client.address, || {
+            env.storage()
+                .persistent()
+                .set(&DataKey::YieldRound(1, 0), &round);
+            env.storage()
+                .persistent()
+                .set(&DataKey::YieldRoundCount(1), &1u32);
+        });
+
+        assert_eq!(client.get_claimable_yield(&1u32, &investor), 250i128);
+        im_client.set_holdings(&1u32, &investor, &100i128);
+        assert_eq!(client.get_claimable_yield(&1u32, &investor), 100i128);
     }
 }
