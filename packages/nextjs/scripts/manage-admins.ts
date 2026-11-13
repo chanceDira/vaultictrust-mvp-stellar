@@ -13,7 +13,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const USER_REGISTRY_CID = "CCFXQOUZSAE7O5NLKJEA4I7I76YDDDKHF3V7EOAZYCMK2X7CIVQ6XSWR";
+const USER_REGISTRY_CID = "CDLBST2RYQHFTLDLB6TA242K3WAHV6KQ6YB7K5UGBCBJN6IN34ZQLVCI";
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = "Test SDF Network ; September 2015";
 

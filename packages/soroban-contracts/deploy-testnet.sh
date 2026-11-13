@@ -5,8 +5,7 @@
 # Prerequisites:
 #   1. Install stellar CLI:  cargo install --locked stellar-cli --features opt
 #   2. Add wasm target:      rustup target add wasm32-unknown-unknown
-#   3. Generate a deploy key: stellar keys generate --global deployer --network testnet
-#   4. Fund it via Friendbot: stellar keys fund --network testnet deployer
+#   3. Generate a deploy key: stellar keys generate vtrust-admin --network testnet --fund
 # =============================================================================
 
 set -euo pipefail
@@ -15,9 +14,8 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 
 NETWORK="testnet"
-DEPLOYER_ALIAS="deployer"
-ADMIN_ADDRESS_1="GCBWGQS24DUWG3HNCIFVICSJQXUTNGRKY7OZ4IZGBJSLK3MYHBY7HWHI"
-ADMIN_ADDRESS_2="GBWAF6C56BDHNNUDY2KLC5HFZPGXBZAFE7YKZC36GZYMI2B5QH2M3NCL"
+DEPLOYER_ALIAS="vtrust-admin"
+ADMIN_ADDRESS="GAH77PR2URZJHS7EE6KQHHHQDD6AK5ELXGQUOM2X3EA6KWO373NG2KE3"
 CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REGISTRY_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_asset_registry.wasm"
 INVESTMENT_WASM="$CONTRACT_DIR/target/wasm32v1-none/release/vaultic_investment_manager.wasm"
@@ -105,8 +103,7 @@ echo "   ✓ VaulticUserRegistry deployed: $USER_REGISTRY_ID"
 DEPLOYER_ADDRESS=$(stellar keys address "$DEPLOYER_ALIAS")
 echo ""
 echo "   Deployer address (paying gas): $DEPLOYER_ADDRESS"
-echo "   Admin 1 address:               $ADMIN_ADDRESS_1"
-echo "   Admin 2 address:               $ADMIN_ADDRESS_2"
+echo "   Admin address:                 $ADMIN_ADDRESS"
 
 # ---------------------------------------------------------------------------- #
 # 6. INITIALIZE — ASSET REGISTRY
@@ -118,10 +115,10 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$REGISTRY_ID" \
   -- initialize \
-  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]" \
+  --admins "[ \"$ADMIN_ADDRESS\" ]" \
   --tokenizer "$INVESTMENT_ID"
 
-echo "   ✓ Registry initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2], Tokenizer=$INVESTMENT_ID"
+echo "   ✓ Registry initialized. Admin=$ADMIN_ADDRESS, Tokenizer=$INVESTMENT_ID"
 
 # ---------------------------------------------------------------------------- #
 # 6a. INITIALIZE — USER REGISTRY
@@ -133,9 +130,9 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$USER_REGISTRY_ID" \
   -- initialize \
-  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]"
+  --admins "[ \"$ADMIN_ADDRESS\" ]"
 
-echo "   ✓ UserRegistry initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2]"
+echo "   ✓ UserRegistry initialized. Admin=$ADMIN_ADDRESS"
 
 # ---------------------------------------------------------------------------- #
 # 7. INITIALIZE — INVESTMENT MANAGER
@@ -147,14 +144,14 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$INVESTMENT_ID" \
   -- initialize \
-  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]" \
+  --admins "[ \"$ADMIN_ADDRESS\" ]" \
   --registry "$REGISTRY_ID" \
   --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC" \
-  --fee_treasury "$ADMIN_ADDRESS_1" \
+  --fee_treasury "$ADMIN_ADDRESS" \
   --protocol_fee_bps "50"
 
-echo "   ✓ InvestmentManager initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2], USDC=$TESTNET_USDC, Fee=0.5%"
+echo "   ✓ InvestmentManager initialized. Admin=$ADMIN_ADDRESS, USDC=$TESTNET_USDC, Fee=0.5%"
 
 # ---------------------------------------------------------------------------- #
 # 8. INITIALIZE — DIVIDEND MANAGER
@@ -166,12 +163,12 @@ stellar contract invoke \
   --source "$DEPLOYER_ALIAS" \
   --id "$DIVIDEND_ID" \
   -- initialize \
-  --admins "[ \"$ADMIN_ADDRESS_1\", \"$ADMIN_ADDRESS_2\" ]" \
+  --admins "[ \"$ADMIN_ADDRESS\" ]" \
   --investment_manager "$INVESTMENT_ID" \
   --user_registry "$USER_REGISTRY_ID" \
   --payment_token "$TESTNET_USDC"
 
-echo "   ✓ DividendManager initialized. Admins=[$ADMIN_ADDRESS_1, $ADMIN_ADDRESS_2]"
+echo "   ✓ DividendManager initialized. Admin=$ADMIN_ADDRESS"
 
 # ---------------------------------------------------------------------------- #
 # 9. RENUNCIATION VERIFICATION — Confirming Developer Roles Transferred
@@ -191,10 +188,11 @@ check_renunciation() {
     --id "$id" \
     -- get_admins)
   
-  if [[ "$admins" == *"$DEPLOYER_ADDRESS"* ]]; then
-    echo "   ⚠️ WARNING: Deployer address found in $name admins!"
+  if [[ "$admins" == *"$ADMIN_ADDRESS"* ]]; then
+    echo "   ✓ $name admin is $ADMIN_ADDRESS"
   else
-    echo "   ✓ Success: Deployer NOT an admin in $name. Power transferred to team."
+    echo "   ⚠️ WARNING: $ADMIN_ADDRESS was not stored as an admin of $name"
+    exit 1
   fi
 }
 
