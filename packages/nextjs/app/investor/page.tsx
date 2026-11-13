@@ -7,6 +7,7 @@ import { RpcErrorBoundary } from "~~/components/RpcErrorBoundary";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { ActivityFeed } from "~~/components/activity/ActivityFeed";
 import { WalletOffers } from "~~/components/investor/WalletOffers";
+import { YieldDepositNotes } from "~~/components/investor/YieldDepositNotes";
 import { KycStatusBadge } from "~~/components/stellar/KycStatusBadge";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { ConnectWalletPrompt } from "~~/components/ui/ConnectWalletPrompt";
@@ -346,54 +347,57 @@ export default function InvestorPage() {
                 </div>
               </RpcErrorBoundary>
 
-              <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
-                <h2 className="text-sm font-semibold text-base-content">Dividends</h2>
-                {yields.length === 0 ? (
-                  <p className="mt-4 text-sm font-medium text-base-content/60">No unclaimed yield for your shares.</p>
-                ) : (
-                  <div className="mt-4 space-y-3">
-                    {yields.map(y => (
-                      <div
-                        key={y.assetId}
-                        className="flex items-center justify-between gap-3 border-b border-base-200 pb-3 last:border-0 last:pb-0"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold">{y.assetCode}</p>
-                          <p className="text-xs font-medium text-success">Ready to claim</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold tabular-nums">
-                            {(Number(y.claimable) / 1e7).toFixed(2)} USDC
-                          </p>
-                          <button
-                            type="button"
-                            onClick={e => handleClaimYield(e, y.assetId, y.assetCode)}
-                            disabled={isClaiming || !canClaim}
-                            className="text-xs font-semibold text-primary hover:underline disabled:opacity-40"
-                          >
-                            Claim
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-4 text-sm font-medium leading-relaxed text-base-content/60">
-                  Yield is paid in USDC to your wallet, in proportion to the shares you hold.
-                </p>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm mt-4 w-full gap-2 rounded-xl"
-                  disabled={yields.length === 0 || isClaiming || !canClaim}
-                  onClick={e => yields.length > 0 && handleClaimYield(e, yields[0].assetId, "All Assets")}
-                >
-                  {isClaiming ? (
-                    <span className="loading loading-bars loading-xs" />
+              <div className="space-y-4">
+                {publicKey ? <YieldDepositNotes holdings={offerHoldings} holdingsLoading={isHoldingsLoading} /> : null}
+                <div className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+                  <h2 className="text-sm font-semibold text-base-content">Dividends</h2>
+                  {yields.length === 0 ? (
+                    <p className="mt-4 text-sm font-medium text-base-content/60">No unclaimed yield for your shares.</p>
                   ) : (
-                    <BanknotesIcon className="h-4 w-4" />
+                    <div className="mt-4 space-y-3">
+                      {yields.map(y => (
+                        <div
+                          key={y.assetId}
+                          className="flex items-center justify-between gap-3 border-b border-base-200 pb-3 last:border-0 last:pb-0"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold">{y.assetCode}</p>
+                            <p className="text-xs font-medium text-success">Ready to claim</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold tabular-nums">
+                              {(Number(y.claimable) / 1e7).toFixed(2)} USDC
+                            </p>
+                            <button
+                              type="button"
+                              onClick={e => handleClaimYield(e, y.assetId, y.assetCode)}
+                              disabled={isClaiming || !canClaim}
+                              className="text-xs font-semibold text-primary hover:underline disabled:opacity-40"
+                            >
+                              Claim
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  Claim all yield
-                </button>
+                  <p className="mt-4 text-sm font-medium leading-relaxed text-base-content/60">
+                    Yield is paid in USDC to your wallet, in proportion to the shares you hold.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm mt-4 w-full gap-2 rounded-xl"
+                    disabled={yields.length === 0 || isClaiming || !canClaim}
+                    onClick={e => yields.length > 0 && handleClaimYield(e, yields[0].assetId, "All Assets")}
+                  >
+                    {isClaiming ? (
+                      <span className="loading loading-bars loading-xs" />
+                    ) : (
+                      <BanknotesIcon className="h-4 w-4" />
+                    )}
+                    Claim all yield
+                  </button>
+                </div>
               </div>
             </div>
             {publicKey ? <WalletOffers holdings={offerHoldings} holdingsLoading={isHoldingsLoading} /> : null}

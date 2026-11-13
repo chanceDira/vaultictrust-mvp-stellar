@@ -25,7 +25,9 @@ export function HolderChart({ assetId }: HolderChartProps): ReactElement {
     return (
       <div className="rounded-2xl border border-base-300 bg-base-100 p-4">
         <h2 className="text-sm font-semibold text-base-content">Holders</h2>
-        <p className="mt-2 text-sm font-medium text-base-content/60">No holder counts recorded yet.</p>
+        <p className="mt-2 text-sm font-medium text-base-content/60">
+          No holder counts recorded yet. The count is updated every 24 hours.
+        </p>
       </div>
     );
   }
@@ -34,7 +36,7 @@ export function HolderChart({ assetId }: HolderChartProps): ReactElement {
     <div className="space-y-2">
       <DayBarChart
         title="Holders"
-        caption="Accounts that hold this share asset. This is not a price."
+        caption="Accounts that hold this share asset. The count is updated every 24 hours. This is not a price."
         points={rows.map(row => ({
           day: row.capturedOn,
           primary: BigInt(row.holderCount),
