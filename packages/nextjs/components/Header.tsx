@@ -9,7 +9,7 @@ import { SwitchTheme } from "~~/components/SwitchTheme";
 import { StellarConnectButton } from "~~/components/stellar/StellarConnectButton";
 import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { useOutsideClick } from "~~/hooks/vaultic/useOutsideClick";
-import { ADMIN_ADDRESSES } from "~~/scaffold.config";
+import { adminAddresses } from "~~/utils/vaultic/adminAddresses";
 
 type HeaderMenuLink = {
   label: string;
@@ -29,7 +29,7 @@ const menuLinks: HeaderMenuLink[] = [
 const HeaderMenuLinks = ({ onClose, compact = false }: { onClose?: () => void; compact?: boolean }) => {
   const pathname = usePathname();
   const { publicKey } = useStellarWallet();
-  const isAdmin = publicKey && ADMIN_ADDRESSES.includes(publicKey);
+  const isAdmin = publicKey && adminAddresses().includes(publicKey);
 
   if (compact) {
     return (
