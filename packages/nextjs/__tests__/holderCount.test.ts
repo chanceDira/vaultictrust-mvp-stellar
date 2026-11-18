@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { countShareHolders, readAccountPage, readHolderChartBody } from "~~/utils/vaultic/holderCount";
+import {
+  chosenHolderCount,
+  countShareHolders,
+  readAccountPage,
+  readHolderChartBody,
+} from "~~/utils/vaultic/holderCount";
 
 const ISSUER = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
@@ -52,5 +57,11 @@ describe("holderCount", () => {
     expect(
       readHolderChartBody({ skipped: false, truncated: false, rows: [{ capturedOn: "2026-11-13", holderCount: -1 }] }),
     ).toBeNull();
+  });
+
+  it("uses the in-app holder count when the chain scan is zero", () => {
+    expect(chosenHolderCount(0, 1)).toBe(1);
+    expect(chosenHolderCount(3, 1)).toBe(3);
+    expect(chosenHolderCount(null, null)).toBeNull();
   });
 });
