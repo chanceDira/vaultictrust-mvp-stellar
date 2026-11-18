@@ -46,6 +46,7 @@ function NotAuthorized() {
       <Link href="/" className="btn btn-primary btn-sm rounded-xl px-6">
         Back to home
       </Link>
+      
     </div>
   );
 }
