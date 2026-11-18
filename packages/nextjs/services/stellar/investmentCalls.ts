@@ -7,6 +7,19 @@ import { TESTNET_USDC_CONTRACT } from "~~/scaffold.config";
 import { parseProtocolFeeBps, parsePurchasesPaused } from "~~/utils/vaultic/protocolFee";
 import { type ResaleOffer, parseResaleOffer, parseSellerList } from "~~/utils/vaultic/resaleOffer";
 
+export async function fetchInvestorList(assetId: number): Promise<string[] | null> {
+  const { investmentManager } = getContractIds();
+  if (!investmentManager) return null;
+
+  const result = await simulateReadCall({
+    contractId: investmentManager,
+    method: "get_investor_list",
+    args: [nativeToScVal(assetId, { type: "u32" })],
+  });
+  if (!result) return null;
+  return parseSellerList(safeScValToNative(result));
+}
+
 export async function fetchPool(assetId: number): Promise<any> {
   const { investmentManager } = getContractIds();
   if (!investmentManager) return null;

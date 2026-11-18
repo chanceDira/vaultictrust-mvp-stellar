@@ -2,7 +2,13 @@ import { notification } from "~~/utils/vaultic";
 import { type ListingDocument, displayDocumentName } from "~~/utils/vaultic/listingDocument";
 import { sha256Hex } from "~~/utils/vaultic/sha256";
 
-const IPFS_GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/"];
+const IPFS_GATEWAYS = [
+  "https://ipfs.filebase.io/ipfs/",
+  "https://w3s.link/ipfs/",
+  "https://gateway.pinata.cloud/ipfs/",
+  "https://dweb.link/ipfs/",
+  "https://ipfs.io/ipfs/",
+];
 
 export function toIpfsCid(uriOrCid: string): string {
   return uriOrCid.replace(/^ipfs:\/\//, "").replace(/^https?:\/\/[^/]+\/ipfs\//, "");

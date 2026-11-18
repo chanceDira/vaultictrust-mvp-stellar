@@ -139,6 +139,17 @@ export function listingStorageUrl(supabaseUrl: string, cid: string): string | nu
   }
 }
 
+export function publicFileCids(copy: ListingCopy): string[] {
+  const refs = [...(copy.imageCid ? [copy.imageCid] : []), ...copy.documents.map(document => document.cid)];
+  const cids: string[] = [];
+  for (const ref of refs) {
+    const cid = ref.startsWith("ipfs://") ? ref.slice("ipfs://".length) : ref;
+    if (!isIpfsCid(cid) || cids.includes(cid)) continue;
+    cids.push(cid);
+  }
+  return cids;
+}
+
 export function withStoredImage(payload: Record<string, unknown>, storageUrl: string | null): Record<string, unknown> {
   if (!storageUrl || !isListingStorageUrl(storageUrl)) return payload;
   const image = payload.image;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchAsset } from "~~/services/stellar/assetRegistryCalls";
-import { listingCopyConfigured, saveListing } from "~~/services/stellar/listingCopyService";
+import { copyOffchainRecord, listingCopyConfigured, saveListing } from "~~/services/stellar/listingCopyService";
 
 const MAX_ASSET_ID = 1_000_000;
 
@@ -25,6 +25,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const asset = await fetchAsset(assetId);
     if (!asset) return NextResponse.json({ saved: false });
     const saved = await saveListing(asset);
+    if (saved && typeof asset.metadata_uri === "string" && asset.metadata_uri.length > 0) {
+      await copyOffchainRecord(asset.metadata_uri);
+    }
     return NextResponse.json({ saved });
   } catch {
     return NextResponse.json({ saved: false }, { status: 502 });
