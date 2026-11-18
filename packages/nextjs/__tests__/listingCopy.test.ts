@@ -5,6 +5,7 @@ import {
   classifyOffchainPayload,
   isListingStorageUrl,
   listingMetadataPayload,
+  listingPhotoUrl,
   listingRowFromAsset,
   listingStorageUrl,
   publicFileCids,
@@ -53,6 +54,10 @@ describe("classifyOffchainPayload", () => {
     expect(listingMetadataPayload(copy).image).toBe(`ipfs://${CID}`);
     expect(copy.documents).toHaveLength(1);
     expect(publicFileCids(copy)).toEqual([CID]);
+    expect(listingPhotoUrl(`ipfs://${CID}`)).toBe(`/api/ipfs/file?cid=${CID}`);
+    expect(listingPhotoUrl(`https://example.supabase.co/storage/v1/object/public/listing-files/${CID}`)).toBe(
+      `/api/ipfs/file?cid=${CID}`,
+    );
   });
 
   it("stores only ciphertext when the package includes an applicant name", () => {

@@ -22,7 +22,10 @@ const IMAGE_COPY_TIMEOUT_MS = 4_000;
 async function readGatewayJson(cid: string): Promise<unknown | null> {
   for (const gateway of IPFS_GATEWAYS) {
     try {
-      const response = await fetch(`${gateway}${cid}`, { next: { revalidate: 300 } });
+      const response = await fetch(`${gateway}${cid}`, {
+        next: { revalidate: 300 },
+        signal: AbortSignal.timeout(8_000),
+      });
       if (!response.ok) continue;
       return JSON.parse(await response.text()) as unknown;
     } catch {
@@ -55,6 +58,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "invalid cid" }, { status: 400 });
   }
 
+  const stored = await readListingMetadata(cid);
+  if (stored) {
+    return NextResponse.json(await presentListingMetadata(stored), {
+      headers: { "Cache-Control": "public, max-age=60" },
+    });
+  }
+
   const remote = await readGatewayJson(cid);
   if (remote !== null && remote !== undefined) {
     if (typeof remote === "object") {
@@ -68,13 +78,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       });
     }
     return NextResponse.json(remote, { headers: { "Cache-Control": "public, max-age=300" } });
-  }
-
-  const stored = await readListingMetadata(cid);
-  if (stored) {
-    return NextResponse.json(await presentListingMetadata(stored), {
-      headers: { "Cache-Control": "public, max-age=60" },
-    });
   }
 
   const encrypted = await readEncryptedDocument(cid);
