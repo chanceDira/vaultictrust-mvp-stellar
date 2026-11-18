@@ -154,7 +154,7 @@ export async function storedFileUrl(cid: string): Promise<string | null> {
 async function fetchGatewayFile(cid: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
   for (const gateway of IPFS_GATEWAYS) {
     try {
-      const response = await fetch(`${gateway}${cid}`);
+      const response = await fetch(`${gateway}${cid}`, { signal: AbortSignal.timeout(8_000) });
       if (!response.ok) continue;
       const bytes = new Uint8Array(await response.arrayBuffer());
       if (bytes.byteLength === 0 || bytes.byteLength > MAX_LISTING_DOCUMENT_BYTES) continue;
@@ -216,7 +216,7 @@ export async function persistOffchainDocument(cid: string, content: unknown): Pr
 async function fetchGatewayJson(cid: string): Promise<unknown | null> {
   for (const gateway of IPFS_GATEWAYS) {
     try {
-      const response = await fetch(`${gateway}${cid}`);
+      const response = await fetch(`${gateway}${cid}`, { signal: AbortSignal.timeout(8_000) });
       if (!response.ok) continue;
       return JSON.parse(await response.text()) as unknown;
     } catch {

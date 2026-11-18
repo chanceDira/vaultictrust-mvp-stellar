@@ -150,6 +150,26 @@ export function publicFileCids(copy: ListingCopy): string[] {
   return cids;
 }
 
+export function listingPhotoUrl(raw: string): string | null {
+  const cid = photoCid(raw);
+  if (!cid) return null;
+  return `/api/ipfs/file?cid=${encodeURIComponent(cid)}`;
+}
+
+function photoCid(raw: string): string | null {
+  if (raw.startsWith("ipfs://")) {
+    const cid = raw.slice("ipfs://".length);
+    return isIpfsCid(cid) ? cid : null;
+  }
+  if (!isListingStorageUrl(raw)) return null;
+  try {
+    const cid = decodeURIComponent(new URL(raw).pathname.split("/").pop() ?? "");
+    return isIpfsCid(cid) ? cid : null;
+  } catch {
+    return null;
+  }
+}
+
 export function withStoredImage(payload: Record<string, unknown>, storageUrl: string | null): Record<string, unknown> {
   if (!storageUrl || !isListingStorageUrl(storageUrl)) return payload;
   const image = payload.image;

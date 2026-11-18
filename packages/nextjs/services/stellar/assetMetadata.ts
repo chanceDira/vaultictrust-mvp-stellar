@@ -1,5 +1,5 @@
-import { fetchFromIpfs, toIpfsGatewayUrl } from "~~/services/stellar/ipfsService";
-import { isListingStorageUrl } from "~~/utils/vaultic/listingCopy";
+import { fetchFromIpfs } from "~~/services/stellar/ipfsService";
+import { listingPhotoUrl } from "~~/utils/vaultic/listingCopy";
 import { type ListingDocument, readListingDocuments } from "~~/utils/vaultic/listingDocument";
 
 export type AssetMetadata = {
@@ -16,9 +16,7 @@ function readText(record: Record<string, unknown>, key: string): string {
 
 function readImageUrl(record: Record<string, unknown>): string | null {
   const raw = readText(record, "image") || readText(record, "imageCid");
-  if (raw.startsWith("ipfs://")) return toIpfsGatewayUrl(raw);
-  if (isListingStorageUrl(raw)) return raw;
-  return null;
+  return listingPhotoUrl(raw);
 }
 
 export function parseAssetMetadata(payload: unknown): AssetMetadata | null {

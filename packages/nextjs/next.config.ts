@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "gateway.pinata.cloud", pathname: "/ipfs/**" },
+      { protocol: "https", hostname: "ipfs.filebase.io", pathname: "/ipfs/**" },
+      { protocol: "https", hostname: "w3s.link", pathname: "/ipfs/**" },
       { protocol: "https", hostname: "dweb.link", pathname: "/ipfs/**" },
       { protocol: "https", hostname: "ipfs.io", pathname: "/ipfs/**" },
       {
