@@ -66,7 +66,13 @@ export async function recordHolderSnapshots(): Promise<HolderSnapshotResult> {
   let skippedAssets = 0;
 
   for (let assetId = 1; assetId <= total; assetId += 1) {
-    const asset = await fetchAsset(assetId);
+    let asset: Awaited<ReturnType<typeof fetchAsset>>;
+    try {
+      asset = await fetchAsset(assetId);
+    } catch {
+      skippedAssets += 1;
+      continue;
+    }
     const code = typeof asset?.asset_code === "string" ? asset.asset_code : "";
     const issuer = typeof asset?.issuer === "string" ? asset.issuer : "";
     const state = asset?.state?.tag;

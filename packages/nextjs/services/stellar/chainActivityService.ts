@@ -2,7 +2,12 @@ import { rpc } from "@stellar/stellar-sdk";
 import vaulticConfig from "~~/scaffold.config";
 import { fetchAsset } from "~~/services/stellar/assetRegistryCalls";
 import { fetchInvestorHoldings, fetchPool } from "~~/services/stellar/investmentCalls";
-import { getSupabaseAdmin, listingCopyConfigured, saveListing } from "~~/services/stellar/listingCopyService";
+import {
+  copyOffchainRecord,
+  getSupabaseAdmin,
+  listingCopyConfigured,
+  saveListing,
+} from "~~/services/stellar/listingCopyService";
 import { safeScValToNative } from "~~/services/stellar/sorobanDecode";
 import { getContractIds, getRpcServer } from "~~/services/stellar/sorobanRpc";
 import { fetchUserRecord } from "~~/services/stellar/userRegistryCalls";
@@ -41,18 +46,19 @@ function contractIds(): string[] {
 
 function contractIdText(value: unknown): string {
   if (typeof value === "string") return value;
-  if (value && typeof value === "object" && "contractId" in value) {
-    const read = (value as { contractId: unknown }).contractId;
-    if (typeof read === "function") {
-      const id = (read as () => unknown)();
-      return typeof id === "string" ? id : "";
-    }
+  if (!value || typeof value !== "object" || !("contractId" in value)) return "";
+  const read = (value as { contractId: unknown }).contractId;
+  if (typeof read !== "function") return "";
+  try {
+    const id = read.call(value);
+    return typeof id === "string" ? id : "";
+  } catch {
+    return "";
   }
-  return "";
 }
 
 function activityFromEvent(event: rpc.Api.EventResponse): ActivityRecord | null {
-  if (!event.inSuccessfulContractCall) return null;
+  if (event.inSuccessfulContractCall === false) return null;
   return decodeChainEvent({
     eventId: event.id,
     txHash: event.txHash,
@@ -146,7 +152,11 @@ async function refreshRecords(network: string, records: ActivityRecord[]): Promi
   for (const assetId of uniqueNumbers(records.map(record => record.assetId))) {
     try {
       const asset = await fetchAsset(assetId);
-      if (asset) await saveListing(asset);
+      if (!asset) continue;
+      await saveListing(asset);
+      if (typeof asset.metadata_uri === "string" && asset.metadata_uri.length > 0) {
+        await copyOffchainRecord(asset.metadata_uri);
+      }
     } catch {
       continue;
     }
@@ -216,7 +226,7 @@ async function refreshRecords(network: string, records: ActivityRecord[]): Promi
   }
 }
 
-async function refreshProtocol(network: string): Promise<void> {
+export async function refreshProtocol(network: string): Promise<void> {
   const { investmentManager } = getContractIds();
   const client = getSupabaseAdmin();
   if (!investmentManager || !client) return;
@@ -246,6 +256,33 @@ async function refreshProtocol(network: string): Promise<void> {
   }
 }
 
+async function ledgerBounds(ids: string[]): Promise<{ oldest: number; latest: number }> {
+  const server = getRpcServer();
+  const horizon = new URL(vaulticConfig.horizonUrl);
+  const response = await fetch(`${horizon.origin}/ledgers?order=desc&limit=1`);
+  if (!response.ok) throw new Error("latest ledger unavailable");
+  const body = (await response.json()) as { _embedded?: { records?: Array<{ sequence?: unknown }> } };
+  const sequence = body._embedded?.records?.[0]?.sequence;
+  if (typeof sequence !== "number" || !Number.isInteger(sequence) || sequence < 1) {
+    throw new Error("latest ledger unavailable");
+  }
+  try {
+    const probe = await server.getEvents({
+      filters: [{ type: "contract", contractIds: ids }],
+      startLedger: sequence,
+      endLedger: sequence,
+      limit: 1,
+    });
+    const oldest = probe.oldestLedger > 0 ? probe.oldestLedger : 1;
+    return { oldest, latest: sequence };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const match = /ledger range:\s*(\d+)\s*-\s*(\d+)/.exec(message);
+    if (!match) throw error;
+    return { oldest: Number(match[1]), latest: Number(match[2]) };
+  }
+}
+
 async function readPage(
   ids: string[],
   stored: StoredCursor,
@@ -254,46 +291,44 @@ async function readPage(
   const filters = [{ type: "contract" as const, contractIds: ids }];
   if (stored.cursor) {
     const response = await server.getEvents({ filters, cursor: stored.cursor, limit: EVENT_PAGE_LIMIT });
+    if (response.events.length === EVENT_PAGE_LIMIT && response.cursor) {
+      return {
+        events: response.events,
+        stored: { cursor: response.cursor, scanLedger: stored.scanLedger },
+        caughtUp: false,
+      };
+    }
+    const resume = stored.scanLedger;
     return {
       events: response.events,
-      stored: {
-        cursor: response.events.length > 0 ? response.cursor : stored.cursor,
-        scanLedger: null,
-      },
-      caughtUp: response.events.length < EVENT_PAGE_LIMIT,
+      stored: { cursor: null, scanLedger: resume },
+      caughtUp: resume === null,
     };
   }
 
-  const latest = await server.getLatestLedger();
-  let start = stored.scanLedger;
-  if (start === null) {
-    const probe = await server.getEvents({
-      filters,
-      startLedger: latest.sequence,
-      endLedger: latest.sequence,
-      limit: 1,
-    });
-    start = probe.oldestLedger > 0 ? probe.oldestLedger : 1;
-  }
-  const end = Math.min(start + LEDGER_WINDOW - 1, latest.sequence);
+  const bounds = await ledgerBounds(ids);
+  let start = stored.scanLedger ?? bounds.oldest;
+  if (start < bounds.oldest) start = bounds.oldest;
+  const latest = bounds.latest;
+  const end = Math.min(start + LEDGER_WINDOW - 1, latest);
   const response = await server.getEvents({
     filters,
     startLedger: start,
     endLedger: end,
     limit: EVENT_PAGE_LIMIT,
   });
-  if (response.events.length > 0) {
+  const resume = end >= latest ? latest : end + 1;
+  if (response.events.length === EVENT_PAGE_LIMIT && response.cursor) {
     return {
       events: response.events,
-      stored: { cursor: response.cursor, scanLedger: null },
-      caughtUp: response.events.length < EVENT_PAGE_LIMIT && end >= latest.sequence,
+      stored: { cursor: response.cursor, scanLedger: resume },
+      caughtUp: false,
     };
   }
-  const caughtUp = end >= latest.sequence;
   return {
-    events: [],
-    stored: { cursor: null, scanLedger: caughtUp ? latest.sequence : end + 1 },
-    caughtUp,
+    events: response.events,
+    stored: { cursor: null, scanLedger: resume },
+    caughtUp: end >= latest,
   };
 }
 

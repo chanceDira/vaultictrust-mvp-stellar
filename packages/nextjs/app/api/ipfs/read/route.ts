@@ -10,7 +10,13 @@ import {
 import { isIpfsCid } from "~~/utils/vaultic/ipfsCid";
 import { classifyOffchainPayload, imageCidFromMetadata } from "~~/utils/vaultic/listingCopy";
 
-const IPFS_GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/"];
+const IPFS_GATEWAYS = [
+  "https://ipfs.filebase.io/ipfs/",
+  "https://w3s.link/ipfs/",
+  "https://gateway.pinata.cloud/ipfs/",
+  "https://dweb.link/ipfs/",
+  "https://ipfs.io/ipfs/",
+];
 const IMAGE_COPY_TIMEOUT_MS = 4_000;
 
 async function readGatewayJson(cid: string): Promise<unknown | null> {

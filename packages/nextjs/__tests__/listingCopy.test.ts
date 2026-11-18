@@ -7,6 +7,7 @@ import {
   listingMetadataPayload,
   listingRowFromAsset,
   listingStorageUrl,
+  publicFileCids,
   visibleAssetsFromRows,
   withStoredImage,
 } from "~~/utils/vaultic/listingCopy";
@@ -51,6 +52,7 @@ describe("classifyOffchainPayload", () => {
     if (copy?.kind !== "listing") return;
     expect(listingMetadataPayload(copy).image).toBe(`ipfs://${CID}`);
     expect(copy.documents).toHaveLength(1);
+    expect(publicFileCids(copy)).toEqual([CID]);
   });
 
   it("stores only ciphertext when the package includes an applicant name", () => {

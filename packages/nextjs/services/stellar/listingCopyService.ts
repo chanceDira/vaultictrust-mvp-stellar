@@ -10,6 +10,7 @@ import {
   listingMetadataPayload,
   listingRowFromAsset,
   listingStorageUrl,
+  publicFileCids,
   visibleAssetsFromRows,
   withStoredImage,
 } from "~~/utils/vaultic/listingCopy";
@@ -17,8 +18,14 @@ import { MAX_LISTING_DOCUMENT_BYTES, readListingDocuments } from "~~/utils/vault
 import { listingFileType } from "~~/utils/vaultic/listingFileType";
 
 const LISTING_FILES_BUCKET = "listing-files";
-const IPFS_GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://dweb.link/ipfs/", "https://ipfs.io/ipfs/"];
-const COPY_TIMEOUT_MS = 4_000;
+const IPFS_GATEWAYS = [
+  "https://ipfs.filebase.io/ipfs/",
+  "https://w3s.link/ipfs/",
+  "https://gateway.pinata.cloud/ipfs/",
+  "https://dweb.link/ipfs/",
+  "https://ipfs.io/ipfs/",
+];
+const COPY_TIMEOUT_MS = 20_000;
 
 let admin: SupabaseClient | null = null;
 
@@ -38,9 +45,33 @@ export function listingCopyConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && readSupabaseAdminKey());
 }
 
+function ensureWebSocket(): void {
+  if (typeof globalThis.WebSocket !== "undefined") return;
+  class IdleWebSocket {
+    static CONNECTING = 0;
+    static OPEN = 1;
+    static CLOSING = 2;
+    static CLOSED = 3;
+    readyState = IdleWebSocket.CLOSED;
+    url = "";
+    protocol = "";
+    onopen = null;
+    onmessage = null;
+    onclose = null;
+    onerror = null;
+    close(): void {}
+    send(): void {}
+    addEventListener(): void {}
+    removeEventListener(): void {}
+  }
+  // supabase-js 2.119 builds a realtime client on create. Node 20 has no WebSocket.
+  globalThis.WebSocket = IdleWebSocket as unknown as typeof WebSocket;
+}
+
 export function getSupabaseAdmin(): SupabaseClient | null {
   if (!listingCopyConfigured()) return null;
   if (admin) return admin;
+  ensureWebSocket();
   const url = process.env.SUPABASE_URL;
   const key = readSupabaseAdminKey();
   if (!url || !key) return null;
@@ -180,6 +211,44 @@ export async function persistOffchainDocument(cid: string, content: unknown): Pr
   } catch {
     return;
   }
+}
+
+async function fetchGatewayJson(cid: string): Promise<unknown | null> {
+  for (const gateway of IPFS_GATEWAYS) {
+    try {
+      const response = await fetch(`${gateway}${cid}`);
+      if (!response.ok) continue;
+      return JSON.parse(await response.text()) as unknown;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function metadataCid(uri: string): string | null {
+  const trimmed = uri.trim();
+  const cid = trimmed.replace(/^ipfs:\/\//, "").replace(/^https?:\/\/[^/]+\/ipfs\//, "");
+  return isIpfsCid(cid) ? cid : null;
+}
+
+export async function copyOffchainRecord(uri: string): Promise<{ stored: boolean; files: number }> {
+  const client = getSupabaseAdmin();
+  const cid = metadataCid(uri);
+  if (!client || !cid) return { stored: false, files: 0 };
+  const payload = await fetchGatewayJson(cid);
+  if (!payload || typeof payload !== "object") return { stored: false, files: 0 };
+  await persistOffchainDocument(cid, payload);
+  const copy = classifyOffchainPayload(payload);
+  if (!copy) return { stored: false, files: 0 };
+  if (copy.kind === "encrypted") return { stored: true, files: 0 };
+
+  let files = 0;
+  for (const fileCid of publicFileCids(copy)) {
+    const loaded = await loadPublicFile(fileCid);
+    if (loaded) files += 1;
+  }
+  return { stored: true, files };
 }
 
 export async function readListingMetadata(cid: string): Promise<Record<string, unknown> | null> {
