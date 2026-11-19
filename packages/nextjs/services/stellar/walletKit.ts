@@ -53,36 +53,39 @@ function siteKitTheme(isDark: boolean): KitTheme {
     return {
       ...kitThemeShared,
       background: "#0a0a0a",
-      "background-secondary": "#111111",
+      "background-secondary": "#131316",
       "foreground-strong": "#f5f3ff",
       foreground: "#f5f3ff",
       "foreground-secondary": "#c4b5fd",
       primary: "#8b5cf6",
       "primary-foreground": "#ffffff",
-      border: "#171717",
+      border: "#27272a",
     };
   }
 
   return {
     ...kitThemeShared,
     background: "#ffffff",
-    "background-secondary": "#fbfbfe",
+    "background-secondary": "#f9f8fc",
     "foreground-strong": "#171717",
     foreground: "#171717",
     "foreground-secondary": "#52525b",
     primary: "#7c3aed",
     "primary-foreground": "#ffffff",
-    border: "#f5f3ff",
+    border: "#e9e6f2",
   };
 }
 
 async function startKit() {
-  const [{ StellarWalletsKit }, { defaultModules }] = await Promise.all([
+  const [{ StellarWalletsKit }, { defaultModules }, { VARIAL_ID }] = await Promise.all([
     import("@creit.tech/stellar-wallets-kit/sdk"),
     import("@creit.tech/stellar-wallets-kit/modules/utils"),
+    import("@creit.tech/stellar-wallets-kit/modules/varial"),
   ]);
 
-  const modules = [...defaultModules()];
+  const modules = defaultModules().sort(
+    (a, b) => Number(b.productId === VARIAL_ID) - Number(a.productId === VARIAL_ID),
+  );
   if (WALLETCONNECT_PROJECT_ID) {
     const { WalletConnectModule, WalletConnectTargetChain } = await import(
       "@creit.tech/stellar-wallets-kit/modules/wallet-connect"
@@ -112,7 +115,7 @@ async function startKit() {
   return StellarWalletsKit;
 }
 
-type WalletKit = Awaited<ReturnType<typeof startKit>>;
+export type WalletKit = Awaited<ReturnType<typeof startKit>>;
 
 let startingKit: Promise<WalletKit> | null = null;
 
@@ -134,18 +137,4 @@ export async function getWalletKit(): Promise<WalletKit> {
   }
 
   return startingKit;
-}
-
-export async function signWalletTransaction(xdr: string, address: string): Promise<string> {
-  const kit = await getWalletKit();
-  const { signedTxXdr } = await kit.signTransaction(xdr, {
-    networkPassphrase: getNetworkPassphrase(),
-    address,
-  });
-
-  if (!signedTxXdr) {
-    throw new Error("The wallet did not return a signed transaction");
-  }
-
-  return signedTxXdr;
 }

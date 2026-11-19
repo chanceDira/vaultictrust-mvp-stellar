@@ -1,5 +1,5 @@
 import { getHorizonServer, getNetworkPassphrase } from "./horizonClient";
-import { signWalletTransaction } from "./walletKit";
+import { signWalletTransaction } from "./walletSession";
 import { Asset, BASE_FEE, Keypair, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 
 export const TESTNET_USDC_ASSET = new Asset("USDC", "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");

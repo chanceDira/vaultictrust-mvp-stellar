@@ -2,7 +2,7 @@
 
 import { type FormEvent, type ReactElement, useState } from "react";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
-import { formatCount } from "~~/utils/vaultic/liveTotals";
+import { formatShareCount } from "~~/utils/vaultic/liveTotals";
 import { formatUsdcAmount } from "~~/utils/vaultic/protocolFee";
 import { type ResaleOffer, resaleQuote, shareCount } from "~~/utils/vaultic/resaleOffer";
 
@@ -55,7 +55,7 @@ export function ShareOfferRow({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm font-semibold text-base-content">{shortenStellarAddress(offer.seller)}</p>
         <p className="text-sm font-semibold tabular-nums text-base-content">
-          {formatCount(offer.shares)} shares at {formatUsdcAmount(offer.priceStroops)} USDC
+          {formatShareCount(offer.shares)} at {formatUsdcAmount(offer.priceStroops)} USDC
         </p>
       </div>
       {isSeller ? (

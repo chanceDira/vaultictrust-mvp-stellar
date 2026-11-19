@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Spinner } from "../Spinner";
-import { QuestionMarkCircleIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { QuestionMarkCircleIcon, ShieldCheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { getHorizonServer } from "~~/services/stellar/horizonClient";
 import { setupTrustline } from "~~/services/stellar/stellarService";
 import { notification } from "~~/utils/vaultic";
@@ -73,11 +73,8 @@ export const TrustlineModal = ({ isOpen, onClose, publicKey, assetCode, issuer, 
   return (
     <div className="modal modal-open backdrop-blur-sm bg-black/60">
       <div className="modal-box relative bg-base-100/80 backdrop-blur-md border border-base-300 shadow-2xl rounded-3xl p-8 max-w-md">
-        <button
-          onClick={onClose}
-          className="btn btn-sm btn-circle absolute right-4 top-4 hover:rotate-90 transition-transform"
-        >
-          ✕
+        <button onClick={onClose} className="btn btn-sm btn-circle absolute right-4 top-4" aria-label="Close">
+          <XMarkIcon className="h-4 w-4" />
         </button>
 
         <div className="flex flex-col items-center text-center p-4">

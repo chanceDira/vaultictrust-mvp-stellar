@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { KYC_CONFIG } from "./constants";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { ArrowTopRightOnSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { KycStatusTag, UserRecord } from "~~/types/stellar";
 
@@ -137,8 +137,9 @@ export function KycUserDetail({
                     <button
                       className="btn btn-circle btn-xs absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => setDecryptedFileUrl(null)}
+                      aria-label="Hide document"
                     >
-                      ✕
+                      <XMarkIcon className="h-3 w-3" />
                     </button>
                     <p className="text-[10px] text-success mt-2 font-bold uppercase tracking-[0.2em]">
                       Decrypted successfully

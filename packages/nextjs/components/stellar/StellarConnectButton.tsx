@@ -44,6 +44,11 @@ export const StellarConnectButton = () => {
           </li>
           <div className="divider my-1" />
           <li>
+            <button type="button" onClick={connect}>
+              Switch wallet
+            </button>
+          </li>
+          <li>
             <button type="button" onClick={disconnect} className="text-error">
               Disconnect
             </button>

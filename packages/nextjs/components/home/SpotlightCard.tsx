@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { FeaturedBadge } from "~~/components/home/FeaturedBadge";
 import { useAssetMetadata } from "~~/hooks/vaultic/useAssetMetadata";
 import type { OnChainAsset } from "~~/types/stellar";
 import { listingStatusLabel, saleTypeLabel } from "~~/utils/vaultic/listingLabels";
@@ -40,7 +41,8 @@ export function SpotlightCard({ asset }: SpotlightCardProps): ReactElement {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/35 via-primary/10 to-base-200" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-        <div className="absolute left-4 top-4 flex gap-2">
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <FeaturedBadge />
           <span className="rounded-lg bg-base-100/90 px-2.5 py-1 text-xs font-bold text-base-content">
             {asset.asset_category}
           </span>

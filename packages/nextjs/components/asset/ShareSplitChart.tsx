@@ -43,7 +43,7 @@ export function ShareSplitChart({ split }: ShareSplitChartProps): ReactElement {
   const visualSold = drawnSoldFraction(soldFraction, soldBelow, remainingBelow);
   const gap = visualSold > 0.04 && visualSold < 0.96 ? GAP : 0;
   const activeTenths = active === "sold" ? split.soldTenths : split.remainingTenths;
-  const activeBelow = active === "sold" ? soldBelow : remainingBelow;
+  const partial = split.sold > 0n && split.remaining > 0n;
 
   function showSold(): void {
     setActive("sold");
@@ -90,7 +90,7 @@ export function ShareSplitChart({ split }: ShareSplitChartProps): ReactElement {
           </svg>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-lg font-bold tabular-nums text-base-content">
-              {formatSharePercent(activeTenths, activeBelow)}%
+              {formatSharePercent(activeTenths, partial)}%
             </p>
             <p className="text-xs font-semibold text-base-content/60">{active === "sold" ? "Sold" : "Remaining"}</p>
           </div>
@@ -108,7 +108,7 @@ export function ShareSplitChart({ split }: ShareSplitChartProps): ReactElement {
             <span>Sold</span>
             <span className="ml-auto tabular-nums">{formatCount(split.sold)}</span>
             <span className="w-14 text-right tabular-nums text-base-content/70">
-              {formatSharePercent(split.soldTenths, soldBelow)}%
+              {formatSharePercent(split.soldTenths, partial)}%
             </span>
           </button>
           <button
@@ -123,7 +123,7 @@ export function ShareSplitChart({ split }: ShareSplitChartProps): ReactElement {
             <span>Remaining</span>
             <span className="ml-auto tabular-nums">{formatCount(split.remaining)}</span>
             <span className="w-14 text-right tabular-nums text-base-content/70">
-              {formatSharePercent(split.remainingTenths, remainingBelow)}%
+              {formatSharePercent(split.remainingTenths, partial)}%
             </span>
           </button>
         </div>

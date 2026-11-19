@@ -23,7 +23,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en" suppressHydrationWarning className={montserrat.variable}>
       <body className={`${montserrat.className} font-sans`}>
-        <ThemeProvider enableSystem>
+        <ThemeProvider enableSystem disableTransitionOnChange>
           <VaulticAppWithProviders>{children}</VaulticAppWithProviders>
         </ThemeProvider>
       </body>

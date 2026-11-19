@@ -4,7 +4,7 @@ import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
 import type { ActivityFeedRow } from "~~/utils/vaultic/activityFeed";
-import { formatCount } from "~~/utils/vaultic/liveTotals";
+import { formatCount, formatShareCount } from "~~/utils/vaultic/liveTotals";
 import { formatUsdcAmount } from "~~/utils/vaultic/protocolFee";
 
 type ActivityRowProps = {
@@ -28,7 +28,7 @@ function partyLine(row: ActivityFeedRow): string | null {
 
 function amountLine(row: ActivityFeedRow): string | null {
   const parts: string[] = [];
-  if (row.shares) parts.push(`${formatCount(BigInt(row.shares))} shares`);
+  if (row.shares) parts.push(formatShareCount(BigInt(row.shares)));
   if (row.usdcStroops) parts.push(`${formatUsdcAmount(BigInt(row.usdcStroops))} USDC`);
   if (row.feeStroops) parts.push(`fee ${formatUsdcAmount(BigInt(row.feeStroops))} USDC`);
   return parts.length > 0 ? parts.join(" · ") : null;

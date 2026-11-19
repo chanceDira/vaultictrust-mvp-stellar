@@ -15,6 +15,8 @@ describe("shareSplit", () => {
     expect(formatSharePercent(333, false)).toBe("33.3");
     expect(formatSharePercent(1000, false)).toBe("100");
     expect(formatSharePercent(0, true)).toBe("<0.1");
+    expect(formatSharePercent(1000, true)).toBe(">99.9");
+    expect(formatSharePercent(1000, false)).toBe("100");
   });
 
   it("returns nothing when the counts cannot be a split", () => {

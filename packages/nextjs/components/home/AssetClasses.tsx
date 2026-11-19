@@ -12,6 +12,7 @@ type AssetClass = {
   name: string;
   description: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
+  examples?: string[];
   wide?: boolean;
 };
 
@@ -21,6 +22,7 @@ const CLASSES: AssetClass[] = [
     description:
       "Apartments, offices, hotels, and venues. Rent and other income can be paid to holders as yield in USDC.",
     icon: BuildingOffice2Icon,
+    examples: ["Apartments", "Offices", "Hotels", "Venues"],
     wide: true,
   },
   {
@@ -54,7 +56,7 @@ export function AssetClasses(): ReactElement {
           right now.
         </SectionHeading>
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CLASSES.map(({ name, description, icon: Icon, wide }) => (
+          {CLASSES.map(({ name, description, icon: Icon, examples, wide }) => (
             <li
               key={name}
               className={`group flex flex-col justify-between rounded-3xl border border-base-300 bg-base-100 p-6 transition-colors hover:border-primary/40 ${
@@ -75,6 +77,18 @@ export function AssetClasses(): ReactElement {
                 >
                   {description}
                 </p>
+                {examples ? (
+                  <ul className="mt-6 flex flex-wrap gap-2">
+                    {examples.map(example => (
+                      <li
+                        key={example}
+                        className="rounded-full border border-primary/25 bg-base-100/80 px-3 py-1 text-xs font-bold text-base-content/80"
+                      >
+                        {example}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             </li>
           ))}

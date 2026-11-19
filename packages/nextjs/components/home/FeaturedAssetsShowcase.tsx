@@ -8,6 +8,7 @@ import { ListingMarqueeCard } from "~~/components/home/ListingMarqueeCard";
 import { MarqueeTrack } from "~~/components/home/MarqueeTrack";
 import { useMarketplaceAssets } from "~~/hooks/vaultic/useAssets";
 import type { OnChainAsset } from "~~/types/stellar";
+import { featuredAsset } from "~~/utils/vaultic/featuredAsset";
 import { marqueeRows } from "~~/utils/vaultic/marqueeRows";
 
 const CARD_SECONDS_PER_ROW = 4.8;
@@ -20,6 +21,7 @@ function assetKey(asset: OnChainAsset): string {
 export function FeaturedAssetsShowcase(): ReactElement {
   const { assets, isLoading, fromCopy } = useMarketplaceAssets();
   const rows = marqueeRows(assets, assetKey);
+  const featuredId = featuredAsset(assets)?.asset_id;
   const durationSec = Math.max(MIN_CARD_SECONDS, Math.round(rows.length * CARD_SECONDS_PER_ROW));
 
   return (
@@ -56,7 +58,12 @@ export function FeaturedAssetsShowcase(): ReactElement {
       {!isLoading && assets.length > 0 ? (
         <MarqueeTrack durationSec={durationSec}>
           {rows.map(row => (
-            <ListingMarqueeCard key={row.key} asset={row.item} decorative={row.copy > 0} />
+            <ListingMarqueeCard
+              key={row.key}
+              asset={row.item}
+              decorative={row.copy > 0}
+              featured={row.item.asset_id === featuredId}
+            />
           ))}
         </MarqueeTrack>
       ) : null}

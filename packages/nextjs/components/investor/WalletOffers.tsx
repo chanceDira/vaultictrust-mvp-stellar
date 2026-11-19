@@ -6,7 +6,7 @@ import { useStellarWallet } from "~~/components/stellar/StellarWalletProvider";
 import { getExplorerTxUrl } from "~~/scaffold.config";
 import { cancelShareOffer, fetchShareOffer } from "~~/services/stellar/investmentCalls";
 import { notification } from "~~/utils/vaultic";
-import { formatCount } from "~~/utils/vaultic/liveTotals";
+import { formatShareCount } from "~~/utils/vaultic/liveTotals";
 import { formatUsdcAmount } from "~~/utils/vaultic/protocolFee";
 import type { ResaleOffer } from "~~/utils/vaultic/resaleOffer";
 
@@ -116,7 +116,7 @@ export function WalletOffers({ holdings, holdingsLoading }: WalletOffersProps): 
                   {offer.assetCode}
                 </Link>
                 <p className="text-sm font-semibold tabular-nums text-base-content">
-                  {formatCount(offer.shares)} shares at {formatUsdcAmount(offer.priceStroops)} USDC
+                  {formatShareCount(offer.shares)} at {formatUsdcAmount(offer.priceStroops)} USDC
                 </p>
               </div>
               <button

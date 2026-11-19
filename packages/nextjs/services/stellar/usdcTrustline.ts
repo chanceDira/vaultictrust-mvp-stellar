@@ -1,6 +1,6 @@
 import { getNetworkPassphrase } from "./horizonClient";
 import { getTxGuard } from "./sorobanRpc";
-import { signWalletTransaction } from "./walletKit";
+import { signWalletTransaction } from "./walletSession";
 import { Asset, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { TESTNET_USDC_ASSET } from "~~/scaffold.config";
 import type { HorizonAssetBalance } from "~~/types/horizon";
