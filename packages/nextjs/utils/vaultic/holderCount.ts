@@ -89,6 +89,13 @@ export function readHolderChartBody(value: unknown): HolderChartBody | null {
   return { skipped: body.skipped, truncated: body.truncated, rows };
 }
 
+export function chosenHolderCount(chainHolders: number | null, recordedHolders: number | null): number | null {
+  if (chainHolders === null && recordedHolders === null) return null;
+  if (chainHolders !== null && (!Number.isInteger(chainHolders) || chainHolders < 0)) return null;
+  if (recordedHolders !== null && (!Number.isInteger(recordedHolders) || recordedHolders < 0)) return null;
+  return Math.max(chainHolders ?? 0, recordedHolders ?? 0);
+}
+
 export function holderChartLimit(): number {
   return HOLDER_CHART_LIMIT;
 }

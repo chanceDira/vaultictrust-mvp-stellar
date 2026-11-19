@@ -1,9 +1,11 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import vaulticConfig from "~~/scaffold.config";
 import { fetchAsset, fetchTotalAssetsResult } from "~~/services/stellar/assetRegistryCalls";
 import { getSupabaseAdmin } from "~~/services/stellar/listingCopyService";
 import {
   type HolderAccount,
   type HolderPoint,
+  chosenHolderCount,
   countShareHolders,
   holderChartLimit,
   readAccountPage,
@@ -53,6 +55,20 @@ export async function countAssetHolders(code: string, issuer: string): Promise<n
   return countShareHolders(accounts, code, issuer);
 }
 
+const SHARE_AMOUNT = /^(?:0|[1-9]\d*)$/;
+
+async function countRecordedHolders(client: SupabaseClient, network: string, assetId: number): Promise<number | null> {
+  const result = await client.from("holdings").select("shares").eq("network", network).eq("asset_id", assetId);
+  if (result.error || !Array.isArray(result.data)) return null;
+  let count = 0;
+  for (const row of result.data) {
+    const shares = row.shares;
+    if (typeof shares !== "string" || !SHARE_AMOUNT.test(shares)) return null;
+    if (BigInt(shares) > 0n) count += 1;
+  }
+  return count;
+}
+
 export async function recordHolderSnapshots(): Promise<HolderSnapshotResult> {
   const client = getSupabaseAdmin();
   if (!client) return { skipped: true, failed: false, recorded: 0, skippedAssets: 0 };
@@ -82,7 +98,9 @@ export async function recordHolderSnapshots(): Promise<HolderSnapshotResult> {
       continue;
     }
 
-    const holderCount = await countAssetHolders(code, issuer);
+    const chainHolders = await countAssetHolders(code, issuer);
+    const recordedHolders = await countRecordedHolders(client, network, assetId);
+    const holderCount = chosenHolderCount(chainHolders, recordedHolders);
     if (holderCount === null) {
       skippedAssets += 1;
       continue;

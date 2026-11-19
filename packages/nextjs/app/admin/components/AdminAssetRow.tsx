@@ -4,8 +4,9 @@ import { ShareTokenButton } from "./ShareTokenButton";
 import { STATE_CONFIG } from "./constants";
 import { ArchiveBoxIcon, CheckCircleIcon, CubeTransparentIcon, FireIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { shortenStellarAddress } from "~~/services/stellar/horizonClient";
-import { toIpfsGatewayUrl } from "~~/services/stellar/ipfsService";
+import { toIpfsCid } from "~~/services/stellar/ipfsService";
 import type { AssetStateKey, OnChainAsset } from "~~/types/stellar";
+import { isIpfsCid } from "~~/utils/vaultic/ipfsCid";
 
 type Props = {
   asset: OnChainAsset;
@@ -43,6 +44,7 @@ export function AdminAssetRow({
   const canArchive = ARCHIVABLE_STATES.includes(state);
   const canDelete = DELETABLE_STATES.includes(state);
   const canBurn = BURNABLE_STATES.includes(state) && asset.model.tag === "Fractional";
+  const metadataCid = toIpfsCid(asset.metadata_uri ?? "");
 
   return (
     <div className="rounded-2xl border border-base-300 bg-base-100/50 backdrop-blur-sm p-5 hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5">
@@ -77,9 +79,9 @@ export function AdminAssetRow({
             </span>
           </div>
 
-          {asset.metadata_uri && (
+          {isIpfsCid(metadataCid) && (
             <a
-              href={toIpfsGatewayUrl(asset.metadata_uri)}
+              href={`/api/ipfs/read?cid=${encodeURIComponent(metadataCid)}`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-primary/70 hover:text-primary mt-1.5 inline-block underline underline-offset-2 break-all"
