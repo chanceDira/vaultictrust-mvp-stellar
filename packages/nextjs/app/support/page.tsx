@@ -9,6 +9,8 @@ export const metadata = getMetadata({
 });
 
 const SUPPORT_LINKS = [
+  { label: "How it works", href: "/how-it-works", description: "Step by step guides for investors and owners" },
+  { label: "FAQ", href: "/faq", description: "Answers about buying, owning, listing, and privacy" },
   {
     label: "Terms of Service",
     href: "/terms",

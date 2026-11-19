@@ -22,7 +22,8 @@ const menuLinks: HeaderMenuLink[] = [
   { label: "Assets", href: "/owner" },
   { label: "Marketplace", href: "/marketplace" },
   { label: "Portfolio", href: "/investor" },
-  { label: "Litepaper", href: "/litepaper" },
+  { label: "How it works", href: "/how-it-works" },
+  { label: "About", href: "/about" },
   { label: "Admin", href: "/admin", adminOnly: true },
 ];
 

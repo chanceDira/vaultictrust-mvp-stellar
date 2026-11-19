@@ -6,6 +6,13 @@ const productLinks = [
   { label: "Marketplace", href: "/marketplace" },
   { label: "Asset owners", href: "/owner" },
   { label: "Investors", href: "/investor" },
+];
+
+const learnLinks = [
+  { label: "How it works", href: "/how-it-works" },
+  { label: "About", href: "/about" },
+  { label: "How trust works", href: "/trust" },
+  { label: "FAQ", href: "/faq" },
   { label: "Litepaper", href: "/litepaper" },
 ];
 
@@ -42,12 +49,14 @@ export const Footer = () => {
           <div className="flex max-w-sm flex-col items-center lg:items-start">
             <BrandLogo size="lg" showTagline href="/" />
             <p className="mt-4 text-sm font-medium leading-relaxed text-base-content/70">
-              Buy shares in real assets. List one if you own it.
+              Shares in real assets from Rwanda and across Africa, paid in USDC on Stellar. Buy a piece, or list an
+              asset you own.
             </p>
           </div>
 
-          <div className="flex gap-12 sm:gap-16">
+          <div className="flex flex-wrap justify-center gap-10 sm:gap-16">
             <FooterLinkGroup title="Product" links={productLinks} />
+            <FooterLinkGroup title="Learn" links={learnLinks} />
             <FooterLinkGroup title="Legal" links={legalLinks} />
           </div>
         </div>
