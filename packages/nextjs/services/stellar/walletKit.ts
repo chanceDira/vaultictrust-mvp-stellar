@@ -53,26 +53,26 @@ function siteKitTheme(isDark: boolean): KitTheme {
     return {
       ...kitThemeShared,
       background: "#0a0a0a",
-      "background-secondary": "#111111",
+      "background-secondary": "#131316",
       "foreground-strong": "#f5f3ff",
       foreground: "#f5f3ff",
       "foreground-secondary": "#c4b5fd",
       primary: "#8b5cf6",
       "primary-foreground": "#ffffff",
-      border: "#171717",
+      border: "#27272a",
     };
   }
 
   return {
     ...kitThemeShared,
     background: "#ffffff",
-    "background-secondary": "#fbfbfe",
+    "background-secondary": "#f9f8fc",
     "foreground-strong": "#171717",
     foreground: "#171717",
     "foreground-secondary": "#52525b",
     primary: "#7c3aed",
     "primary-foreground": "#ffffff",
-    border: "#f5f3ff",
+    border: "#e9e6f2",
   };
 }
 
@@ -112,7 +112,7 @@ async function startKit() {
   return StellarWalletsKit;
 }
 
-type WalletKit = Awaited<ReturnType<typeof startKit>>;
+export type WalletKit = Awaited<ReturnType<typeof startKit>>;
 
 let startingKit: Promise<WalletKit> | null = null;
 
@@ -134,18 +134,4 @@ export async function getWalletKit(): Promise<WalletKit> {
   }
 
   return startingKit;
-}
-
-export async function signWalletTransaction(xdr: string, address: string): Promise<string> {
-  const kit = await getWalletKit();
-  const { signedTxXdr } = await kit.signTransaction(xdr, {
-    networkPassphrase: getNetworkPassphrase(),
-    address,
-  });
-
-  if (!signedTxXdr) {
-    throw new Error("The wallet did not return a signed transaction");
-  }
-
-  return signedTxXdr;
 }

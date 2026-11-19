@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { VaulticLoader } from "~~/components/VaulticLoader";
 import { ListingMarqueeCard } from "~~/components/home/ListingMarqueeCard";
 import { MarqueeTrack } from "~~/components/home/MarqueeTrack";
@@ -33,10 +32,9 @@ export function FeaturedAssetsShowcase(): ReactElement {
         </div>
         <Link
           href="/marketplace"
-          className="btn btn-ghost btn-sm shrink-0 gap-1.5 rounded-xl px-3 text-primary hover:bg-primary/10"
+          className="btn btn-ghost btn-sm shrink-0 rounded-xl px-3 text-primary hover:bg-primary/10"
         >
           All listings
-          <ArrowRightIcon className="h-4 w-4" />
         </Link>
       </div>
       {isLoading ? <VaulticLoader message="Loading listings" className="py-8" /> : null}
@@ -47,9 +45,8 @@ export function FeaturedAssetsShowcase(): ReactElement {
               ? "The chain could not be read, and there is no saved copy yet."
               : "No listings are open right now."}
           </p>
-          <Link href="/marketplace" className="btn btn-primary btn-sm mt-4 gap-2 rounded-xl px-6">
+          <Link href="/marketplace" className="btn btn-primary btn-sm mt-4 rounded-xl px-6">
             Browse marketplace
-            <ArrowRightIcon className="h-4 w-4" />
           </Link>
         </div>
       ) : null}

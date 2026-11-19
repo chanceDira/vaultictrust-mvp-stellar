@@ -12,6 +12,10 @@ export function formatCount(value: bigint): string {
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+export function formatShareCount(shares: bigint): string {
+  return `${formatCount(shares)} ${shares === 1n ? "share" : "shares"}`;
+}
+
 export function summarizeOpenListings(assets: readonly OnChainAsset[]): LiveTotals | null {
   let openListings = 0;
   let sharesSold = 0n;

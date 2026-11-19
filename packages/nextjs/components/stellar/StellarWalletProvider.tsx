@@ -3,6 +3,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { getWalletKit, syncWalletKitTheme } from "~~/services/stellar/walletKit";
+import { connectWallet, dropOrphanedSession, syncWalletAccount } from "~~/services/stellar/walletSession";
+import { notification } from "~~/utils/vaultic/notification";
+import { connectFailureMessage } from "~~/utils/vaultic/walletErrors";
 
 type StellarWalletContextValue = {
   publicKey: string | null;
@@ -10,7 +13,6 @@ type StellarWalletContextValue = {
   isLoading: boolean;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  network: string | null;
 };
 
 const StellarWalletContext = createContext<StellarWalletContextValue>({
@@ -19,57 +21,25 @@ const StellarWalletContext = createContext<StellarWalletContextValue>({
   isLoading: false,
   connect: async () => {},
   disconnect: async () => {},
-  network: null,
 });
-
-function applyAddress(
-  address: string | undefined,
-  setPublicKey: (value: string | null) => void,
-  setIsConnected: (value: boolean) => void,
-): void {
-  if (!address) {
-    setPublicKey(null);
-    setIsConnected(false);
-    return;
-  }
-
-  setPublicKey(address);
-  setIsConnected(true);
-}
 
 export const StellarWalletProvider = ({ children }: { children: React.ReactNode }) => {
   const { resolvedTheme } = useTheme();
   const [publicKey, setPublicKey] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [network, setNetwork] = useState<string | null>(null);
 
   useEffect(() => {
-    let stopState = () => {};
-    let stopDisconnect = () => {};
     let cancelled = false;
+    const stops: Array<() => void> = [];
 
-    const listen = async () => {
+    const listen = async (): Promise<void> => {
+      await dropOrphanedSession();
       const kit = await getWalletKit();
       const { KitEventType } = await import("@creit.tech/stellar-wallets-kit/types");
       if (cancelled) return;
 
-      try {
-        const { address } = await kit.getAddress();
-        applyAddress(address, setPublicKey, setIsConnected);
-      } catch {
-        applyAddress(undefined, setPublicKey, setIsConnected);
-      }
-
-      stopState = kit.on(KitEventType.STATE_UPDATED, event => {
-        applyAddress(event.payload.address, setPublicKey, setIsConnected);
-        if (event.payload.networkPassphrase) setNetwork(event.payload.networkPassphrase);
-      });
-
-      stopDisconnect = kit.on(KitEventType.DISCONNECT, () => {
-        applyAddress(undefined, setPublicKey, setIsConnected);
-        setNetwork(null);
-      });
+      stops.push(kit.on(KitEventType.STATE_UPDATED, event => setPublicKey(event.payload.address ?? null)));
+      stops.push(kit.on(KitEventType.DISCONNECT, () => setPublicKey(null)));
     };
 
     listen().catch((error: unknown) => {
@@ -78,10 +48,25 @@ export const StellarWalletProvider = ({ children }: { children: React.ReactNode 
 
     return () => {
       cancelled = true;
-      stopState();
-      stopDisconnect();
+      stops.forEach(stop => stop());
     };
   }, []);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
+    const checkAccount = (): void => {
+      if (document.visibilityState !== "visible") return;
+      syncWalletAccount().catch(() => undefined);
+    };
+
+    window.addEventListener("focus", checkAccount);
+    document.addEventListener("visibilitychange", checkAccount);
+    return () => {
+      window.removeEventListener("focus", checkAccount);
+      document.removeEventListener("visibilitychange", checkAccount);
+    };
+  }, [publicKey]);
 
   useEffect(() => {
     if (!resolvedTheme) return;
@@ -93,13 +78,10 @@ export const StellarWalletProvider = ({ children }: { children: React.ReactNode 
   const connect = useCallback(async () => {
     setIsLoading(true);
     try {
-      const kit = await getWalletKit();
-      const { address } = await kit.authModal();
-      applyAddress(address, setPublicKey, setIsConnected);
+      setPublicKey(await connectWallet());
     } catch (error: unknown) {
-      const closedByUser =
-        typeof error === "object" && error !== null && "code" in error && (error as { code?: number }).code === -1;
-      if (!closedByUser) console.error("[Stellar] Connection failed:", error);
+      const message = connectFailureMessage(error);
+      if (message) notification.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -112,13 +94,14 @@ export const StellarWalletProvider = ({ children }: { children: React.ReactNode 
     } catch (error: unknown) {
       console.error("[Stellar] Disconnect failed:", error);
     } finally {
-      applyAddress(undefined, setPublicKey, setIsConnected);
-      setNetwork(null);
+      setPublicKey(null);
     }
   }, []);
 
   return (
-    <StellarWalletContext.Provider value={{ publicKey, isConnected, isLoading, connect, disconnect, network }}>
+    <StellarWalletContext.Provider
+      value={{ publicKey, isConnected: publicKey !== null, isLoading, connect, disconnect }}
+    >
       {children}
     </StellarWalletContext.Provider>
   );

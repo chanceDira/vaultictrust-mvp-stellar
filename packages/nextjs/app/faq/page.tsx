@@ -18,8 +18,7 @@ const FaqPage: NextPage = () => {
   return (
     <div className="flex min-h-0 flex-col">
       <PageIntro
-        label="FAQ"
-        title="Questions, answered plainly"
+        title="Frequently asked questions"
         lede="If your question is not here, the support page has wallet help and the team inbox."
       />
       <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
@@ -45,20 +44,13 @@ const FaqPage: NextPage = () => {
                 <FaqList entries={group.entries} />
               </section>
             ))}
-            <div className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-base-100 to-base-100 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-base-content">Still stuck?</h2>
-              <p className="mt-2 text-base font-medium leading-relaxed text-base-content/80">
-                The support page covers trustline errors and wallet setup, and lists the team inbox.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link href="/support" className="btn btn-primary rounded-xl px-6 font-bold">
-                  Go to support
-                </Link>
-                <Link href="/how-it-works" className="btn btn-ghost rounded-xl px-6 font-bold text-primary">
-                  How it works
-                </Link>
-              </div>
-            </div>
+            <p className="text-base font-medium leading-relaxed text-base-content/75">
+              Still stuck? The{" "}
+              <Link href="/support" className="font-semibold text-primary hover:underline">
+                support page
+              </Link>{" "}
+              covers trustline errors and wallet setup, and lists the team inbox.
+            </p>
           </div>
         </div>
       </section>

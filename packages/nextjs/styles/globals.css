@@ -32,8 +32,8 @@
   --color-neutral-content: #ffffff;
   /* Backgrounds */
   --color-base-100: #ffffff;
-  --color-base-200: #fbfbfe;
-  --color-base-300: #f5f3ff;
+  --color-base-200: #f9f8fc;
+  --color-base-300: #e9e6f2;
   --color-base-content: #171717;
   /* Semantic */
   --color-info: #7c3aed;
@@ -64,8 +64,8 @@
   --color-neutral-content: #171717;
   /* Backgrounds — obsidian space aesthetic */
   --color-base-100: #0a0a0a;
-  --color-base-200: #111111;
-  --color-base-300: #171717;
+  --color-base-200: #131316;
+  --color-base-300: #27272a;
   --color-base-content: #f5f3ff;
   /* Semantic */
   --color-info: #8b5cf6;
@@ -88,7 +88,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
+    border-color: var(--color-base-300, currentColor);
   }
 
   body {

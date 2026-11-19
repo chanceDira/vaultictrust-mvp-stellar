@@ -46,7 +46,7 @@ export const VaulticAppWithProviders = ({ children }: { children: React.ReactNod
     <StellarWalletProvider>
       <TransactionProvider>
         <TxGuardBridge />
-        <ProgressBar height="3px" color="#7c3aed" options={{ showSpinner: false }} />
+        <ProgressBar height="3px" color="var(--color-primary)" options={{ showSpinner: false }} />
         <VaulticApp>{children}</VaulticApp>
       </TransactionProvider>
     </StellarWalletProvider>

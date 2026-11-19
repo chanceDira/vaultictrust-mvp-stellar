@@ -1,51 +1,39 @@
 import type { ReactElement } from "react";
-import { BuildingOffice2Icon, WalletIcon } from "@heroicons/react/24/outline";
-import { AudiencePanel } from "~~/components/home/AudiencePanel";
-import { SectionHeading } from "~~/components/home/SectionHeading";
+import { AudienceColumn } from "~~/components/home/AudienceColumn";
 
 const INVESTOR_POINTS = [
-  "Buy one share or many. Each listing has a fixed share price, and you choose how much to put in.",
-  "Pay in USDC from your own Stellar wallet. No bank transfer, no paperwork by post.",
-  "Open every public document on the listing and check that its hash matches.",
-  "Claim yield in USDC from your portfolio when the owner pays out.",
-  "Offer your shares to another verified investor when you want to sell.",
+  "Buy one share or many at the listed share price.",
+  "Pay in USDC from your own Stellar wallet.",
+  "Read the listing documents and check each file against its hash.",
+  "Claim yield from your portfolio when the owner pays out.",
+  "Offer your shares to another verified investor when you want out.",
 ];
 
 const OWNER_POINTS = [
-  "Submit a building, a farm, a mine, or another asset straight from your wallet.",
-  "Sell it as shares to many investors, or as one asset to a single buyer.",
-  "Withdraw sale proceeds in USDC whenever shares sell.",
-  "Pay yield to every holder with one deposit. The contract works out each share.",
-  "Reach investors across Africa and abroad without running your own fundraise.",
+  "Submit the asset from your wallet with its documents and valuation.",
+  "Sell it as shares to many investors, or whole to one buyer.",
+  "Withdraw sale proceeds in USDC as shares sell.",
+  "Pay yield to every holder with a single deposit.",
 ];
 
 export function AudiencePaths(): ReactElement {
   return (
-    <section className="px-5 py-16 sm:px-8 sm:py-24 lg:px-12">
-      <div className="mx-auto w-full max-w-7xl">
-        <SectionHeading label="Two ways in" title="Whether you invest or you own, it starts with a wallet">
-          VTrust Africa connects people who own productive assets with people who want a stake in them. Both sides sign
-          with their own Stellar wallet, and both see the same public record.
-        </SectionHeading>
-        <div className="mt-12 grid gap-6 lg:grid-cols-2">
-          <AudiencePanel
-            icon={WalletIcon}
-            audience="For investors"
-            title="Own part of something real"
-            points={INVESTOR_POINTS}
-            primary={{ label: "Browse listings", href: "/marketplace" }}
-            secondary={{ label: "Verify your identity", href: "/investor/kyc" }}
-            highlighted
-          />
-          <AudiencePanel
-            icon={BuildingOffice2Icon}
-            audience="For asset owners"
-            title="Raise money from many people at once"
-            points={OWNER_POINTS}
-            primary={{ label: "List your asset", href: "/owner" }}
-            secondary={{ label: "How listing works", href: "/how-it-works#owners" }}
-          />
-        </div>
+    <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
+      <div className="mx-auto grid w-full max-w-7xl gap-12 md:grid-cols-2 md:gap-16">
+        <AudienceColumn
+          title="For investors"
+          intro="Hold a share of an asset that earns, in your own wallet."
+          points={INVESTOR_POINTS}
+          linkLabel="Browse listings"
+          linkHref="/marketplace"
+        />
+        <AudienceColumn
+          title="For asset owners"
+          intro="Raise money from many investors without selling the asset to one buyer."
+          points={OWNER_POINTS}
+          linkLabel="How listing works"
+          linkHref="/how-it-works#owners"
+        />
       </div>
     </section>
   );

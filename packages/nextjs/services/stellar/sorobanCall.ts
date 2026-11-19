@@ -1,7 +1,7 @@
 import { getNetworkPassphrase } from "./horizonClient";
 import { parseSorobanError } from "./sorobanErrors";
 import { getRpcServer, getTxGuard } from "./sorobanRpc";
-import { signWalletTransaction } from "./walletKit";
+import { signWalletTransaction } from "./walletSession";
 import { Contract, TransactionBuilder, rpc, xdr } from "@stellar/stellar-sdk";
 import { rememberChainTx } from "~~/utils/vaultic/rememberChainTx";
 

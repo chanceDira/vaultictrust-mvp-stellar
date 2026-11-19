@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 
 type BrandLogoProps = {
   showTagline?: boolean;
@@ -39,26 +38,34 @@ export function BrandLogo({
 }: BrandLogoProps) {
   const height = logoHeights[size];
   const wordmarkClass = compact ? compactWordmarkScale[size] : wordmarkScale[size];
-  const { resolvedTheme } = useTheme();
-
-  const isDarkMode = resolvedTheme === "dark";
+  const iconFrame = compact
+    ? "h-8 w-8 max-[374px]:hidden sm:h-[var(--logo-h)] sm:w-[var(--logo-h)]"
+    : "h-[var(--logo-h)] w-[var(--logo-h)]";
 
   const content = (
     <div className={`flex min-w-0 items-center gap-1.5 sm:gap-3 ${compact ? "max-[374px]:gap-0" : ""} ${className}`}>
-      <Image
-        src={isDarkMode ? "/logo-dark.jpeg" : "/logo.jpeg"}
-        alt=""
-        width={height}
-        height={height}
-        aria-hidden
-        className={`shrink-0 object-contain rounded-[2px] dark:rounded-[3px] dark:ring-1 dark:ring-white/[0.06] ${
-          compact
-            ? "h-8 w-8 max-[374px]:hidden sm:h-[var(--logo-h)] sm:w-[var(--logo-h)]"
-            : "h-[var(--logo-h)] w-[var(--logo-h)]"
-        } ${iconClassName}`}
+      <span
+        className={`block shrink-0 ${iconFrame} ${iconClassName}`}
         style={{ ["--logo-h" as string]: `${height}px` }}
-        priority
-      />
+        aria-hidden
+      >
+        <Image
+          src="/logo.jpeg"
+          alt=""
+          width={height}
+          height={height}
+          className="h-full w-full rounded-[2px] object-contain dark:hidden"
+          priority
+        />
+        <Image
+          src="/logo-dark.jpeg"
+          alt=""
+          width={height}
+          height={height}
+          className="hidden h-full w-full object-contain mix-blend-lighten dark:block"
+          priority
+        />
+      </span>
       {(showWordmark || showTagline) && (
         <div className="flex min-w-0 flex-col leading-none">
           {showWordmark && (

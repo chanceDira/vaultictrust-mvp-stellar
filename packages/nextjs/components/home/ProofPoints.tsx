@@ -1,87 +1,56 @@
-import type { ComponentType, ReactElement, SVGProps } from "react";
+import type { ReactElement } from "react";
 import Link from "next/link";
-import {
-  CodeBracketIcon,
-  DocumentCheckIcon,
-  ExclamationTriangleIcon,
-  ListBulletIcon,
-  LockClosedIcon,
-  ReceiptPercentIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
 import { SectionHeading } from "~~/components/home/SectionHeading";
+import { DefinitionRows } from "~~/components/ui/DefinitionRows";
 
-type ProofPoint = {
-  title: string;
-  description: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
-};
-
-const POINTS: ProofPoint[] = [
+const POINTS = [
   {
-    title: "Reviewed before listing",
-    description: "An asset stays pending until a reviewer approves it. Pending assets never reach the marketplace.",
-    icon: ShieldCheckIcon,
+    title: "The review",
+    description: "An asset stays pending, and off the marketplace, until a reviewer approves it.",
   },
   {
-    title: "Documents you can verify",
-    description: "Each public file shows its SHA-256 hash. When you open it, the page checks the bytes match.",
-    icon: DocumentCheckIcon,
+    title: "The documents",
+    description: "Each public file shows its SHA-256 hash, and the page checks the bytes when you open it.",
   },
   {
-    title: "Contracts in the open",
-    description: "Every contract address the app calls is published, with a link to Stellar Expert.",
-    icon: CodeBracketIcon,
+    title: "The contracts",
+    description: "Every contract address the app calls is published with a link to Stellar Expert.",
   },
   {
-    title: "Fees read from the contract",
-    description: "The rate comes from the sales contract, and the buy screen quotes it before your wallet opens.",
-    icon: ReceiptPercentIcon,
+    title: "The fee",
+    description: "The rate is read from the sales contract and quoted before your wallet opens.",
   },
   {
-    title: "Identity stays private",
-    description: "Your ID is encrypted in your browser. The chain stores a reference, never the document.",
-    icon: LockClosedIcon,
+    title: "Your identity",
+    description: "Your ID is encrypted in your browser. The chain stores a reference, not the document.",
   },
   {
-    title: "Every sale on record",
-    description: "Purchases, yield, and resales on each listing come from chain events, not from a form we fill in.",
-    icon: ListBulletIcon,
+    title: "The sales",
+    description: "Purchases, yield, and resales on a listing come from chain events.",
   },
 ];
 
 export function ProofPoints(): ReactElement {
   return (
-    <section className="px-5 py-16 sm:px-8 sm:py-24 lg:px-12">
-      <div className="mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <SectionHeading label="Built to be checked" title="Trust you can verify, not just read about">
-            We would rather show you the record than ask you to take our word for it. Here is what you can check
-            yourself, on every listing.
+    <section className="border-t border-base-300/80 px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
+      <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+        <div>
+          <SectionHeading title="What you can check yourself">
+            You should not have to take our word for any of this.
           </SectionHeading>
-          <div className="mt-8 flex gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4">
-            <ExclamationTriangleIcon className="h-6 w-6 shrink-0 text-warning" aria-hidden />
-            <p className="text-sm font-semibold leading-relaxed text-base-content/80">
-              The contracts are not audited yet, and a listing review is not an audit. Read the{" "}
-              <Link href="/risks" className="font-bold text-primary hover:underline">
-                risks
-              </Link>{" "}
-              before you buy.
-            </p>
-          </div>
-          <Link href="/trust" className="btn btn-outline mt-6 rounded-xl border-base-content/15 px-6 font-bold">
-            How trust works
-          </Link>
+          <p className="mt-4 max-w-md text-sm font-medium leading-relaxed text-base-content/70">
+            The contracts are not audited yet, and a listing review is not an audit. Read the{" "}
+            <Link href="/risks" className="font-semibold text-primary hover:underline">
+              risks
+            </Link>{" "}
+            before you buy, or see{" "}
+            <Link href="/trust" className="font-semibold text-primary hover:underline">
+              how trust works
+            </Link>
+            .
+          </p>
         </div>
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {POINTS.map(({ title, description, icon: Icon }) => (
-            <li key={title} className="rounded-3xl border border-base-300 bg-base-100 p-6">
-              <Icon className="h-7 w-7 text-primary" aria-hidden />
-              <h3 className="mt-4 text-lg font-bold text-base-content">{title}</h3>
-              <p className="mt-2 text-sm font-medium leading-relaxed text-base-content/75">{description}</p>
-            </li>
-          ))}
-        </ul>
+        <DefinitionRows rows={POINTS} />
       </div>
     </section>
   );

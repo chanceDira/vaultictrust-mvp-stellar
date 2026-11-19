@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { DayBarChart } from "~~/components/asset/DayBarChart";
 import { useActivityFeed } from "~~/hooks/vaultic/useActivityFeed";
 import { lastSaleSeries, payoutSeries, salesSeries } from "~~/utils/vaultic/listingSeries";
-import { formatCount } from "~~/utils/vaultic/liveTotals";
+import { formatShareCount } from "~~/utils/vaultic/liveTotals";
 import { formatUsdcAmount } from "~~/utils/vaultic/protocolFee";
 
 type ListingHistoryProps = {
@@ -53,14 +53,14 @@ export function ListingHistory({ assetId }: ListingHistoryProps): ReactElement {
             day: point.day,
             primary: point.usdc,
             secondary: null,
-            note: point.shares > 0n ? `${formatCount(point.shares)} shares` : null,
+            note: point.shares > 0n ? formatShareCount(point.shares) : null,
           }))}
-          primaryLabel="USDC"
+          primaryLabel="Paid"
           secondaryLabel={null}
           formatPrimary={usdcLabel}
           formatSecondary={null}
           totalPrimary={usdcLabel(saleUsdc)}
-          totalSecondary={saleShares > 0n ? `${formatCount(saleShares)} shares` : null}
+          totalSecondary={saleShares > 0n ? formatShareCount(saleShares) : null}
           undatedNote={salesUndated ? "Some sales have no date, so they are in the total and not on the chart." : null}
         />
       )}
@@ -98,7 +98,7 @@ export function ListingHistory({ assetId }: ListingHistoryProps): ReactElement {
             day: point.day,
             primary: point.priceStroops,
             secondary: null,
-            note: `${formatCount(point.shares)} shares`,
+            note: formatShareCount(point.shares),
           }))}
           primaryLabel="Price"
           secondaryLabel={null}

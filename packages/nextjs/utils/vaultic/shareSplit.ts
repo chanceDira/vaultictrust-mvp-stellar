@@ -20,8 +20,9 @@ export function shareSplit(total: bigint, sold: bigint): ShareSplit | null {
   };
 }
 
-export function formatSharePercent(tenths: number, belowTenth: boolean): string {
-  if (belowTenth && tenths === 0) return "<0.1";
+export function formatSharePercent(tenths: number, partial: boolean): string {
+  if (partial && tenths === 0) return "<0.1";
+  if (partial && tenths === Number(PERCENT_TENTHS)) return ">99.9";
   const whole = Math.trunc(tenths / 10);
   const frac = tenths % 10;
   if (frac === 0) return String(whole);
