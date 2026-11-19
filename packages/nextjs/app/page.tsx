@@ -10,7 +10,7 @@ import { LiveTotalsStrip } from "~~/components/home/LiveTotalsStrip";
 import { MissionSection } from "~~/components/home/MissionSection";
 import { ProofPoints } from "~~/components/home/ProofPoints";
 import { RoadmapSection } from "~~/components/home/RoadmapSection";
-import { StellarSection } from "~~/components/home/StellarSection";
+import { WhyStellarBand } from "~~/components/home/WhyStellarBand";
 
 const Home: NextPage = () => {
   return (
@@ -23,7 +23,7 @@ const Home: NextPage = () => {
       <AssetClasses />
       <MissionSection />
       <ProofPoints />
-      <StellarSection />
+      <WhyStellarBand />
       <RoadmapSection />
       <HomeFaq />
       <ClosingCallToAction />

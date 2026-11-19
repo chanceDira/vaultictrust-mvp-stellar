@@ -1,4 +1,5 @@
 import { getNetworkPassphrase } from "./horizonClient";
+import { markRecommendedWallet } from "./recommendedWallet";
 import { type WalletKit, getWalletKit } from "./walletKit";
 import type { ModuleInterface } from "@creit.tech/stellar-wallets-kit/types";
 import { Networks } from "@stellar/stellar-sdk";
@@ -55,7 +56,11 @@ export async function connectWallet(): Promise<string> {
   const previousWalletId = selectedWallet(kit)?.productId ?? null;
   const hadSession = (await sessionAddress(kit)) !== null;
 
-  const { allowedWallets } = await import("@creit.tech/stellar-wallets-kit/state");
+  const [{ allowedWallets }, { VarialModule }] = await Promise.all([
+    import("@creit.tech/stellar-wallets-kit/state"),
+    import("@creit.tech/stellar-wallets-kit/modules/varial"),
+  ]);
+  const unmarkRecommended = markRecommendedWallet(new VarialModule().productName);
   const retries = DETECTION_RETRY_DELAYS_MS.map(delay =>
     setTimeout(() => {
       // a wallet's in-app browser auto-connects on every list render, so a refresh would ask twice
@@ -75,6 +80,7 @@ export async function connectWallet(): Promise<string> {
     throw error;
   } finally {
     retries.forEach(clearTimeout);
+    unmarkRecommended();
   }
 }
 

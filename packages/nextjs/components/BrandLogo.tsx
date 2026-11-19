@@ -54,7 +54,7 @@ export function BrandLogo({
           alt=""
           width={height}
           height={height}
-          className="h-full w-full rounded-[2px] object-contain dark:hidden"
+          className="h-full w-full rounded-[2px] object-contain mix-blend-multiply dark:hidden"
           priority
         />
         <Image

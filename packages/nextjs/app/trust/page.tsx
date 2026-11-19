@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { NextPage } from "next";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { ContractDirectory } from "~~/components/contracts/ContractDirectory";
 import { SectionHeading } from "~~/components/home/SectionHeading";
 import { PageIntro } from "~~/components/ui/PageIntro";
@@ -22,8 +23,9 @@ const TrustPage: NextPage = () => {
   return (
     <div className="flex min-h-0 flex-col">
       <PageIntro
-        title="How trust works"
-        lede="What we check before a listing goes live, what you can check yourself, and what we will not do."
+        label="How trust works"
+        title="What we check, what you can check, and what we will not do"
+        lede="Trust here should not depend on taking our word for it. This page explains each safeguard and where to verify it yourself."
       />
 
       <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
@@ -52,13 +54,18 @@ const TrustPage: NextPage = () => {
             </ul>
           </nav>
 
-          <div className="divide-y divide-base-300">
-            {TRUST_TOPICS.map(topic => (
-              <article key={topic.id} id={topic.id} className="scroll-mt-24 py-8 first:pt-0">
-                <h2 className="text-2xl font-bold text-base-content">{topic.title}</h2>
+          <div className="space-y-6">
+            {TRUST_TOPICS.map((topic, index) => (
+              <article
+                key={topic.id}
+                id={topic.id}
+                className="scroll-mt-24 rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8"
+              >
+                <p className="text-sm font-bold text-primary">{String(index + 1).padStart(2, "0")}</p>
+                <h2 className="mt-2 text-2xl font-bold text-base-content">{topic.title}</h2>
                 <div className="mt-4 space-y-3">
                   {topic.paragraphs.map(paragraph => (
-                    <p key={paragraph} className="text-base font-medium leading-relaxed text-base-content/75">
+                    <p key={paragraph} className="text-base font-medium leading-relaxed text-base-content/80">
                       {paragraph}
                     </p>
                   ))}
@@ -66,9 +73,10 @@ const TrustPage: NextPage = () => {
               </article>
             ))}
 
-            <article id="contracts" className="scroll-mt-24 py-8">
-              <h2 className="text-2xl font-bold text-base-content">The contracts</h2>
-              <p className="mt-4 text-base font-medium leading-relaxed text-base-content/75">
+            <article id="contracts" className="scroll-mt-24 rounded-3xl border border-base-300 bg-base-100 p-6 sm:p-8">
+              <p className="text-sm font-bold text-primary">{String(TRUST_TOPICS.length + 1).padStart(2, "0")}</p>
+              <h2 className="mt-2 text-2xl font-bold text-base-content">The contracts</h2>
+              <p className="mt-4 text-base font-medium leading-relaxed text-base-content/80">
                 These are the addresses this app calls on {networkName}. Copy any of them, or open it on Stellar Expert
                 to read its history.
               </p>
@@ -78,15 +86,19 @@ const TrustPage: NextPage = () => {
         </div>
       </section>
 
-      <section className="border-t border-base-300/80 bg-base-200/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
+      <section className="border-t border-base-300/80 bg-base-200/50 px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
         <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-2 lg:gap-16">
-          <SectionHeading title="What you should know before you buy">
+          <SectionHeading label="Limits" title="What you should know before you buy">
             Safeguards reduce risk. They do not remove it.
           </SectionHeading>
           <div>
-            <ul className="divide-y divide-base-300 border-y border-base-300">
+            <ul className="space-y-3">
               {TRUST_LIMITS.map(limit => (
-                <li key={limit} className="py-3 text-base font-medium leading-relaxed text-base-content/80">
+                <li
+                  key={limit}
+                  className="flex gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-base font-semibold text-base-content/85"
+                >
+                  <ExclamationTriangleIcon className="h-6 w-6 shrink-0 text-warning" aria-hidden />
                   {limit}
                 </li>
               ))}

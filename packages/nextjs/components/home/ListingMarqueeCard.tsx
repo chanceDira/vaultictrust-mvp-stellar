@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { FeaturedBadge } from "~~/components/home/FeaturedBadge";
 import type { OnChainAsset } from "~~/types/stellar";
 import { shareOffer } from "~~/utils/vaultic/shareOffer";
 import { shareSplit } from "~~/utils/vaultic/shareSplit";
@@ -7,9 +8,14 @@ import { shareSplit } from "~~/utils/vaultic/shareSplit";
 type ListingMarqueeCardProps = {
   asset: OnChainAsset;
   decorative?: boolean;
+  featured?: boolean;
 };
 
-export function ListingMarqueeCard({ asset, decorative = false }: ListingMarqueeCardProps): ReactElement {
+export function ListingMarqueeCard({
+  asset,
+  decorative = false,
+  featured = false,
+}: ListingMarqueeCardProps): ReactElement {
   const offer = shareOffer(asset);
   const split = asset.model.tag === "Fractional" ? shareSplit(asset.total_shares, asset.sold_shares) : null;
 
@@ -22,7 +28,10 @@ export function ListingMarqueeCard({ asset, decorative = false }: ListingMarquee
     >
       <div className="min-w-0">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-bold text-primary">{asset.asset_code}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="text-xs font-bold text-primary">{asset.asset_code}</span>
+            {featured ? <FeaturedBadge className="px-2 py-0.5" /> : null}
+          </span>
           <span className="truncate text-xs font-semibold text-base-content/50">{asset.asset_category}</span>
         </div>
         <p className="mt-2 line-clamp-2 min-h-11 text-base font-bold leading-snug text-base-content">

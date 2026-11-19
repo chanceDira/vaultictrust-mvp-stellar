@@ -77,12 +77,15 @@ function siteKitTheme(isDark: boolean): KitTheme {
 }
 
 async function startKit() {
-  const [{ StellarWalletsKit }, { defaultModules }] = await Promise.all([
+  const [{ StellarWalletsKit }, { defaultModules }, { VARIAL_ID }] = await Promise.all([
     import("@creit.tech/stellar-wallets-kit/sdk"),
     import("@creit.tech/stellar-wallets-kit/modules/utils"),
+    import("@creit.tech/stellar-wallets-kit/modules/varial"),
   ]);
 
-  const modules = [...defaultModules()];
+  const modules = defaultModules().sort(
+    (a, b) => Number(b.productId === VARIAL_ID) - Number(a.productId === VARIAL_ID),
+  );
   if (WALLETCONNECT_PROJECT_ID) {
     const { WalletConnectModule, WalletConnectTargetChain } = await import(
       "@creit.tech/stellar-wallets-kit/modules/wallet-connect"
